@@ -1,0 +1,37 @@
+{
+  "name": "lernortai",
+  "version": "1.0.0",
+  "description": "KI-gestützte Prüfungskorrektur für Schweizer Berufsschulen",
+  "private": true,
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "serve": "npx serve ."
+  },
+  "keywords": [
+    "berufsschule",
+    "schweiz",
+    "prüfung",
+    "korrektur",
+    "ki",
+    "claude",
+    "supabase",
+    "notenverwaltung",
+    "pwa"
+  ],
+  "author": "Thomas Walther",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thomas-walther-83/pruefai-app.git"
+  },
+  "homepage": "https://github.com/thomas-walther-83/pruefai-app",
+  "bugs": {
+    "url": "https://github.com/thomas-walther-83/pruefai-app/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
