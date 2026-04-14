@@ -127,15 +127,23 @@ klassen ──< schueler
 
 ## Deployment
 
-### Netlify (empfohlen)
+### GitHub Pages (empfohlen – automatisch)
+
+Die App wird automatisch via GitHub Actions auf GitHub Pages deployed, sobald du in den `main`-Branch pushst.
+
+**Öffentliche URL:** https://thomas-walther-83.github.io/pruefai-app/
+
+**Einmalige Einrichtung (nur einmal nötig):**
+
+1. Gehe im Repository zu **Settings → Pages**
+2. Wähle unter *Source*: **GitHub Actions**
+3. Speichern – danach deployt jeder Push auf `main` die App automatisch
+
+### Netlify (Alternative)
 
 1. Gehe zu https://netlify.com
 2. Ziehe `index.html` direkt ins Dashboard (Drag & Drop)
 3. Fertig – du erhältst eine öffentliche URL
-
-### GitHub Pages
-
-In den Repository-Einstellungen: Settings → Pages → Source: Deploy from branch → main → / (root)
 
 ---
 
