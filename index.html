@@ -451,8 +451,10 @@
   <div class="modal">
     <div class="modal__title">&#9881;&#65039; Einstellungen</div>
     <button class="modal__close" onclick="closeModal('settings-modal')">&#10005;</button>
-    <div class="form-group"><label class="form-label">Supabase URL</label><input type="url" id="settings-supabase-url" class="form-control" /></div>
-    <div class="form-group"><label class="form-label">Supabase Anon Key</label><input type="text" id="settings-supabase-key" class="form-control" /></div>
+    <div id="settings-supabase-fields">
+      <div class="form-group"><label class="form-label">Supabase URL</label><input type="url" id="settings-supabase-url" class="form-control" /></div>
+      <div class="form-group"><label class="form-label">Supabase Anon Key</label><input type="text" id="settings-supabase-key" class="form-control" /></div>
+    </div>
     <div class="form-group"><label class="form-label">Schulname</label><input type="text" id="settings-school-name" class="form-control" /></div>
     <div class="modal__footer">
       <button class="btn btn-danger btn-sm" onclick="logout()" style="margin-right:auto">Abmelden</button>
@@ -465,16 +467,53 @@
 <script>
 'use strict';
 
+// Values injected at build time by build.js (Vercel env vars)
+const __ENV__ = {
+  SUPABASE_URL:      '__SUPABASE_URL__',
+  SUPABASE_ANON_KEY: '__SUPABASE_ANON_KEY__',
+  SCHOOL_NAME:       '__SCHOOL_NAME__',
+  APP_PASSWORD:      '__APP_PASSWORD__',
+};
+
 const LS = { PASSWORD: 'lernortai_pw', CONFIG: 'lernortai_config' };
 let cfg = { supabaseUrl: '', supabaseKey: '', schoolName: 'LernortAI' };
 let uploadPages = [];
 let kiPendingData = null;
 
+function envVal(key) {
+  const v = __ENV__[key];
+  return (v && v !== '__' + key + '__') ? v : '';
+}
+
+function envConfigured() {
+  return !!(envVal('SUPABASE_URL') && envVal('SUPABASE_ANON_KEY'));
+}
+
+function applyEnvConfig() {
+  if (envVal('SUPABASE_URL'))      cfg.supabaseUrl = envVal('SUPABASE_URL');
+  if (envVal('SUPABASE_ANON_KEY')) cfg.supabaseKey = envVal('SUPABASE_ANON_KEY');
+  if (envVal('SCHOOL_NAME'))       cfg.schoolName  = envVal('SCHOOL_NAME');
+}
+
+function mergeConfigPreservingEnv(saved) {
+  if (saved) cfg = { ...cfg, ...JSON.parse(saved) };
+  applyEnvConfig();
+}
+
 // INIT
 document.addEventListener('DOMContentLoaded', async () => {
+  applyEnvConfig();
   const pw    = localStorage.getItem(LS.PASSWORD);
   const saved = localStorage.getItem(LS.CONFIG);
-  if (!pw)    { showSetup('setup-login');  return; }
+  const envPw = envVal('APP_PASSWORD');
+  if (!pw && !envPw) { showSetup('setup-login'); return; }
+  if (!pw && envPw)  { showSetup('setup-login'); return; }
+  if (envConfigured()) {
+    mergeConfigPreservingEnv(saved);
+    applyConfig();
+    await loadDashboard();
+    return;
+  }
   if (!saved) { showSetup('setup-config'); return; }
   cfg = { ...cfg, ...JSON.parse(saved) };
   applyConfig();
@@ -497,18 +536,18 @@ function handleLogin() {
   const pw = document.getElementById('login-password').value.trim();
   if (!pw) { showToast('Bitte Passwort eingeben.', 'error'); return; }
   const stored = localStorage.getItem(LS.PASSWORD);
-  if (!stored) {
-    localStorage.setItem(LS.PASSWORD, pw);
-    const saved = localStorage.getItem(LS.CONFIG);
-    if (!saved) { showSetup('setup-config'); return; }
-    cfg = { ...cfg, ...JSON.parse(saved) };
-    applyConfig(); loadDashboard();
-  } else if (pw === stored) {
-    const saved = localStorage.getItem(LS.CONFIG);
-    if (!saved) { showSetup('setup-config'); return; }
-    cfg = { ...cfg, ...JSON.parse(saved) };
-    applyConfig(); loadDashboard();
-  } else { showToast('Falsches Passwort.', 'error'); }
+  const envPw  = envVal('APP_PASSWORD');
+  const correctPw = stored ? pw === stored : (envPw ? pw === envPw : true);
+  if (!correctPw) { showToast('Falsches Passwort.', 'error'); return; }
+  if (!stored) localStorage.setItem(LS.PASSWORD, pw);
+  const saved = localStorage.getItem(LS.CONFIG);
+  if (envConfigured()) {
+    mergeConfigPreservingEnv(saved);
+    applyConfig(); loadDashboard(); return;
+  }
+  if (!saved) { showSetup('setup-config'); return; }
+  cfg = { ...cfg, ...JSON.parse(saved) };
+  applyConfig(); loadDashboard();
 }
 
 function saveConfig() {
@@ -1131,15 +1170,23 @@ async function exportNotenCSV() {
 
 // EINSTELLUNGEN
 function openSettingsModal() {
-  document.getElementById('settings-supabase-url').value  = cfg.supabaseUrl;
-  document.getElementById('settings-supabase-key').value  = cfg.supabaseKey;
+  const sbFields = document.getElementById('settings-supabase-fields');
+  if (envConfigured()) {
+    sbFields.style.display = 'none';
+  } else {
+    sbFields.style.display = '';
+    document.getElementById('settings-supabase-url').value = cfg.supabaseUrl;
+    document.getElementById('settings-supabase-key').value = cfg.supabaseKey;
+  }
   document.getElementById('settings-school-name').value   = cfg.schoolName;
   document.getElementById('settings-modal').classList.remove('hidden');
 }
 
 function saveSettings() {
-  cfg.supabaseUrl  = document.getElementById('settings-supabase-url').value.trim();
-  cfg.supabaseKey  = document.getElementById('settings-supabase-key').value.trim();
+  if (!envConfigured()) {
+    cfg.supabaseUrl = document.getElementById('settings-supabase-url').value.trim();
+    cfg.supabaseKey = document.getElementById('settings-supabase-key').value.trim();
+  }
   cfg.schoolName   = document.getElementById('settings-school-name').value.trim() || 'LernortAI';
   localStorage.setItem(LS.CONFIG, JSON.stringify(cfg));
   applyConfig(); closeModal('settings-modal'); showToast('Einstellungen gespeichert.', 'success'); loadDashboard();
