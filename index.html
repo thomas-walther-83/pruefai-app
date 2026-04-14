@@ -505,9 +505,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyEnvConfig();
   const pw    = localStorage.getItem(LS.PASSWORD);
   const saved = localStorage.getItem(LS.CONFIG);
-  const envPw = envVal('APP_PASSWORD');
-  if (!pw && !envPw) { showSetup('setup-login'); return; }
-  if (!pw && envPw)  { showSetup('setup-login'); return; }
+  if (!pw) { showSetup('setup-login'); return; }
   if (envConfigured()) {
     mergeConfigPreservingEnv(saved);
     applyConfig();
@@ -537,7 +535,10 @@ function handleLogin() {
   if (!pw) { showToast('Bitte Passwort eingeben.', 'error'); return; }
   const stored = localStorage.getItem(LS.PASSWORD);
   const envPw  = envVal('APP_PASSWORD');
-  const correctPw = stored ? pw === stored : (envPw ? pw === envPw : true);
+  let correctPw;
+  if (stored)      { correctPw = pw === stored; }
+  else if (envPw)  { correctPw = pw === envPw; }
+  else             { correctPw = true; }
   if (!correctPw) { showToast('Falsches Passwort.', 'error'); return; }
   if (!stored) localStorage.setItem(LS.PASSWORD, pw);
   const saved = localStorage.getItem(LS.CONFIG);
