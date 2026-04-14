@@ -1,12 +1,1224 @@
-<!-- Your HTML content goes here -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1a56db" />
+  <meta name="description" content="LernortAI – KI-gestützte Prüfungskorrektur für Schweizer Berufsschulen" />
+  <title>LernortAI</title>
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"><\/script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"><\/script>
+  <style>
+    :root {
+      --primary: #1a56db; --primary-dark: #1245b7; --primary-light: #e8f0fe;
+      --success: #059669; --success-light: #d1fae5;
+      --warning: #d97706; --warning-light: #fef3c7;
+      --danger: #dc2626; --danger-light: #fee2e2;
+      --text: #111827; --text-muted: #6b7280;
+      --border: #e5e7eb; --bg: #f9fafb; --card: #ffffff;
+      --radius: 10px; --shadow: 0 2px 8px rgba(0,0,0,.08); --shadow-lg: 0 4px 20px rgba(0,0,0,.12);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+    button { cursor: pointer; font-family: inherit; }
+    input, select, textarea { font-family: inherit; }
+    a { color: var(--primary); text-decoration: none; }
+
+    /* Layout */
+    #app { display: flex; flex-direction: column; min-height: 100vh; }
+    .header { background: var(--primary); color: #fff; padding: .75rem 1.25rem; display: flex; align-items: center; gap: .75rem; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 100; }
+    .header__logo { font-size: 1.4rem; font-weight: 700; }
+    .header__sub { font-size: .8rem; opacity: .85; }
+    .header__actions { margin-left: auto; display: flex; gap: .5rem; }
+    .nav-tabs { background: #fff; border-bottom: 2px solid var(--border); display: flex; overflow-x: auto; scrollbar-width: none; }
+    .nav-tabs::-webkit-scrollbar { display: none; }
+    .nav-tab { padding: .75rem 1.25rem; border: none; background: transparent; color: var(--text-muted); font-size: .9rem; font-weight: 500; white-space: nowrap; border-bottom: 3px solid transparent; margin-bottom: -2px; transition: color .15s, border-color .15s; }
+    .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .nav-tab:hover:not(.active) { color: var(--text); background: var(--bg); }
+    .main { flex: 1; padding: 1.25rem; max-width: 1100px; margin: 0 auto; width: 100%; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* Cards */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); }
+    .card + .card { margin-top: 1rem; }
+    .card__title { font-size: 1.05rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; gap: .4rem; padding: .5rem 1rem; border-radius: 6px; border: none; font-size: .875rem; font-weight: 500; transition: all .15s; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: var(--border); }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #047857; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-sm { padding: .35rem .7rem; font-size: .8rem; }
+    .btn-icon { padding: .4rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); color: var(--text-muted); }
+    .btn-icon:hover { background: var(--border); }
+
+    /* Forms */
+    .form-group { margin-bottom: 1rem; }
+    .form-label { display: block; font-size: .875rem; font-weight: 500; margin-bottom: .4rem; }
+    .form-control { width: 100%; padding: .5rem .75rem; border: 1px solid var(--border); border-radius: 6px; font-size: .875rem; background: #fff; transition: border-color .15s; }
+    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,86,219,.1); }
+    .form-hint { font-size: .75rem; color: var(--text-muted); margin-top: .3rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    /* Tables */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius); }
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    thead th { background: var(--bg); padding: .65rem 1rem; text-align: left; font-weight: 600; color: var(--text-muted); border-bottom: 2px solid var(--border); white-space: nowrap; }
+    tbody td { padding: .65rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: var(--bg); }
+
+    /* Badges */
+    .badge { display: inline-flex; align-items: center; padding: .2rem .6rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
+    .badge-blue { background: var(--primary-light); color: var(--primary); }
+    .badge-green { background: var(--success-light); color: var(--success); }
+    .badge-yellow { background: var(--warning-light); color: var(--warning); }
+    .badge-red { background: var(--danger-light); color: var(--danger); }
+    .badge-gray { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+
+    /* Note colors */
+    .note-6 { color: var(--success); font-weight: 700; }
+    .note-5 { color: #2563eb; font-weight: 700; }
+    .note-4 { color: var(--warning); font-weight: 700; }
+    .note-bad { color: var(--danger); font-weight: 700; }
+
+    /* Alerts */
+    .alert { padding: .75rem 1rem; border-radius: var(--radius); font-size: .875rem; margin-bottom: 1rem; display: flex; align-items: flex-start; gap: .5rem; }
+    .alert-info { background: var(--primary-light); color: var(--primary); }
+    .alert-success { background: var(--success-light); color: var(--success); }
+    .alert-warning { background: var(--warning-light); color: var(--warning); }
+    .alert-danger { background: var(--danger-light); color: var(--danger); }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .modal { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow-lg); width: 100%; max-width: 550px; max-height: 90vh; overflow-y: auto; padding: 1.5rem; position: relative; }
+    .modal__title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; padding-right: 2rem; }
+    .modal__close { position: absolute; top: 1rem; right: 1rem; background: transparent; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer; padding: .25rem .5rem; border-radius: 4px; }
+    .modal__close:hover { background: var(--bg); }
+    .modal__footer { margin-top: 1.25rem; display: flex; gap: .75rem; justify-content: flex-end; flex-wrap: wrap; }
+    .hidden { display: none !important; }
+
+    /* Upload */
+    .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 2rem; text-align: center; cursor: pointer; transition: all .15s; color: var(--text-muted); }
+    .upload-zone:hover, .upload-zone.drag-over { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+    .upload-zone__icon { font-size: 2rem; margin-bottom: .5rem; }
+    .pages-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .75rem; margin-top: .75rem; }
+    .page-thumb { position: relative; aspect-ratio: 3/4; border-radius: 6px; overflow: hidden; border: 2px solid var(--border); background: var(--bg); }
+    .page-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .page-thumb__num { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,.55); color: #fff; font-size: .7rem; text-align: center; padding: .2rem; }
+    .page-thumb__del { position: absolute; top: .25rem; right: .25rem; background: rgba(220,38,38,.85); color: #fff; border: none; border-radius: 50%; width: 1.4rem; height: 1.4rem; font-size: .8rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+    /* Progress */
+    .progress { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
+    .progress-bar { height: 100%; background: var(--primary); transition: width .3s; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center; }
+    .stat-card__num { font-size: 2rem; font-weight: 700; color: var(--primary); }
+    .stat-card__lbl { font-size: .8rem; color: var(--text-muted); margin-top: .25rem; }
+
+    /* Setup */
+    #setup-screen { position: fixed; inset: 0; background: linear-gradient(135deg, #1a56db 0%, #0e3d8a 100%); z-index: 999; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .setup-card { background: #fff; border-radius: 16px; padding: 2rem; width: 100%; max-width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+    .setup-card__logo { text-align: center; margin-bottom: 1.5rem; }
+    .setup-card__logo h1 { font-size: 2rem; font-weight: 800; color: var(--primary); }
+    .setup-card__logo p { color: var(--text-muted); font-size: .9rem; margin-top: .25rem; }
+    .setup-step { display: none; }
+    .setup-step.active { display: block; }
+
+    /* Histogram */
+    .histogram { display: flex; align-items: flex-end; gap: 4px; height: 60px; }
+    .histogram-bar { flex: 1; border-radius: 3px 3px 0 0; min-height: 4px; position: relative; }
+
+    /* Toast */
+    #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: .5rem; max-width: 340px; }
+    .toast { padding: .75rem 1rem; border-radius: 8px; font-size: .875rem; font-weight: 500; box-shadow: var(--shadow-lg); animation: toast-in .25s ease; display: flex; align-items: center; gap: .5rem; color: #fff; }
+    .toast-success { background: var(--success); }
+    .toast-error { background: var(--danger); }
+    .toast-info { background: var(--primary); }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    @media (max-width: 768px) { .main { padding: .75rem; } }
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+    @media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
+  </style>
 </head>
 <body>
-    <h1>Hello, World!</h1>
+
+<!-- Setup Screen -->
+<div id="setup-screen" class="hidden">
+  <div class="setup-card">
+    <div class="setup-card__logo">
+      <h1>&#127891; LernortAI</h1>
+      <p>KI-gestützte Prüfungskorrektur für Schweizer Berufsschulen</p>
+    </div>
+    <div id="setup-login" class="setup-step active">
+      <div class="form-group">
+        <label class="form-label">App-Passwort</label>
+        <input type="password" id="login-password" class="form-control" placeholder="Passwort eingeben …" />
+        <p class="form-hint">Beim ersten Start: Passwort frei wählen – es wird lokal gespeichert.</p>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="handleLogin()">Anmelden &#8594;</button>
+    </div>
+    <div id="setup-config" class="setup-step">
+      <div class="alert alert-info">Willkommen! Bitte konfiguriere LernortAI.</div>
+      <div class="form-group">
+        <label class="form-label">Supabase URL *</label>
+        <input type="url" id="cfg-supabase-url" class="form-control" placeholder="https://xxx.supabase.co" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Supabase Anon Key *</label>
+        <input type="text" id="cfg-supabase-key" class="form-control" placeholder="eyJ…" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Anthropic API-Key (optional)</label>
+        <input type="text" id="cfg-anthropic-key" class="form-control" placeholder="sk-ant-…" />
+        <p class="form-hint">Nur für KI-Korrektur benötigt.</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Schulname</label>
+        <input type="text" id="cfg-school-name" class="form-control" placeholder="Berufsschule …" />
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:.5rem" onclick="saveConfig()">Konfiguration speichern &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="app">
+  <header class="header">
+    <div>
+      <div class="header__logo">&#127891; LernortAI</div>
+      <div class="header__sub" id="header-school">Berufsschule</div>
+    </div>
+    <div class="header__actions">
+      <button class="btn btn-icon" onclick="openSettingsModal()" title="Einstellungen">&#9881;&#65039;</button>
+    </div>
+  </header>
+
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="showView('dashboard')" id="tab-dashboard">&#128202; Dashboard</button>
+    <button class="nav-tab" onclick="showView('klassen')" id="tab-klassen">&#127979; Klassen</button>
+    <button class="nav-tab" onclick="showView('schueler')" id="tab-schueler">&#128101; Schüler</button>
+    <button class="nav-tab" onclick="showView('faecher')" id="tab-faecher">&#128218; Fächer</button>
+    <button class="nav-tab" onclick="showView('pruefungen')" id="tab-pruefungen">&#128221; Prüfungen</button>
+    <button class="nav-tab" onclick="showView('korrektur')" id="tab-korrektur">&#129302; Korrektur</button>
+    <button class="nav-tab" onclick="showView('noten')" id="tab-noten">&#128200; Noten</button>
+  </nav>
+
+  <main class="main">
+
+    <!-- Dashboard -->
+    <div id="view-dashboard" class="view active">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-card__num" id="stat-klassen">–</div><div class="stat-card__lbl">Klassen</div></div>
+        <div class="stat-card"><div class="stat-card__num" id="stat-schueler">–</div><div class="stat-card__lbl">Schüler</div></div>
+        <div class="stat-card"><div class="stat-card__num" id="stat-pruefungen">–</div><div class="stat-card__lbl">Prüfungen</div></div>
+        <div class="stat-card"><div class="stat-card__num" id="stat-korrigiert">–</div><div class="stat-card__lbl">Korrigiert</div></div>
+      </div>
+      <div class="card">
+        <div class="card__title">&#128197; Nächste Prüfungen</div>
+        <div id="dashboard-pruefungen-list"><p style="color:var(--text-muted);font-size:.875rem">Keine anstehenden Prüfungen.</p></div>
+      </div>
+    </div>
+
+    <!-- Klassen -->
+    <div id="view-klassen" class="view">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h2 style="font-size:1.25rem;font-weight:700">Klassen</h2>
+        <button class="btn btn-primary" onclick="openModal('klasse-modal')">+ Neue Klasse</button>
+      </div>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Klasse</th><th>Beruf</th><th>Lehrjahr</th><th>Schuljahr</th><th>Schüler</th><th>Aktionen</th></tr></thead>
+        <tbody id="klassen-tbody"><tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Klassen erfasst.</td></tr></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- Schüler -->
+    <div id="view-schueler" class="view">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;gap:1rem;flex-wrap:wrap">
+        <h2 style="font-size:1.25rem;font-weight:700">Schüler</h2>
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+          <select class="form-control" id="schueler-filter-klasse" style="width:auto" onchange="loadSchueler()">
+            <option value="">Alle Klassen</option>
+          </select>
+          <button class="btn btn-primary" onclick="openModal('schueler-modal')">+ Neuer Schüler</button>
+        </div>
+      </div>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Name</th><th>Nummer</th><th>Klasse</th><th>Aktionen</th></tr></thead>
+        <tbody id="schueler-tbody"><tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Schüler erfasst.</td></tr></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- Fächer -->
+    <div id="view-faecher" class="view">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h2 style="font-size:1.25rem;font-weight:700">Fächer</h2>
+        <button class="btn btn-primary" onclick="openModal('fach-modal')">+ Neues Fach</button>
+      </div>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Fach</th><th>Kürzel</th><th>Aktionen</th></tr></thead>
+        <tbody id="faecher-tbody"><tr><td colspan="3" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Fächer erfasst.</td></tr></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- Prüfungen -->
+    <div id="view-pruefungen" class="view">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h2 style="font-size:1.25rem;font-weight:700">Prüfungen</h2>
+        <button class="btn btn-primary" onclick="openModal('pruefung-modal')">+ Neue Prüfung</button>
+      </div>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Name</th><th>Datum</th><th>Fach</th><th>Max. Punkte</th><th>Klassen</th><th>Aktionen</th></tr></thead>
+        <tbody id="pruefungen-tbody"><tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Prüfungen erfasst.</td></tr></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- Korrektur -->
+    <div id="view-korrektur" class="view">
+      <div style="margin-bottom:1rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end">
+        <div style="flex:1;min-width:200px">
+          <label class="form-label">Prüfung wählen</label>
+          <select class="form-control" id="korrektur-pruefung-select" onchange="loadKorrekturEintraege()"><option value="">– bitte wählen –</option></select>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <label class="form-label">Klasse</label>
+          <select class="form-control" id="korrektur-klasse-select" onchange="loadKorrekturEintraege()"><option value="">– bitte wählen –</option></select>
+        </div>
+        <button class="btn btn-success" onclick="kiAlleKorrigieren()">&#129302; Alle KI-korrigieren</button>
+      </div>
+      <div id="korrektur-eintraege-list"></div>
+    </div>
+
+    <!-- Noten -->
+    <div id="view-noten" class="view">
+      <div style="margin-bottom:1rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end">
+        <div style="flex:1;min-width:200px">
+          <label class="form-label">Prüfung</label>
+          <select class="form-control" id="noten-pruefung-select" onchange="loadNotenTabelle()"><option value="">– bitte wählen –</option></select>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <label class="form-label">Klasse</label>
+          <select class="form-control" id="noten-klasse-select" onchange="loadNotenTabelle()"><option value="">– bitte wählen –</option></select>
+        </div>
+        <button class="btn btn-secondary" onclick="exportNotenPDF()">&#128196; PDF-Export</button>
+        <button class="btn btn-secondary" onclick="exportNotenCSV()">&#128202; CSV-Export</button>
+      </div>
+      <div id="noten-tabelle-wrap"></div>
+      <div id="noten-histogram-wrap" class="card hidden" style="margin-top:1rem">
+        <div class="card__title">&#128202; Notenverteilung</div>
+        <div id="noten-histogram"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- Klasse Modal -->
+<div id="klasse-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal__title" id="klasse-modal-title">Neue Klasse</div>
+    <button class="modal__close" onclick="closeModal('klasse-modal')">&#10005;</button>
+    <input type="hidden" id="klasse-id" />
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Klassenname *</label><input type="text" id="klasse-name" class="form-control" placeholder="z.B. 1BI-A" /></div>
+      <div class="form-group"><label class="form-label">Beruf *</label><input type="text" id="klasse-beruf" class="form-control" placeholder="z.B. Informatiker/in" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Lehrjahr *</label>
+        <select id="klasse-lehrjahr" class="form-control"><option value="1">1. Lehrjahr</option><option value="2">2. Lehrjahr</option><option value="3">3. Lehrjahr</option><option value="4">4. Lehrjahr</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Schuljahr *</label><input type="text" id="klasse-schuljahr" class="form-control" placeholder="z.B. 2024/2025" /></div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('klasse-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveKlasse()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Schüler Modal -->
+<div id="schueler-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal__title" id="schueler-modal-title">Neuer Schüler</div>
+    <button class="modal__close" onclick="closeModal('schueler-modal')">&#10005;</button>
+    <input type="hidden" id="schueler-id" />
+    <div class="form-group"><label class="form-label">Name *</label><input type="text" id="schueler-name" class="form-control" placeholder="Vor- und Nachname" /></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Schülernummer</label><input type="text" id="schueler-nummer" class="form-control" placeholder="optional" /></div>
+      <div class="form-group"><label class="form-label">Klasse *</label><select id="schueler-klasse-id" class="form-control"><option value="">– wählen –</option></select></div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('schueler-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveSchueler()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fach Modal -->
+<div id="fach-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal__title" id="fach-modal-title">Neues Fach</div>
+    <button class="modal__close" onclick="closeModal('fach-modal')">&#10005;</button>
+    <input type="hidden" id="fach-id" />
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Fachname *</label><input type="text" id="fach-name" class="form-control" placeholder="z.B. Mathematik" /></div>
+      <div class="form-group"><label class="form-label">Kürzel *</label><input type="text" id="fach-kuerzel" class="form-control" placeholder="z.B. M" maxlength="8" /></div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('fach-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveFach()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Prüfung Modal -->
+<div id="pruefung-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:640px">
+    <div class="modal__title" id="pruefung-modal-title">Neue Prüfung</div>
+    <button class="modal__close" onclick="closeModal('pruefung-modal')">&#10005;</button>
+    <input type="hidden" id="pruefung-id" />
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Prüfungsname *</label><input type="text" id="pruefung-name" class="form-control" placeholder="z.B. Semesterprüfung Q1" /></div>
+      <div class="form-group"><label class="form-label">Datum</label><input type="date" id="pruefung-datum" class="form-control" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Fach</label><select id="pruefung-fach-id" class="form-control"><option value="">– optional –</option></select></div>
+      <div class="form-group"><label class="form-label">Max. Punkte *</label><input type="number" id="pruefung-max-punkte" class="form-control" value="100" min="1" /></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Klassen</label>
+      <div id="pruefung-klassen-checkboxes" style="display:flex;flex-wrap:wrap;gap:.5rem;padding:.5rem;border:1px solid var(--border);border-radius:6px;max-height:120px;overflow-y:auto">
+        <span style="color:var(--text-muted);font-size:.8rem">Klassen werden geladen…</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">KI-Anweisungen (Aufgabenstellung für die Korrektur)</label>
+      <textarea id="pruefung-anweisungen" class="form-control" rows="4" placeholder="Beschreibe Aufgaben und Bewertungskriterien…"></textarea>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('pruefung-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="savePruefung()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="upload-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:600px">
+    <div class="modal__title" id="upload-modal-title">Prüfung hochladen</div>
+    <button class="modal__close" onclick="closeModal('upload-modal')">&#10005;</button>
+    <input type="hidden" id="upload-eintrag-id" />
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+      <div class="upload-zone__icon">&#128248;</div>
+      <div>Fotos / Scans hier ablegen oder klicken</div>
+      <div style="font-size:.75rem;margin-top:.25rem;opacity:.8">JPG, PNG, WebP – mehrseitige Prüfungen möglich</div>
+    </div>
+    <input type="file" id="file-input" accept="image/*" multiple style="display:none" onchange="handleFileSelect(event)" />
+    <div id="pages-preview" class="pages-grid"></div>
+    <div id="upload-progress" class="hidden" style="margin-top:.75rem">
+      <div class="progress"><div class="progress-bar" id="upload-progress-bar" style="width:0%"></div></div>
+      <p style="font-size:.8rem;color:var(--text-muted);margin-top:.3rem" id="upload-progress-text">Uploading…</p>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('upload-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="uploadSeiten()" id="upload-btn">&#128228; Hochladen</button>
+    </div>
+  </div>
+</div>
+
+<!-- KI-Ergebnis Modal -->
+<div id="ki-ergebnis-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:600px">
+    <div class="modal__title">&#129302; KI-Korrektur Ergebnis</div>
+    <button class="modal__close" onclick="closeModal('ki-ergebnis-modal')">&#10005;</button>
+    <div id="ki-ergebnis-content"></div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('ki-ergebnis-modal')">Schliessen</button>
+      <button class="btn btn-success" onclick="saveKiErgebnis()">&#10003; Note übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Einstellungen Modal -->
+<div id="settings-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal__title">&#9881;&#65039; Einstellungen</div>
+    <button class="modal__close" onclick="closeModal('settings-modal')">&#10005;</button>
+    <div class="form-group"><label class="form-label">Supabase URL</label><input type="url" id="settings-supabase-url" class="form-control" /></div>
+    <div class="form-group"><label class="form-label">Supabase Anon Key</label><input type="text" id="settings-supabase-key" class="form-control" /></div>
+    <div class="form-group"><label class="form-label">Anthropic API-Key</label><input type="text" id="settings-anthropic-key" class="form-control" /></div>
+    <div class="form-group"><label class="form-label">Schulname</label><input type="text" id="settings-school-name" class="form-control" /></div>
+    <div class="modal__footer">
+      <button class="btn btn-danger btn-sm" onclick="logout()" style="margin-right:auto">Abmelden</button>
+      <button class="btn btn-secondary" onclick="closeModal('settings-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const LS = { PASSWORD: 'lernortai_pw', CONFIG: 'lernortai_config' };
+let cfg = { supabaseUrl: '', supabaseKey: '', anthropicKey: '', schoolName: 'LernortAI' };
+let uploadPages = [];
+let kiPendingData = null;
+
+// INIT
+document.addEventListener('DOMContentLoaded', async () => {
+  const pw    = localStorage.getItem(LS.PASSWORD);
+  const saved = localStorage.getItem(LS.CONFIG);
+  if (!pw)    { showSetup('setup-login');  return; }
+  if (!saved) { showSetup('setup-config'); return; }
+  cfg = { ...cfg, ...JSON.parse(saved) };
+  applyConfig();
+  await loadDashboard();
+});
+
+function applyConfig() {
+  document.getElementById('header-school').textContent = cfg.schoolName || 'LernortAI';
+  document.getElementById('setup-screen').classList.add('hidden');
+}
+
+// SETUP
+function showSetup(step) {
+  document.getElementById('setup-screen').classList.remove('hidden');
+  document.querySelectorAll('.setup-step').forEach(s => s.classList.remove('active'));
+  document.getElementById(step).classList.add('active');
+}
+
+function handleLogin() {
+  const pw = document.getElementById('login-password').value.trim();
+  if (!pw) { showToast('Bitte Passwort eingeben.', 'error'); return; }
+  const stored = localStorage.getItem(LS.PASSWORD);
+  if (!stored) {
+    localStorage.setItem(LS.PASSWORD, pw);
+    const saved = localStorage.getItem(LS.CONFIG);
+    if (!saved) { showSetup('setup-config'); return; }
+    cfg = { ...cfg, ...JSON.parse(saved) };
+    applyConfig(); loadDashboard();
+  } else if (pw === stored) {
+    const saved = localStorage.getItem(LS.CONFIG);
+    if (!saved) { showSetup('setup-config'); return; }
+    cfg = { ...cfg, ...JSON.parse(saved) };
+    applyConfig(); loadDashboard();
+  } else { showToast('Falsches Passwort.', 'error'); }
+}
+
+function saveConfig() {
+  const url = document.getElementById('cfg-supabase-url').value.trim();
+  const key = document.getElementById('cfg-supabase-key').value.trim();
+  if (!url || !key) { showToast('Supabase URL und Key sind Pflichtfelder.', 'error'); return; }
+  cfg.supabaseUrl  = url;
+  cfg.supabaseKey  = key;
+  cfg.anthropicKey = document.getElementById('cfg-anthropic-key').value.trim();
+  cfg.schoolName   = document.getElementById('cfg-school-name').value.trim() || 'LernortAI';
+  localStorage.setItem(LS.CONFIG, JSON.stringify(cfg));
+  applyConfig(); loadDashboard();
+}
+
+function logout() {
+  if (!confirm('Wirklich abmelden?')) return;
+  localStorage.removeItem(LS.PASSWORD);
+  location.reload();
+}
+
+// SUPABASE
+async function sbFetch(path, opts = {}) {
+  const url = cfg.supabaseUrl + '/rest/v1/' + path;
+  const headers = {
+    'apikey': cfg.supabaseKey,
+    'Authorization': 'Bearer ' + cfg.supabaseKey,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    ...opts.headers,
+  };
+  const res = await fetch(url, { ...opts, headers });
+  if (!res.ok) throw new Error('Supabase ' + res.status + ': ' + await res.text());
+  const text = await res.text();
+  return text ? JSON.parse(text) : [];
+}
+
+const sb = {
+  select: (t, q) => sbFetch(t + (q ? '?' + q : '') + (q ? '&' : '?') + 'order=created_at.asc'),
+  insert: (t, d) => sbFetch(t, { method: 'POST', body: JSON.stringify(d) }),
+  update: (t, id, d) => sbFetch(t + '?id=eq.' + id, { method: 'PATCH', body: JSON.stringify(d) }),
+  delete: (t, id) => sbFetch(t + '?id=eq.' + id, { method: 'DELETE' }),
+};
+
+async function sbStorageUpload(bucket, filePath, file) {
+  const url = cfg.supabaseUrl + '/storage/v1/object/' + bucket + '/' + filePath;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'apikey': cfg.supabaseKey, 'Authorization': 'Bearer ' + cfg.supabaseKey, 'Content-Type': file.type || 'image/jpeg' },
+    body: file,
+  });
+  if (!res.ok) throw new Error('Storage upload failed: ' + await res.text());
+  return cfg.supabaseUrl + '/storage/v1/object/public/' + bucket + '/' + filePath;
+}
+
+// NAVIGATION
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'klassen')   loadKlassen();
+  if (name === 'schueler')  { loadKlassenIntoSelect('schueler-filter-klasse'); loadSchueler(); }
+  if (name === 'faecher')   loadFaecher();
+  if (name === 'pruefungen') loadPruefungen();
+  if (name === 'korrektur') { loadPruefungenIntoSelect('korrektur-pruefung-select'); loadKlassenIntoSelect('korrektur-klasse-select'); }
+  if (name === 'noten')     { loadPruefungenIntoSelect('noten-pruefung-select'); loadKlassenIntoSelect('noten-klasse-select'); }
+}
+
+// DASHBOARD
+async function loadDashboard() {
+  if (!cfg.supabaseUrl || !cfg.supabaseKey) return;
+  try {
+    const [klassen, schueler, pruefungen, eintraege] = await Promise.all([
+      sb.select('klassen'), sb.select('schueler'), sb.select('pruefungen'), sb.select('eintraege')
+    ]);
+    document.getElementById('stat-klassen').textContent    = klassen.length;
+    document.getElementById('stat-schueler').textContent   = schueler.length;
+    document.getElementById('stat-pruefungen').textContent = pruefungen.length;
+    document.getElementById('stat-korrigiert').textContent = eintraege.filter(e => e.status === 'korrigiert' || e.status === 'abgeschlossen').length;
+    const today = new Date().toISOString().split('T')[0];
+    const upcoming = pruefungen.filter(p => p.datum && p.datum >= today).sort((a,b) => a.datum.localeCompare(b.datum)).slice(0, 5);
+    const el = document.getElementById('dashboard-pruefungen-list');
+    el.innerHTML = upcoming.length ? upcoming.map(p =>
+      '<div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border)">' +
+      '<span>' + escHtml(p.name) + '</span>' +
+      '<span class="badge badge-blue">' + formatDate(p.datum) + '</span></div>'
+    ).join('') : '<p style="color:var(--text-muted);font-size:.875rem">Keine anstehenden Prüfungen.</p>';
+  } catch(e) { showToast('Verbindungsfehler: ' + e.message, 'error'); }
+}
+
+// KLASSEN
+async function loadKlassen() {
+  try {
+    const [rows, schueler] = await Promise.all([sb.select('klassen'), sb.select('schueler')]);
+    const tbody = document.getElementById('klassen-tbody');
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Klassen erfasst.</td></tr>'; return; }
+    tbody.innerHTML = rows.map(k => {
+      const cnt = schueler.filter(s => s.klasse_id === k.id).length;
+      return '<tr><td><strong>' + escHtml(k.name) + '</strong></td><td>' + escHtml(k.beruf) + '</td><td>' + k.lehrjahr + '. Lehrjahr</td><td>' + escHtml(k.schuljahr) + '</td><td>' + cnt + '</td><td>' +
+        '<button class="btn btn-sm btn-secondary" onclick="editKlasse(\'' + k.id + '\')">&#9998;</button> ' +
+        '<button class="btn btn-sm btn-danger" onclick="deleteKlasse(\'' + k.id + '\')">&#128465;</button></td></tr>';
+    }).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function openModal(id) {
+  if (id === 'klasse-modal') {
+    document.getElementById('klasse-id').value = '';
+    document.getElementById('klasse-name').value = '';
+    document.getElementById('klasse-beruf').value = '';
+    document.getElementById('klasse-lehrjahr').value = '1';
+    document.getElementById('klasse-schuljahr').value = currentSchoolyear();
+    document.getElementById('klasse-modal-title').textContent = 'Neue Klasse';
+  }
+  if (id === 'schueler-modal') {
+    document.getElementById('schueler-id').value = '';
+    document.getElementById('schueler-name').value = '';
+    document.getElementById('schueler-nummer').value = '';
+    document.getElementById('schueler-modal-title').textContent = 'Neuer Schüler';
+    await loadKlassenIntoSelect('schueler-klasse-id');
+  }
+  if (id === 'fach-modal') {
+    document.getElementById('fach-id').value = '';
+    document.getElementById('fach-name').value = '';
+    document.getElementById('fach-kuerzel').value = '';
+    document.getElementById('fach-modal-title').textContent = 'Neues Fach';
+  }
+  if (id === 'pruefung-modal') {
+    document.getElementById('pruefung-id').value = '';
+    document.getElementById('pruefung-name').value = '';
+    document.getElementById('pruefung-datum').value = '';
+    document.getElementById('pruefung-max-punkte').value = '100';
+    document.getElementById('pruefung-anweisungen').value = '';
+    document.getElementById('pruefung-modal-title').textContent = 'Neue Prüfung';
+    await loadFaecherIntoSelect('pruefung-fach-id');
+    await loadKlassenCheckboxes();
+  }
+  document.getElementById(id).classList.remove('hidden');
+}
+
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+async function editKlasse(id) {
+  const rows = await sb.select('klassen', 'id=eq.' + id);
+  const k = rows[0]; if (!k) return;
+  document.getElementById('klasse-id').value = k.id;
+  document.getElementById('klasse-name').value = k.name;
+  document.getElementById('klasse-beruf').value = k.beruf;
+  document.getElementById('klasse-lehrjahr').value = k.lehrjahr;
+  document.getElementById('klasse-schuljahr').value = k.schuljahr;
+  document.getElementById('klasse-modal-title').textContent = 'Klasse bearbeiten';
+  document.getElementById('klasse-modal').classList.remove('hidden');
+}
+
+async function saveKlasse() {
+  const id = document.getElementById('klasse-id').value;
+  const name = document.getElementById('klasse-name').value.trim();
+  const beruf = document.getElementById('klasse-beruf').value.trim();
+  const lehrjahr = parseInt(document.getElementById('klasse-lehrjahr').value);
+  const schuljahr = document.getElementById('klasse-schuljahr').value.trim();
+  if (!name || !beruf || !schuljahr) { showToast('Bitte alle Pflichtfelder ausfüllen.', 'error'); return; }
+  try {
+    if (id) await sb.update('klassen', id, { name, beruf, lehrjahr, schuljahr });
+    else    await sb.insert('klassen', { name, beruf, lehrjahr, schuljahr });
+    closeModal('klasse-modal'); showToast('Klasse gespeichert.', 'success'); loadKlassen(); loadDashboard();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteKlasse(id) {
+  if (!confirm('Klasse wirklich löschen?')) return;
+  try { await sb.delete('klassen', id); showToast('Klasse gelöscht.', 'success'); loadKlassen(); loadDashboard(); }
+  catch(e) { showToast(e.message, 'error'); }
+}
+
+// SCHÜLER
+async function loadSchueler() {
+  try {
+    const filterKlasse = document.getElementById('schueler-filter-klasse')?.value || '';
+    const q = filterKlasse ? 'klasse_id=eq.' + filterKlasse : '';
+    const [rows, klassen] = await Promise.all([sb.select('schueler', q), sb.select('klassen')]);
+    const km = Object.fromEntries(klassen.map(k => [k.id, k.name]));
+    const tbody = document.getElementById('schueler-tbody');
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Keine Schüler gefunden.</td></tr>'; return; }
+    tbody.innerHTML = rows.map(s =>
+      '<tr><td><strong>' + escHtml(s.name) + '</strong></td><td>' + escHtml(s.nummer || '–') + '</td><td>' + escHtml(km[s.klasse_id] || '–') + '</td><td>' +
+      '<button class="btn btn-sm btn-secondary" onclick="editSchueler(\'' + s.id + '\')">&#9998;</button> ' +
+      '<button class="btn btn-sm btn-danger" onclick="deleteSchueler(\'' + s.id + '\')">&#128465;</button></td></tr>'
+    ).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function editSchueler(id) {
+  const rows = await sb.select('schueler', 'id=eq.' + id);
+  const s = rows[0]; if (!s) return;
+  await loadKlassenIntoSelect('schueler-klasse-id');
+  document.getElementById('schueler-id').value = s.id;
+  document.getElementById('schueler-name').value = s.name;
+  document.getElementById('schueler-nummer').value = s.nummer || '';
+  document.getElementById('schueler-klasse-id').value = s.klasse_id;
+  document.getElementById('schueler-modal-title').textContent = 'Schüler bearbeiten';
+  document.getElementById('schueler-modal').classList.remove('hidden');
+}
+
+async function saveSchueler() {
+  const id = document.getElementById('schueler-id').value;
+  const name = document.getElementById('schueler-name').value.trim();
+  const nummer = document.getElementById('schueler-nummer').value.trim();
+  const klasseId = document.getElementById('schueler-klasse-id').value;
+  if (!name || !klasseId) { showToast('Name und Klasse sind Pflichtfelder.', 'error'); return; }
+  try {
+    const data = { name, nummer: nummer || null, klasse_id: klasseId };
+    if (id) await sb.update('schueler', id, data); else await sb.insert('schueler', data);
+    closeModal('schueler-modal'); showToast('Schüler gespeichert.', 'success'); loadSchueler(); loadDashboard();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteSchueler(id) {
+  if (!confirm('Schüler wirklich löschen?')) return;
+  try { await sb.delete('schueler', id); showToast('Schüler gelöscht.', 'success'); loadSchueler(); }
+  catch(e) { showToast(e.message, 'error'); }
+}
+
+// FÄCHER
+async function loadFaecher() {
+  try {
+    const rows = await sb.select('faecher');
+    const tbody = document.getElementById('faecher-tbody');
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="3" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Fächer erfasst.</td></tr>'; return; }
+    tbody.innerHTML = rows.map(f =>
+      '<tr><td><strong>' + escHtml(f.name) + '</strong></td><td><span class="badge badge-blue">' + escHtml(f.kuerzel) + '</span></td><td>' +
+      '<button class="btn btn-sm btn-secondary" onclick="editFach(\'' + f.id + '\')">&#9998;</button> ' +
+      '<button class="btn btn-sm btn-danger" onclick="deleteFach(\'' + f.id + '\')">&#128465;</button></td></tr>'
+    ).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function editFach(id) {
+  const rows = await sb.select('faecher', 'id=eq.' + id);
+  const f = rows[0]; if (!f) return;
+  document.getElementById('fach-id').value = f.id;
+  document.getElementById('fach-name').value = f.name;
+  document.getElementById('fach-kuerzel').value = f.kuerzel;
+  document.getElementById('fach-modal-title').textContent = 'Fach bearbeiten';
+  document.getElementById('fach-modal').classList.remove('hidden');
+}
+
+async function saveFach() {
+  const id = document.getElementById('fach-id').value;
+  const name = document.getElementById('fach-name').value.trim();
+  const kuerzel = document.getElementById('fach-kuerzel').value.trim().toUpperCase();
+  if (!name || !kuerzel) { showToast('Bitte alle Pflichtfelder ausfüllen.', 'error'); return; }
+  try {
+    if (id) await sb.update('faecher', id, { name, kuerzel }); else await sb.insert('faecher', { name, kuerzel });
+    closeModal('fach-modal'); showToast('Fach gespeichert.', 'success'); loadFaecher();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteFach(id) {
+  if (!confirm('Fach wirklich löschen?')) return;
+  try { await sb.delete('faecher', id); showToast('Fach gelöscht.', 'success'); loadFaecher(); }
+  catch(e) { showToast(e.message, 'error'); }
+}
+
+// PRÜFUNGEN
+async function loadPruefungen() {
+  try {
+    const [rows, faecher, pruefungKlassen, klassen] = await Promise.all([
+      sb.select('pruefungen'), sb.select('faecher'), sb.select('pruefung_klassen'), sb.select('klassen')
+    ]);
+    const fm = Object.fromEntries(faecher.map(f => [f.id, f]));
+    const km = Object.fromEntries(klassen.map(k => [k.id, k.name]));
+    const tbody = document.getElementById('pruefungen-tbody');
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Prüfungen erfasst.</td></tr>'; return; }
+    tbody.innerHTML = rows.map(p => {
+      const fach = p.fach_id ? fm[p.fach_id] : null;
+      const kNames = pruefungKlassen.filter(pk => pk.pruefung_id === p.id).map(pk => km[pk.klasse_id] || '?').join(', ');
+      return '<tr><td><strong>' + escHtml(p.name) + '</strong></td><td>' + (p.datum ? formatDate(p.datum) : '–') + '</td><td>' +
+        (fach ? '<span class="badge badge-blue">' + escHtml(fach.kuerzel) + '</span>' : '–') + '</td><td>' + p.max_punkte + '</td>' +
+        '<td><small>' + escHtml(kNames || '–') + '</small></td><td>' +
+        '<button class="btn btn-sm btn-secondary" onclick="editPruefung(\'' + p.id + '\')">&#9998;</button> ' +
+        '<button class="btn btn-sm btn-success" onclick="erstelleEintraege(\'' + p.id + '\')">&#128203; Einträge</button> ' +
+        '<button class="btn btn-sm btn-danger" onclick="deletePruefung(\'' + p.id + '\')">&#128465;</button></td></tr>';
+    }).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function editPruefung(id) {
+  const rows = await sb.select('pruefungen', 'id=eq.' + id);
+  const p = rows[0]; if (!p) return;
+  await loadFaecherIntoSelect('pruefung-fach-id');
+  await loadKlassenCheckboxes(id);
+  document.getElementById('pruefung-id').value = p.id;
+  document.getElementById('pruefung-name').value = p.name;
+  document.getElementById('pruefung-datum').value = p.datum || '';
+  document.getElementById('pruefung-fach-id').value = p.fach_id || '';
+  document.getElementById('pruefung-max-punkte').value = p.max_punkte;
+  document.getElementById('pruefung-anweisungen').value = p.anweisungen || '';
+  document.getElementById('pruefung-modal-title').textContent = 'Prüfung bearbeiten';
+  document.getElementById('pruefung-modal').classList.remove('hidden');
+}
+
+async function savePruefung() {
+  const id = document.getElementById('pruefung-id').value;
+  const name = document.getElementById('pruefung-name').value.trim();
+  const datum = document.getElementById('pruefung-datum').value || null;
+  const fachId = document.getElementById('pruefung-fach-id').value || null;
+  const maxPunkte = parseFloat(document.getElementById('pruefung-max-punkte').value) || 100;
+  const anweisungen = document.getElementById('pruefung-anweisungen').value.trim() || null;
+  if (!name) { showToast('Name ist ein Pflichtfeld.', 'error'); return; }
+  const checked = Array.from(document.querySelectorAll('#pruefung-klassen-checkboxes input[type=checkbox]:checked')).map(cb => cb.value);
+  try {
+    let pruefungId = id;
+    const payload = { name, datum, fach_id: fachId, max_punkte: maxPunkte, anweisungen };
+    if (id) { await sb.update('pruefungen', id, payload); }
+    else { const r = await sb.insert('pruefungen', payload); pruefungId = r[0].id; }
+    if (pruefungId) {
+      const existing = await sb.select('pruefung_klassen', 'pruefung_id=eq.' + pruefungId);
+      for (const ex of existing) await sb.delete('pruefung_klassen', ex.id);
+      for (const kid of checked) await sb.insert('pruefung_klassen', { pruefung_id: pruefungId, klasse_id: kid });
+    }
+    closeModal('pruefung-modal'); showToast('Prüfung gespeichert.', 'success'); loadPruefungen();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deletePruefung(id) {
+  if (!confirm('Prüfung wirklich löschen?')) return;
+  try { await sb.delete('pruefungen', id); showToast('Prüfung gelöscht.', 'success'); loadPruefungen(); loadDashboard(); }
+  catch(e) { showToast(e.message, 'error'); }
+}
+
+async function erstelleEintraege(pruefungId) {
+  try {
+    const pks = await sb.select('pruefung_klassen', 'pruefung_id=eq.' + pruefungId);
+    let total = 0;
+    for (const pk of pks) {
+      const schueler = await sb.select('schueler', 'klasse_id=eq.' + pk.klasse_id);
+      for (const s of schueler) {
+        const ex = await sb.select('eintraege', 'schueler_id=eq.' + s.id + '&pruefung_id=eq.' + pruefungId);
+        if (!ex.length) { await sb.insert('eintraege', { schueler_id: s.id, pruefung_id: pruefungId, status: 'offen' }); total++; }
+      }
+    }
+    showToast(total + ' Einträge erstellt.', 'success'); loadDashboard();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// KORREKTUR
+async function loadKorrekturEintraege() {
+  const pruefungId = document.getElementById('korrektur-pruefung-select').value;
+  const klasseId   = document.getElementById('korrektur-klasse-select').value;
+  const el = document.getElementById('korrektur-eintraege-list');
+  if (!pruefungId || !klasseId) { el.innerHTML = '<div class="alert alert-info">Bitte Prüfung und Klasse wählen.</div>'; return; }
+  try {
+    const [schueler, eintraege] = await Promise.all([
+      sb.select('schueler', 'klasse_id=eq.' + klasseId),
+      sb.select('eintraege', 'pruefung_id=eq.' + pruefungId)
+    ]);
+    const eMap = Object.fromEntries(eintraege.map(e => [e.schueler_id, e]));
+    if (!schueler.length) { el.innerHTML = '<div class="alert alert-warning">Keine Schüler in dieser Klasse.</div>'; return; }
+    el.innerHTML = '<div class="card"><div class="card__title">&#128221; Einträge (' + schueler.length + ' Schüler)</div>' +
+      '<div class="table-wrap"><table><thead><tr><th>Schüler</th><th>Status</th><th>Note</th><th>Aktionen</th></tr></thead><tbody>' +
+      schueler.map(s => {
+        const e = eMap[s.id];
+        const status = e ? e.status : 'kein Eintrag';
+        const note = e && (e.note_manuell || e.note) ? noteHtml(e.note_manuell || e.note) : '–';
+        return '<tr><td><strong>' + escHtml(s.name) + '</strong>' + (s.nummer ? '<br><small>' + escHtml(s.nummer) + '</small>' : '') + '</td>' +
+          '<td><span class="badge ' + statusBadge(status) + '">' + escHtml(status) + '</span></td><td>' + note + '</td><td>' +
+          (e ? '<button class="btn btn-sm btn-secondary" onclick="openUploadModal(\'' + e.id + '\', \'' + escHtml(s.name).replace(/'/g, "\\'") + '\')">&#128248; Upload</button> ' +
+               '<button class="btn btn-sm btn-primary" onclick="kiKorrigieren(\'' + e.id + '\')">&#129302; KI</button> ' +
+               '<button class="btn btn-sm btn-secondary" onclick="noteManuelleingabe(\'' + e.id + '\')">&#9998; Note</button>'
+            : '<span style="color:var(--text-muted);font-size:.8rem">Kein Eintrag</span>') + '</td></tr>';
+      }).join('') + '</tbody></table></div></div>';
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// UPLOAD
+function openUploadModal(eintragsId, name) {
+  uploadPages = [];
+  document.getElementById('upload-eintrag-id').value = eintragsId;
+  document.getElementById('upload-modal-title').textContent = 'Prüfung hochladen: ' + name;
+  document.getElementById('pages-preview').innerHTML = '';
+  document.getElementById('upload-progress').classList.add('hidden');
+  document.getElementById('upload-modal').classList.remove('hidden');
+}
+
+function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function handleDrop(e) { e.preventDefault(); e.currentTarget.classList.remove('drag-over'); addFiles(e.dataTransfer.files); }
+function handleFileSelect(e) { addFiles(e.target.files); e.target.value = ''; }
+
+function addFiles(files) {
+  Array.from(files).forEach(file => {
+    if (!file.type.startsWith('image/')) { showToast('Nur Bilder erlaubt: ' + file.name, 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = ev => { uploadPages.push({ file, dataUrl: ev.target.result, seitenNr: uploadPages.length + 1 }); renderPagesPreview(); };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderPagesPreview() {
+  document.getElementById('pages-preview').innerHTML = uploadPages.map((pg, i) =>
+    '<div class="page-thumb">' +
+    '<img src="' + pg.dataUrl + '" alt="Seite ' + pg.seitenNr + '" />' +
+    '<div class="page-thumb__num">Seite ' + pg.seitenNr + '</div>' +
+    '<button class="page-thumb__del" onclick="removePage(' + i + ')">&#10005;</button></div>'
+  ).join('');
+}
+
+function removePage(i) { uploadPages.splice(i, 1); uploadPages.forEach((pg, j) => pg.seitenNr = j + 1); renderPagesPreview(); }
+
+async function uploadSeiten() {
+  if (!uploadPages.length) { showToast('Bitte Seiten hinzufügen.', 'error'); return; }
+  const eintragsId = document.getElementById('upload-eintrag-id').value;
+  const progBar = document.getElementById('upload-progress-bar');
+  const progTxt = document.getElementById('upload-progress-text');
+  document.getElementById('upload-progress').classList.remove('hidden');
+  document.getElementById('upload-btn').disabled = true;
+  try {
+    for (let i = 0; i < uploadPages.length; i++) {
+      const pg = uploadPages[i];
+      progBar.style.width = Math.round((i / uploadPages.length) * 100) + '%';
+      progTxt.textContent = 'Lade Seite ' + (i + 1) + ' von ' + uploadPages.length + ' hoch…';
+      const filePath = eintragsId + '/' + pg.seitenNr + '_' + Date.now() + '.jpg';
+      const storagePath = await sbStorageUpload('pruefungsfotos', filePath, pg.file);
+      await sb.insert('seiten_uploads', { eintrag_id: eintragsId, seitennummer: pg.seitenNr, storage_pfad: storagePath, dateiname: pg.file.name, mime_type: pg.file.type, groesse_bytes: pg.file.size });
+    }
+    await sb.update('eintraege', eintragsId, { status: 'hochgeladen' });
+    progBar.style.width = '100%'; progTxt.textContent = 'Upload abgeschlossen!';
+    showToast('Seiten erfolgreich hochgeladen.', 'success');
+    setTimeout(() => { closeModal('upload-modal'); loadKorrekturEintraege(); }, 1000);
+  } catch(e) { showToast('Upload-Fehler: ' + e.message, 'error'); }
+  finally { document.getElementById('upload-btn').disabled = false; }
+}
+
+// KI-KORREKTUR
+async function kiKorrigieren(eintragsId) {
+  if (!cfg.anthropicKey) { showToast('Kein Anthropic API-Key konfiguriert.', 'error'); return; }
+  try {
+    const eintraege = await sb.select('eintraege', 'id=eq.' + eintragsId);
+    const eintrag = eintraege[0]; if (!eintrag) return;
+    if (eintrag.status === 'offen') { showToast('Zuerst Seiten hochladen.', 'error'); return; }
+    const seiten = await sb.select('seiten_uploads', 'eintrag_id=eq.' + eintragsId + '&order=seitennummer.asc');
+    if (!seiten.length) { showToast('Keine Seiten vorhanden.', 'error'); return; }
+    const [pruefungen, schuelerRows] = await Promise.all([
+      sb.select('pruefungen', 'id=eq.' + eintrag.pruefung_id),
+      sb.select('schueler', 'id=eq.' + eintrag.schueler_id)
+    ]);
+    const pruefung = pruefungen[0]; const schueler = schuelerRows[0];
+    showToast('KI-Korrektur läuft…', 'info');
+    const imageBlocks = await Promise.all(seiten.map(async s => {
+      const res = await fetch(s.storage_pfad, { headers: { 'apikey': cfg.supabaseKey, 'Authorization': 'Bearer ' + cfg.supabaseKey } });
+      const blob = await res.blob();
+      const dataUrl = await blobToDataUrl(blob);
+      return { type: 'image', source: { type: 'base64', media_type: blob.type || 'image/jpeg', data: dataUrl.split(',')[1] } };
+    }));
+    const systemPrompt = 'Du bist ein erfahrener Berufsschullehrer in der Schweiz.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\nAntworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "...", "max": <Zahl>, "erreicht": <Zahl>, "feedback": "..."}]}';
+    const userContent = [...imageBlocks, { type: 'text', text: 'Prüfung: ' + (pruefung?.name || '') + '\nSchüler: ' + (schueler?.name || '') + '\nMax. Punkte: ' + (pruefung?.max_punkte || 100) + (pruefung?.anweisungen ? '\nAufgabenstellung:\n' + pruefung.anweisungen : '') + '\n\nBitte korrigiere diese Prüfung als JSON.' }];
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': cfg.anthropicKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json', 'anthropic-dangerous-direct-browser-calls': 'true' },
+      body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: 1024, system: systemPrompt, messages: [{ role: 'user', content: userContent }] }),
+    });
+    if (!response.ok) throw new Error('Claude API: ' + response.status + ' ' + await response.text());
+    const data = await response.json();
+    const raw = data.content?.[0]?.text || '';
+    let result;
+    try { const m = raw.match(/\{[\s\S]*\}/); result = JSON.parse(m ? m[0] : raw); }
+    catch { throw new Error('KI-Antwort konnte nicht geparst werden: ' + raw); }
+    kiPendingData = { eintragsId, result };
+    showKiErgebnis(result, schueler?.name || 'Schüler', pruefung?.max_punkte || 100);
+  } catch(e) { showToast('KI-Fehler: ' + e.message, 'error'); }
+}
+
+function showKiErgebnis(result, name, maxPunkte) {
+  const n = result.note || 0;
+  document.getElementById('ki-ergebnis-content').innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">' +
+    '<div><strong>' + escHtml(name) + '</strong><div style="font-size:.8rem;color:var(--text-muted)">' + (result.punkte || '–') + ' / ' + maxPunkte + ' Punkte</div></div>' +
+    '<div class="stat-card" style="text-align:center;padding:.75rem 1.5rem"><div class="stat-card__num ' + noteClass(n) + '">' + n.toFixed(1) + '</div><div class="stat-card__lbl">Note</div></div></div>' +
+    '<div class="alert ' + (n >= 4.0 ? 'alert-success' : 'alert-danger') + '" style="margin-bottom:1rem">' + (n >= 4.0 ? '&#10003; Bestanden' : '&#10007; Nicht bestanden') + '</div>' +
+    (result.kommentar ? '<p style="margin-bottom:1rem;font-size:.875rem"><strong>Kommentar:</strong> ' + escHtml(result.kommentar) + '</p>' : '') +
+    ((result.aufgaben || []).length ? '<div class="table-wrap"><table><thead><tr><th>Aufgabe</th><th>Max.</th><th>Erreicht</th><th>Feedback</th></tr></thead><tbody>' +
+      result.aufgaben.map(a => '<tr><td>' + escHtml(a.bezeichnung || '') + '</td><td>' + (a.max || '') + '</td><td>' + (a.erreicht || '') + '</td><td><small>' + escHtml(a.feedback || '') + '</small></td></tr>').join('') +
+      '</tbody></table></div>' : '');
+  document.getElementById('ki-ergebnis-modal').classList.remove('hidden');
+}
+
+async function saveKiErgebnis() {
+  if (!kiPendingData) return;
+  const { eintragsId, result } = kiPendingData;
+  try {
+    await sb.update('eintraege', eintragsId, { status: 'korrigiert', note: parseFloat(result.note) || null, punkte: result.punkte || null, ergebnis: result, kommentar: result.kommentar || null, ki_bewertet_am: new Date().toISOString() });
+    kiPendingData = null; closeModal('ki-ergebnis-modal'); showToast('KI-Note gespeichert.', 'success'); loadKorrekturEintraege(); loadDashboard();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function kiAlleKorrigieren() {
+  const pruefungId = document.getElementById('korrektur-pruefung-select').value;
+  const klasseId   = document.getElementById('korrektur-klasse-select').value;
+  if (!pruefungId || !klasseId) { showToast('Prüfung und Klasse wählen.', 'error'); return; }
+  if (!cfg.anthropicKey) { showToast('Kein Anthropic API-Key konfiguriert.', 'error'); return; }
+  const [eintraege, schueler] = await Promise.all([sb.select('eintraege', 'pruefung_id=eq.' + pruefungId), sb.select('schueler', 'klasse_id=eq.' + klasseId)]);
+  const sIds = new Set(schueler.map(s => s.id));
+  const todo = eintraege.filter(e => sIds.has(e.schueler_id) && e.status === 'hochgeladen');
+  if (!todo.length) { showToast('Keine hochgeladenen Prüfungen gefunden.', 'info'); return; }
+  if (!confirm(todo.length + ' Prüfungen mit KI korrigieren?')) return;
+  for (let i = 0; i < todo.length; i++) { await kiKorrigieren(todo[i].id); showToast('Korrigiert: ' + (i+1) + '/' + todo.length, 'info'); }
+  showToast('Alle Korrekturen abgeschlossen.', 'success');
+}
+
+async function noteManuelleingabe(eintragsId) {
+  const noteStr = prompt('Manuelle Note eingeben (1.0–6.0):');
+  if (noteStr === null) return;
+  const note = parseFloat(noteStr.replace(',', '.'));
+  if (isNaN(note) || note < 1.0 || note > 6.0) { showToast('Ungültige Note.', 'error'); return; }
+  try { await sb.update('eintraege', eintragsId, { note_manuell: note, status: 'abgeschlossen' }); showToast('Note gespeichert.', 'success'); loadKorrekturEintraege(); }
+  catch(e) { showToast(e.message, 'error'); }
+}
+
+// NOTEN
+async function loadNotenTabelle() {
+  const pruefungId = document.getElementById('noten-pruefung-select').value;
+  const klasseId   = document.getElementById('noten-klasse-select').value;
+  const wrap = document.getElementById('noten-tabelle-wrap');
+  if (!pruefungId || !klasseId) { wrap.innerHTML = '<div class="alert alert-info">Bitte Prüfung und Klasse wählen.</div>'; return; }
+  try {
+    const [schueler, eintraege, pruefungenRows, klassenRows] = await Promise.all([
+      sb.select('schueler', 'klasse_id=eq.' + klasseId),
+      sb.select('eintraege', 'pruefung_id=eq.' + pruefungId),
+      sb.select('pruefungen', 'id=eq.' + pruefungId),
+      sb.select('klassen', 'id=eq.' + klasseId)
+    ]);
+    const eMap = Object.fromEntries(eintraege.map(e => [e.schueler_id, e]));
+    const p = pruefungenRows[0]; const k = klassenRows[0];
+    const noten = schueler.map(s => { const e = eMap[s.id]; const n = e ? (e.note_manuell || e.note) : null; return { name: s.name, nummer: s.nummer, note: n, punkte: e?.punkte, status: e?.status }; }).sort((a,b) => a.name.localeCompare(b.name));
+    const mitNote = noten.filter(n => n.note !== null);
+    const bestanden = mitNote.filter(n => n.note >= 4.0).length;
+    const avg = mitNote.length ? (mitNote.reduce((s, n) => s + n.note, 0) / mitNote.length).toFixed(2) : '–';
+    wrap.innerHTML = '<div class="card" style="margin-bottom:1rem"><div style="display:flex;gap:1.5rem;flex-wrap:wrap">' +
+      '<div><strong>Prüfung:</strong> ' + escHtml(p?.name || '') + '</div>' +
+      '<div><strong>Datum:</strong> ' + (p?.datum ? formatDate(p.datum) : '–') + '</div>' +
+      '<div><strong>Max. Punkte:</strong> ' + (p?.max_punkte || '–') + '</div>' +
+      '<div><strong>&#216; Note:</strong> <span style="font-weight:700">' + avg + '</span></div>' +
+      '<div><strong>Bestanden:</strong> ' + bestanden + ' / ' + noten.length + '</div></div></div>' +
+      '<div class="card"><div class="table-wrap"><table><thead><tr><th>#</th><th>Name</th><th>Nummer</th><th>Punkte</th><th>Note</th><th>Status</th></tr></thead><tbody>' +
+      noten.map((n, i) => '<tr><td>' + (i+1) + '</td><td><strong>' + escHtml(n.name) + '</strong></td><td>' + escHtml(n.nummer || '–') + '</td><td>' + (n.punkte ?? '–') + '</td><td>' + (n.note !== null ? noteHtml(n.note) : '–') + '</td><td><span class="badge ' + statusBadge(n.status || 'offen') + '">' + escHtml(n.status || 'offen') + '</span></td></tr>').join('') +
+      '</tbody></table></div></div>';
+    renderHistogram(mitNote.map(n => n.note));
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+function renderHistogram(noten) {
+  const wrap = document.getElementById('noten-histogram-wrap');
+  if (!noten.length) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  const buckets = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0];
+  const counts = buckets.map(b => noten.filter(n => Math.round(n * 2) / 2 === b).length);
+  const maxCnt = Math.max(...counts, 1);
+  document.getElementById('noten-histogram').innerHTML =
+    '<div class="histogram">' + buckets.map((b, i) =>
+      '<div class="histogram-bar" style="height:' + Math.round((counts[i]/maxCnt)*100) + '%;background:' + (b >= 4.0 ? 'var(--success-light)' : 'var(--danger-light)') + '" title="' + b + ': ' + counts[i] + 'x"></div>'
+    ).join('') + '</div>' +
+    '<div style="display:flex;gap:4px;font-size:.7rem;color:var(--text-muted);margin-top:4px">' + buckets.map(b => '<div style="flex:1;text-align:center">' + b + '</div>').join('') + '</div>';
+}
+
+// PDF / CSV
+async function exportNotenPDF() {
+  const pruefungId = document.getElementById('noten-pruefung-select').value;
+  const klasseId   = document.getElementById('noten-klasse-select').value;
+  if (!pruefungId || !klasseId) { showToast('Prüfung und Klasse wählen.', 'error'); return; }
+  if (!window.jspdf) { showToast('jsPDF nicht geladen.', 'error'); return; }
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const [schueler, eintraege, pRows, kRows] = await Promise.all([
+      sb.select('schueler', 'klasse_id=eq.' + klasseId),
+      sb.select('eintraege', 'pruefung_id=eq.' + pruefungId),
+      sb.select('pruefungen', 'id=eq.' + pruefungId),
+      sb.select('klassen', 'id=eq.' + klasseId)
+    ]);
+    const eMap = Object.fromEntries(eintraege.map(e => [e.schueler_id, e]));
+    const p = pRows[0]; const k = kRows[0];
+    doc.setFontSize(16); doc.text('LernortAI – Notenliste', 14, 20);
+    doc.setFontSize(11);
+    doc.text('Prüfung: ' + (p?.name || ''), 14, 30);
+    doc.text('Klasse: ' + (k?.name || '') + '  |  Datum: ' + (p?.datum ? formatDate(p.datum) : '–'), 14, 37);
+    doc.text('Erstellt: ' + formatDate(new Date().toISOString().split('T')[0]) + '  |  ' + cfg.schoolName, 14, 44);
+    const rows = schueler.sort((a,b) => a.name.localeCompare(b.name)).map((s, i) => {
+      const e = eMap[s.id]; const note = e ? (e.note_manuell || e.note) : null;
+      return [i+1, s.name, s.nummer || '', e?.punkte || '', note !== null ? parseFloat(note).toFixed(1) : '', note !== null ? (note >= 4.0 ? 'Bestanden' : 'Nicht best.') : ''];
+    });
+    doc.autoTable({ startY: 52, head: [['#', 'Name', 'Nummer', 'Punkte', 'Note', 'Status']], body: rows, styles: { fontSize: 10 }, headStyles: { fillColor: [26, 86, 219] } });
+    doc.save('Noten_' + (p?.name || 'Pruefung') + '_' + (k?.name || '') + '.pdf');
+    showToast('PDF erstellt.', 'success');
+  } catch(e) { showToast('PDF-Fehler: ' + e.message, 'error'); }
+}
+
+async function exportNotenCSV() {
+  const pruefungId = document.getElementById('noten-pruefung-select').value;
+  const klasseId   = document.getElementById('noten-klasse-select').value;
+  if (!pruefungId || !klasseId) { showToast('Prüfung und Klasse wählen.', 'error'); return; }
+  try {
+    const [schueler, eintraege, pRows, kRows] = await Promise.all([
+      sb.select('schueler', 'klasse_id=eq.' + klasseId),
+      sb.select('eintraege', 'pruefung_id=eq.' + pruefungId),
+      sb.select('pruefungen', 'id=eq.' + pruefungId),
+      sb.select('klassen', 'id=eq.' + klasseId)
+    ]);
+    const eMap = Object.fromEntries(eintraege.map(e => [e.schueler_id, e]));
+    const p = pRows[0]; const k = kRows[0];
+    const lines = ['Pruefung;' + (p?.name || '') + ';Klasse;' + (k?.name || '') + ';Datum;' + (p?.datum || ''), '',
+      'Nr;Name;Nummer;Punkte;Note;Status',
+      ...schueler.sort((a,b) => a.name.localeCompare(b.name)).map((s, i) => {
+        const e = eMap[s.id]; const note = e ? (e.note_manuell || e.note) : '';
+        return (i+1) + ';' + s.name + ';' + (s.nummer || '') + ';' + (e?.punkte || '') + ';' + (note !== '' && note !== null ? parseFloat(note).toFixed(1) : '') + ';' + (note !== '' && note !== null ? (note >= 4.0 ? 'Bestanden' : 'Nicht bestanden') : '');
+      })
+    ];
+    const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'Noten_' + (p?.name || '') + '_' + (k?.name || '') + '.csv'; a.click();
+    URL.revokeObjectURL(url); showToast('CSV erstellt.', 'success');
+  } catch(e) { showToast('CSV-Fehler: ' + e.message, 'error'); }
+}
+
+// EINSTELLUNGEN
+function openSettingsModal() {
+  document.getElementById('settings-supabase-url').value  = cfg.supabaseUrl;
+  document.getElementById('settings-supabase-key').value  = cfg.supabaseKey;
+  document.getElementById('settings-anthropic-key').value = cfg.anthropicKey;
+  document.getElementById('settings-school-name').value   = cfg.schoolName;
+  document.getElementById('settings-modal').classList.remove('hidden');
+}
+
+function saveSettings() {
+  cfg.supabaseUrl  = document.getElementById('settings-supabase-url').value.trim();
+  cfg.supabaseKey  = document.getElementById('settings-supabase-key').value.trim();
+  cfg.anthropicKey = document.getElementById('settings-anthropic-key').value.trim();
+  cfg.schoolName   = document.getElementById('settings-school-name').value.trim() || 'LernortAI';
+  localStorage.setItem(LS.CONFIG, JSON.stringify(cfg));
+  applyConfig(); closeModal('settings-modal'); showToast('Einstellungen gespeichert.', 'success'); loadDashboard();
+}
+
+// HELPER
+async function loadKlassenIntoSelect(selectId) {
+  try {
+    const rows = await sb.select('klassen');
+    const el = document.getElementById(selectId); if (!el) return;
+    const cur = el.value;
+    el.innerHTML = '<option value="">– wählen –</option>' + rows.map(k => '<option value="' + k.id + '">' + escHtml(k.name) + ' (' + escHtml(k.schuljahr) + ')</option>').join('');
+    if (cur) el.value = cur;
+  } catch(e) { /* ignore */ }
+}
+
+async function loadFaecherIntoSelect(selectId) {
+  try {
+    const rows = await sb.select('faecher');
+    const el = document.getElementById(selectId); if (!el) return;
+    const cur = el.value;
+    el.innerHTML = '<option value="">– optional –</option>' + rows.map(f => '<option value="' + f.id + '">' + escHtml(f.name) + ' (' + escHtml(f.kuerzel) + ')</option>').join('');
+    if (cur) el.value = cur;
+  } catch(e) { /* ignore */ }
+}
+
+async function loadPruefungenIntoSelect(selectId) {
+  try {
+    const rows = await sb.select('pruefungen');
+    const el = document.getElementById(selectId); if (!el) return;
+    const cur = el.value;
+    el.innerHTML = '<option value="">– bitte wählen –</option>' + rows.map(p => '<option value="' + p.id + '">' + escHtml(p.name) + (p.datum ? ' (' + formatDate(p.datum) + ')' : '') + '</option>').join('');
+    if (cur) el.value = cur;
+  } catch(e) { /* ignore */ }
+}
+
+async function loadKlassenCheckboxes(pruefungId = null) {
+  try {
+    const klassen = await sb.select('klassen');
+    let selected = new Set();
+    if (pruefungId) { const pks = await sb.select('pruefung_klassen', 'pruefung_id=eq.' + pruefungId); selected = new Set(pks.map(pk => pk.klasse_id)); }
+    document.getElementById('pruefung-klassen-checkboxes').innerHTML = klassen.length ?
+      klassen.map(k => '<label style="display:flex;align-items:center;gap:.4rem;font-size:.875rem;cursor:pointer"><input type="checkbox" value="' + k.id + '" ' + (selected.has(k.id) ? 'checked' : '') + ' /> ' + escHtml(k.name) + '</label>').join('') :
+      '<span style="color:var(--text-muted);font-size:.8rem">Keine Klassen vorhanden.</span>';
+  } catch(e) { /* ignore */ }
+}
+
+function currentSchoolyear() { const n = new Date(); const y = n.getFullYear(); return n.getMonth() >= 7 ? y + '/' + (y+1) : (y-1) + '/' + y; }
+function formatDate(iso) { if (!iso) return '–'; const [y,m,d] = iso.split('-'); return d + '.' + m + '.' + y; }
+function escHtml(str) { if (str === null || str === undefined) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+function noteHtml(note) { if (note === null || note === undefined) return '–'; const n = parseFloat(note); return '<span class="' + noteClass(n) + '">' + n.toFixed(1) + '</span>'; }
+function noteClass(n) { if (n >= 5.5) return 'note-6'; if (n >= 4.5) return 'note-5'; if (n >= 4.0) return 'note-4'; return 'note-bad'; }
+function statusBadge(s) { if (s === 'abgeschlossen') return 'badge-green'; if (s === 'korrigiert') return 'badge-blue'; if (s === 'hochgeladen') return 'badge-yellow'; return 'badge-gray'; }
+function blobToDataUrl(blob) { return new Promise((res, rej) => { const r = new FileReader(); r.onload = e => res(e.target.result); r.onerror = rej; r.readAsDataURL(blob); }); }
+
+function showToast(msg, type = 'info') {
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  const icons = { success: '&#10003;', error: '&#10007;', info: 'i' };
+  el.className = 'toast toast-' + type;
+  el.innerHTML = icons[type] + ' ' + escHtml(msg);
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 4500);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => { if (m.id !== 'setup-screen') m.classList.add('hidden'); });
+});
+<\/script>
 </body>
 </html>

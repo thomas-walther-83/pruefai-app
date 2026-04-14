@@ -1,0 +1,54 @@
+# =============================================================
+# LernortAI – .gitignore
+# =============================================================
+
+# Umgebungsvariablen (enthält Secrets!)
+.env
+.env.local
+.env.*.local
+
+# Node.js / npm (falls lokale Tools verwendet werden)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Build-Artefakte
+dist/
+build/
+.cache/
+
+# Betriebssystem-Dateien
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# Temporäre Dateien
+tmp/
+temp/
+*.tmp
+*.bak
+
+# Test-Artefakte
+coverage/
+
+# Supabase CLI (lokale Entwicklung)
+supabase/.branches
+supabase/.temp
