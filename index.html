@@ -653,9 +653,17 @@ const sb = {
         rows = rows.filter(function(r) { return r[field] != null && String(r[field]) === String(val); });
       });
       rows.sort(function(a, b) {
-        const va = a[parsed.orderField] != null ? String(a[parsed.orderField]) : '';
-        const vb = b[parsed.orderField] != null ? String(b[parsed.orderField]) : '';
-        return parsed.orderDir === 'desc' ? vb.localeCompare(va) : va.localeCompare(vb);
+        const va = a[parsed.orderField];
+        const vb = b[parsed.orderField];
+        // Numeric sort for number fields (e.g. seitennummer)
+        if (typeof va === 'number' || typeof vb === 'number') {
+          const na = va != null ? Number(va) : 0;
+          const nb = vb != null ? Number(vb) : 0;
+          return parsed.orderDir === 'desc' ? nb - na : na - nb;
+        }
+        const sa = va != null ? String(va) : '';
+        const sb_str = vb != null ? String(vb) : '';
+        return parsed.orderDir === 'desc' ? sb_str.localeCompare(sa) : sa.localeCompare(sb_str);
       });
       return rows;
     });
