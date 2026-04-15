@@ -24,6 +24,11 @@ function verifyStripeSignature(rawBody, sigHeader, secret) {
 
   if (!timestamp || v1Sigs.length === 0) return false;
 
+  // Reject webhooks older than 5 minutes to prevent replay attacks
+  const TOLERANCE_SECONDS = 300;
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (Math.abs(nowSeconds - parseInt(timestamp, 10)) > TOLERANCE_SECONDS) return false;
+
   const signedPayload = `${timestamp}.${rawBody}`;
   const expected = crypto
     .createHmac('sha256', secret)

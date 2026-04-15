@@ -62,9 +62,12 @@ export default async function handler(req, res) {
     return res.status(200).json({ valid: false });
   }
 
-  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
   let correctionsThisMonth = parseInt(meta.corrections_this_month || '0', 10);
   let resetDate = meta.corrections_reset_date || today;
+
+  // Clamp future resetDate to today to handle clock skew
+  if (resetDate > today) resetDate = today;
 
   // Reset if new month
   const resetMonth = resetDate.slice(0, 7);
