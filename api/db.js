@@ -19,7 +19,7 @@ export default async function handler(req, res) {
   };
 
   const fetchOpts = { method, headers };
-  if (body !== undefined && method !== 'GET' && method !== 'DELETE') {
+  if (body !== undefined && method !== 'GET') {
     fetchOpts.body = typeof body === 'string' ? body : JSON.stringify(body);
   }
 

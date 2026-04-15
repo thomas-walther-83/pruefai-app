@@ -687,6 +687,7 @@ async function sbFetch(path, opts) {
   // When running on the server (config from /api/config), route through the
   // server-side proxy so the service_role key is never exposed to the client.
   if (useServerProxy) {
+    const preferHeader = opts.headers && opts.headers['Prefer'] || undefined;
     const res = await fetch('/api/db', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -694,7 +695,7 @@ async function sbFetch(path, opts) {
         method:  opts.method || 'GET',
         path,
         body:    opts.body ? JSON.parse(opts.body) : undefined,
-        prefer:  opts.headers && opts.headers['Prefer'],
+        ...(preferHeader ? { prefer: preferHeader } : {}),
       }),
     });
     if (!res.ok) throw new Error('DB ' + res.status + ': ' + await res.text());
