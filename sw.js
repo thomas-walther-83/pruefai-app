@@ -1,10 +1,11 @@
 // LernortAI Service Worker – App-Shell caching
-const CACHE_NAME = 'lernortai-v1';
+const CACHE_NAME = 'lernortai-v2';
 const APP_SHELL = [
   '/',
   '/index.html',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js',
+  'https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js',
 ];
 
 self.addEventListener('install', event => {
@@ -39,7 +40,11 @@ self.addEventListener('fetch', event => {
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
         }
         return response;
-      }).catch(() => caches.match('/index.html'));
+      }).catch(() => {
+        // Only return the app shell for page navigations, not for scripts or assets
+        if (event.request.mode === 'navigate') return caches.match('/index.html');
+        return new Response('', { status: 503 });
+      });
     })
   );
 });
