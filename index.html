@@ -547,6 +547,12 @@
       </div>
       <p class="form-hint" style="margin-top:.5rem">Exportierte Datei per AirDrop, iCloud Drive o.ä. auf das andere Gerät übertragen und dort importieren.</p>
     </div>
+    <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
+      <div class="form-label" style="margin-bottom:.75rem">&#128273; Lizenzschlüssel</div>
+      <input type="text" id="settings-license-key" class="form-control" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="font-family:monospace;font-size:.8rem" />
+      <div id="license-info" style="margin-top:.75rem;font-size:.8rem;color:var(--text-muted)">Lizenz wird geprüft...</div>
+      <a href="#" onclick="openStripePortal();return false;" style="font-size:.8rem;margin-top:.5rem;display:inline-block">Abo verwalten &#8594;</a>
+    </div>
     <div class="modal__footer">
       <button class="btn btn-secondary" onclick="closeModal('settings-modal')">Abbrechen</button>
       <button class="btn btn-primary" onclick="saveSettings()">Speichern</button>
@@ -1562,11 +1568,18 @@ async function kiKorrigieren(eintragsId) {
     }))).filter(function(b) { return b !== null; });
     const systemPrompt = 'Du bist ein erfahrener Berufsschullehrer in der Schweiz.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\nAntworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "...", "max": <Zahl>, "erreicht": <Zahl>, "feedback": "..."}]}';
     const userContent = imageBlocks.concat([{ type: 'text', text: 'Prüfung: ' + (pruefung && pruefung.name || '') + '\nSchüler: ' + (schueler && schueler.name || '') + '\nMax. Punkte: ' + (pruefung && pruefung.max_punkte || 100) + (pruefung && pruefung.anweisungen ? '\nAufgabenstellung:\n' + pruefung.anweisungen : '') + '\n\nBitte korrigiere diese Prüfung als JSON.' }]);
+    const licenseKey = localStorage.getItem('lernortai_license_key') || '';
     const response = await fetch('/api/claude', {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...(licenseKey ? { 'x-license-key': licenseKey } : {}) },
       body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: 1024, system: systemPrompt, messages: [{ role: 'user', content: userContent }] }),
     });
+    if (response.status === 402) {
+      const d = await response.json();
+      showToast(d.error || 'Kein aktiver Plan.', 'error');
+      window.open('/landing.html', '_blank');
+      return;
+    }
     if (!response.ok) throw new Error('Claude API: ' + response.status + ' ' + await response.text());
     const data = await response.json();
     const raw = data.content && data.content[0] && data.content[0].text || '';
@@ -1749,6 +1762,9 @@ async function openSettingsModal() {
     const rows = await sb.select('lehrer', 'id=eq.' + lehrer_id);
     document.getElementById('settings-lehrer-name').value = (rows[0] && rows[0].name) || '';
   } catch(e) { /* ignore */ }
+  const lk = localStorage.getItem('lernortai_license_key') || '';
+  document.getElementById('settings-license-key').value = lk;
+  if (lk) { checkLicenseInfo(lk); } else { document.getElementById('license-info').textContent = 'Kein Lizenzschlüssel eingegeben.'; }
   document.getElementById('settings-modal').classList.remove('hidden');
 }
 
@@ -1765,7 +1781,37 @@ async function saveSettings() {
       await sb.insert('lehrer', { id: lehrer_id, name: name || null });
     }
   } catch(e) { /* ignore */ }
+  const lk = document.getElementById('settings-license-key').value.trim();
+  if (lk) localStorage.setItem('lernortai_license_key', lk);
+  else localStorage.removeItem('lernortai_license_key');
   closeModal('settings-modal'); showToast('Einstellungen gespeichert.', 'success'); loadDashboard();
+}
+
+// =============================================================
+// LICENSE & STRIPE
+// =============================================================
+async function checkLicenseInfo(key) {
+  try {
+    const r = await fetch('/api/validate-license', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ license_key: key, action: 'check' }) });
+    const d = await r.json();
+    const el = document.getElementById('license-info');
+    if (!el) return;
+    if (d.valid) {
+      el.innerHTML = '&#10003;&#65039; Aktiv – Plan: <strong>' + d.plan + '</strong> | Korrekturen: ' + d.corrections_this_month + ' / ' + (d.limit >= 99999 ? '&#8734;' : d.limit);
+    } else {
+      el.innerHTML = '&#10060; Ungültig oder abgelaufen. <a href="/landing.html">Plan wählen &#8594;</a>';
+    }
+  } catch(e) { /* ignore */ }
+}
+
+async function openStripePortal() {
+  const lk = localStorage.getItem('lernortai_license_key') || '';
+  if (!lk) { window.open('/landing.html', '_blank'); return; }
+  try {
+    const r = await fetch('/api/stripe-portal', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ license_key: lk }) });
+    const d = await r.json();
+    if (d.url) window.location.href = d.url;
+  } catch(e) { showToast('Portal konnte nicht geöffnet werden.', 'error'); }
 }
 
 // =============================================================
