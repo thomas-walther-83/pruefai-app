@@ -4,20 +4,21 @@
 [![Vanilla JS](https://img.shields.io/badge/JavaScript-Vanilla-yellow.svg)](index.html)
 [![Supabase](https://img.shields.io/badge/Backend-Supabase-green.svg)](https://supabase.com)
 
-**LernortAI** ist eine webbasierte Applikation für Schweizer Berufsschulen, die Lehrpersonen bei der Korrektur von Prüfungen mithilfe von KI (Claude) unterstützt. Die App läuft vollständig im Browser und benötigt keinen eigenen Server.
+**LernortAI** ist eine webbasierte Applikation für Schweizer Berufsschulen, die Lehrpersonen bei der Korrektur von Prüfungen mithilfe von KI (Claude) unterstützt. Jede Lehrperson hat einen eigenen, sicheren Login (Supabase Auth) und sieht ausschliesslich ihre eigenen Daten.
 
 ---
 
 ## Funktionen
 
+- **Multi-Lehrer-Betrieb** – Jede Lehrperson hat einen eigenen Account, vollständige Datentrennung via Row Level Security
 - Mehrseiten-Scan-Support – Prüfungen als Fotos oder Scans hochladen (mehrseitig)
-- KI-Korrektur – Automatische Bewertung mit Claude AI
+- **Mobile-Kamera-Upload** – Direkter Kamerazugriff auf dem Smartphone, automatische Bildkomprimierung
+- KI-Korrektur – Automatische Bewertung mit Claude AI (API-Key sicher auf Server)
 - Schweizer Notensystem – Noten 1.0–6.0, Bestehensgrenze 4.0
 - Klassenverwaltung – Klassen, Schüler, Fächer organisieren
+- **Lernstoff-Upload** – Musterlösungen, Aufgabenstellungen als Dokumente hinterlegen
 - PDF-Export – Notenlisten und Korrekturen als PDF exportieren
-- Mobile-optimiert – Responsive Design für Tablets und Smartphones
-- PWA-fähig – Installation als App auf dem Gerät möglich
-- Datenschutz – Konfiguration lokal im Browser gespeichert (localStorage)
+- **PWA** – Installierbar als App auf dem Gerät, Mobile Bottom-Navigation, FAB
 
 ---
 
@@ -26,10 +27,11 @@
 | Komponente  | Technologie |
 |-------------|-------------|
 | Frontend    | Vanilla HTML / CSS / JavaScript (kein Build-Schritt) |
-| Backend     | Supabase (PostgreSQL + REST API + Storage) |
-| KI          | Anthropic Claude API |
+| Backend     | Supabase (PostgreSQL + REST API + Auth + Storage) |
+| KI          | Anthropic Claude API (Server-Proxy) |
 | PDF-Export  | jsPDF (CDN) |
-| Auth        | localStorage (App-Passwort) |
+| Auth        | Supabase Auth (Email + Passwort, JWT) |
+| Datenschutz | Row Level Security (jeder Lehrer sieht nur seine Daten) |
 
 ---
 
@@ -38,44 +40,74 @@
 ### Voraussetzungen
 
 - Supabase-Konto (kostenlos): https://supabase.com
-- Anthropic API-Key (optional, für KI-Korrektur): https://anthropic.com
+- Vercel-Konto (für Deployment + API-Key-Proxy): https://vercel.com
+- Anthropic API-Key (für KI-Korrektur): https://anthropic.com
 - Moderner Webbrowser (Chrome, Firefox, Safari, Edge)
 
 ### Schritt 1 – Supabase Projekt erstellen
 
 1. Gehe zu https://supabase.com und erstelle ein neues Projekt
-2. Notiere dir Project URL und anon public key (unter Settings → API)
+2. Notiere dir **Project URL** und **anon public key** (unter Settings → API)
+3. Aktiviere **Email Auth** unter Authentication → Providers (Standard: aktiviert)
 
 ### Schritt 2 – Datenbank einrichten
 
-Öffne den SQL Editor in Supabase und führe die folgenden Dateien aus:
+Öffne den SQL Editor in Supabase und führe der Reihe nach aus:
 
-1. Inhalt von `supabase/schema.sql` einfügen und ausführen
-2. Inhalt von `supabase/rls-policies.sql` einfügen und ausführen
+1. Inhalt von `supabase/schema.sql` → erstellt alle Tabellen + Trigger
+2. Inhalt von `supabase/rls-policies.sql` → setzt Row Level Security Policies
 
-### Schritt 3 – Storage-Bucket erstellen
+### Schritt 3 – Storage-Buckets erstellen
 
-1. Gehe zu Storage im Supabase Dashboard
-2. Erstelle einen neuen Bucket: `pruefungsfotos`
-3. Setze ihn auf Privat (private)
-4. Füge die Storage-Policies aus `supabase/rls-policies.sql` (auskommentierter Teil) hinzu
+1. Gehe zu **Storage** im Supabase Dashboard
+2. Erstelle **privaten** Bucket: `pruefungsfotos`
+3. Erstelle **privaten** Bucket: `lernmaterial`
+4. Füge die Storage Policies aus `supabase/rls-policies.sql` (auskommentierter Block am Ende) über das Supabase Dashboard hinzu
 
-### Schritt 4 – App öffnen und konfigurieren
+### Schritt 4 – Vercel Deployment
 
-1. Öffne `index.html` direkt im Browser oder deploye sie auf Netlify/Vercel
+```bash
+npm install -g vercel
+vercel deploy
+```
+
+Setze folgende **Environment Variables** in Vercel:
+
+| Variable | Beschreibung |
+|----------|-------------|
+| `ANTHROPIC_API_KEY` | Dein Anthropic API-Key (sk-ant-...) |
+| `ALLOWED_ORIGINS` | Deine Vercel-App-URL, z.B. `https://meine-app.vercel.app` |
+
+> **Wichtig:** Der `ANTHROPIC_API_KEY` wird **nie im Browser gespeichert**. Alle KI-Calls laufen über den serverseitigen Proxy `/api/claude`.
+
+### Schritt 5 – App konfigurieren & ersten Account erstellen
+
+1. Öffne deine Vercel-App-URL
 2. Beim ersten Start erscheint der Einrichtungsassistent
-3. Trage ein: Supabase URL, Supabase anon Key, Anthropic API-Key (optional), App-Passwort
+3. Trage ein: **Supabase URL** und **Supabase anon Key**
+4. Klicke **Weiter** → du gelangst zum Login-Screen
+5. Klicke auf **Registrieren** und erstelle deinen Lehrer-Account
+6. (Optional) Passe das E-Mail-Template für die Bestätigungs-E-Mail unter Supabase → Authentication → Email Templates an
 
-### Schritt 5 – Lokal testen (optional)
+### Lokal testen (optional)
 
 ```bash
 git clone https://github.com/thomas-walther-83/pruefai-app.git
 cd pruefai-app
 
-# Einfacher lokaler Server (Python)
+# Vercel Dev (für API-Proxy)
+npm install -g vercel
+vercel dev
+# → http://localhost:3000
+
+# Oder einfacher lokaler Server (ohne KI-Funktionen)
 python3 -m http.server 8000
 # → http://localhost:8000
 ```
+
+### Bestehende Daten migrieren (vom alten Schema)
+
+Falls du eine bestehende Installation ohne `lehrer_id`-Spalten migrieren möchtest, lies die Anleitung in `supabase/migration.sql`.
 
 ---
 

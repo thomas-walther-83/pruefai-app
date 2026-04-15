@@ -1,0 +1,52 @@
+-- =============================================================
+-- LernortAI – Migrations-Script
+-- Bestehende Daten auf Multi-Lehrer-Schema migrieren
+-- =============================================================
+-- HINWEIS: Dieses Script ist für bestehende Installationen gedacht,
+-- die von der öffentlichen (anon) Auth auf Supabase Auth migrieren.
+--
+-- Vorgehen:
+-- 1. Erstelle in Supabase Auth einen neuen Nutzer für den Lehrer
+-- 2. Kopiere die generierte UUID aus auth.users
+-- 3. Ersetze 'DEINE-LEHRER-UUID' unten mit der echten UUID
+-- 4. Führe dieses Script im Supabase SQL Editor aus
+-- =============================================================
+
+-- Setze die UUID des ersten Lehrers (aus Supabase Auth kopieren)
+-- DO $$
+-- DECLARE
+--     v_lehrer_id UUID := 'DEINE-LEHRER-UUID';
+-- BEGIN
+--
+--     -- Lehrer-Profil sicherstellen
+--     INSERT INTO lehrer (id) VALUES (v_lehrer_id) ON CONFLICT DO NOTHING;
+--
+--     -- Klassen dem Lehrer zuweisen
+--     UPDATE klassen SET lehrer_id = v_lehrer_id WHERE lehrer_id IS NULL;
+--
+--     -- Fächer dem Lehrer zuweisen
+--     UPDATE faecher SET lehrer_id = v_lehrer_id WHERE lehrer_id IS NULL;
+--
+--     -- Prüfungen dem Lehrer zuweisen
+--     UPDATE pruefungen SET lehrer_id = v_lehrer_id WHERE lehrer_id IS NULL;
+--
+--     RAISE NOTICE 'Migration erfolgreich für Lehrer %', v_lehrer_id;
+-- END $$;
+
+-- =============================================================
+-- Spalten hinzufügen (falls Migration von altem Schema)
+-- =============================================================
+
+-- lehrer_id zu bestehenden Tabellen hinzufügen (nullable zunächst)
+-- ALTER TABLE klassen    ADD COLUMN IF NOT EXISTS lehrer_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+-- ALTER TABLE faecher    ADD COLUMN IF NOT EXISTS lehrer_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+-- ALTER TABLE pruefungen ADD COLUMN IF NOT EXISTS lehrer_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- Neue Tabellen erstellen (falls nicht vorhanden)
+-- CREATE TABLE IF NOT EXISTS lehrer ( ... );   -- siehe schema.sql
+-- CREATE TABLE IF NOT EXISTS lernmaterial ( ... ); -- siehe schema.sql
+
+-- Nach der Datenmigration: NOT NULL Constraint hinzufügen
+-- ALTER TABLE klassen    ALTER COLUMN lehrer_id SET NOT NULL;
+-- ALTER TABLE faecher    ALTER COLUMN lehrer_id SET NOT NULL;
+-- ALTER TABLE pruefungen ALTER COLUMN lehrer_id SET NOT NULL;
