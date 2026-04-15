@@ -35,7 +35,15 @@ function verifyStripeSignature(rawBody, sigHeader, secret) {
     .update(signedPayload, 'utf8')
     .digest('hex');
 
-  return v1Sigs.some((sig) => crypto.timingSafeEqual(Buffer.from(sig, 'hex'), Buffer.from(expected, 'hex')));
+  const expectedBuf = Buffer.from(expected, 'hex');
+  return v1Sigs.some((sig) => {
+    try {
+      const sigBuf = Buffer.from(sig, 'hex');
+      return sigBuf.length === expectedBuf.length && crypto.timingSafeEqual(sigBuf, expectedBuf);
+    } catch (_) {
+      return false;
+    }
+  });
 }
 
 async function updateCustomerMetadata(stripeKey, customerId, metadata) {

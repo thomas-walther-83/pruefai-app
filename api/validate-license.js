@@ -66,8 +66,18 @@ export default async function handler(req, res) {
   let correctionsThisMonth = parseInt(meta.corrections_this_month || '0', 10);
   let resetDate = meta.corrections_reset_date || today;
 
-  // Clamp future resetDate to today to handle clock skew
-  if (resetDate > today) resetDate = today;
+  // Clamp future resetDate to today to handle clock skew, and persist the correction
+  if (resetDate > today) {
+    resetDate = today;
+    try {
+      await updateCustomerMetadata(stripeKey, customer.id, {
+        corrections_reset_date: resetDate,
+        corrections_this_month: String(correctionsThisMonth),
+      });
+    } catch (err) {
+      console.error('Failed to persist clock-skew correction:', err.message);
+    }
+  }
 
   // Reset if new month
   const resetMonth = resetDate.slice(0, 7);
