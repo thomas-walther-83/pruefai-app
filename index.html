@@ -1390,7 +1390,10 @@ async function uploadSeiten() {
 function openQrModal() {
   const eintragsId = document.getElementById('upload-eintrag-id').value;
   if (!eintragsId) { showToast('Bitte zuerst einen Schüler-Upload öffnen.', 'error'); return; }
-  relayToken = crypto.randomUUID();
+  if (typeof QRCode === 'undefined') { showToast('QR-Code Bibliothek nicht geladen. Bitte Seite neu laden.', 'error'); return; }
+  relayToken = (typeof crypto.randomUUID === 'function')
+    ? crypto.randomUUID()
+    : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
   const url = location.origin + '/?mode=mobile&t=' + relayToken + '&n=' + encodeURIComponent(uploadSchuelerName || '');
   document.getElementById('qr-schueler-label').textContent = uploadSchuelerName ? 'Schüler/in: ' + uploadSchuelerName : '';
   document.getElementById('qr-status').innerHTML = '&#9679; Warten auf Fotos…';
