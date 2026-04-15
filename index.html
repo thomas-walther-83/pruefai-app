@@ -12,6 +12,8 @@
   <!-- jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js"></script>
+  <!-- QR-Code -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
   <style>
     :root {
       --primary: #1a56db; --primary-dark: #1245b7; --primary-light: #e8f0fe;
@@ -146,6 +148,20 @@
     @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
     @media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
 
+    /* QR Relay Modal */
+    .qr-canvas-wrap { display:flex; justify-content:center; margin:1rem 0; }
+    .qr-canvas-wrap canvas { border-radius:8px; border:2px solid var(--border); }
+    .qr-status-line { font-size:.875rem; color:var(--text-muted); margin:.5rem 0; }
+    .qr-count { font-size:1.4rem; font-weight:700; color:var(--success); margin:.25rem 0; }
+
+    /* Mobile Upload Page */
+    #mobile-app { display:none; flex-direction:column; min-height:100vh; background:var(--bg); padding:1rem; max-width:600px; margin:0 auto; }
+    #mobile-app.active { display:flex; }
+    .mobile-photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:.5rem; margin:1rem 0; }
+    .mobile-photo-thumb { position:relative; aspect-ratio:3/4; border-radius:6px; overflow:hidden; border:2px solid var(--border); background:var(--bg); }
+    .mobile-photo-thumb img { width:100%; height:100%; object-fit:cover; }
+    .mobile-photo-del { position:absolute; top:.2rem; right:.2rem; background:rgba(220,38,38,.85); color:#fff; border:none; border-radius:50%; width:1.4rem; height:1.4rem; font-size:.8rem; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+
     /* Mobile bottom nav */
     .mobile-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--border); z-index: 90; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -2px 10px rgba(0,0,0,.08); }
     .mobile-nav__items { display: flex; }
@@ -173,6 +189,29 @@
   </style>
 </head>
 <body>
+
+<!-- Mobile Upload Page (shown when ?mode=mobile) -->
+<div id="mobile-app">
+  <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem">
+    <div style="font-size:1.4rem;font-weight:700;color:var(--primary)">&#127891; LernortAI</div>
+    <div style="font-size:.8rem;color:var(--text-muted)">Foto-Upload</div>
+  </div>
+  <div class="card">
+    <div class="card__title">&#128248; Fotos aufnehmen</div>
+    <div id="mobile-schueler-info" style="font-size:.875rem;color:var(--text-muted);margin-bottom:.75rem"></div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem">
+      <button class="btn btn-primary" onclick="document.getElementById('mobile-camera-input').click()">&#128247; Kamera</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('mobile-file-input').click()">&#128444;&#65039; Galerie</button>
+    </div>
+    <input type="file" id="mobile-camera-input" accept="image/*" capture="environment" style="display:none" onchange="mobileAddPhoto(event)" />
+    <input type="file" id="mobile-file-input" accept="image/*" multiple style="display:none" onchange="mobileAddPhoto(event)" />
+    <div id="mobile-photo-grid" class="mobile-photo-grid"></div>
+    <div id="mobile-send-status" style="text-align:center;font-size:.875rem;margin:.75rem 0"></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end">
+      <button class="btn btn-success" id="mobile-send-btn" onclick="mobileSendPhotos()" disabled>&#128228; Senden</button>
+    </div>
+  </div>
+</div>
 
 <!-- Main App -->
 <div id="app">
@@ -449,6 +488,7 @@
     <div style="margin-top:.75rem;display:flex;gap:.5rem;flex-wrap:wrap">
       <button class="btn btn-secondary btn-sm" onclick="document.getElementById('camera-input').click()">&#128247; Kamera</button>
       <button class="btn btn-secondary btn-sm" onclick="document.getElementById('file-input').click()">&#128444;&#65039; Galerie / Datei</button>
+      <button class="btn btn-secondary btn-sm" onclick="openQrModal()">&#128241; Mit Handy</button>
     </div>
     <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none" onchange="handleFileSelect(event)" />
     <div id="pages-preview" class="pages-grid"></div>
@@ -472,6 +512,22 @@
     <div class="modal__footer">
       <button class="btn btn-secondary" onclick="closeModal('ki-ergebnis-modal')">Schliessen</button>
       <button class="btn btn-success" onclick="saveKiErgebnis()">&#10003; Note übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- QR-Code Relay Modal -->
+<div id="qr-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:380px">
+    <div class="modal__title">&#128241; Mit Handy fotografieren</div>
+    <button class="modal__close" onclick="closeQrModal()">&#10005;</button>
+    <p id="qr-schueler-label" style="font-size:.875rem;color:var(--text-muted);margin-bottom:.5rem"></p>
+    <div class="qr-canvas-wrap"><canvas id="qr-canvas"></canvas></div>
+    <p style="font-size:.75rem;color:var(--text-muted);text-align:center;margin-bottom:.5rem">QR-Code mit dem Handy scannen</p>
+    <div class="qr-status-line" id="qr-status" style="text-align:center">&#9679; Warten auf Fotos…</div>
+    <div class="qr-count hidden" id="qr-count" style="text-align:center"></div>
+    <div class="modal__footer" style="justify-content:center">
+      <button class="btn btn-secondary" onclick="closeQrModal()">Schliessen</button>
     </div>
   </div>
 </div>
@@ -555,6 +611,10 @@ const LS = { CONFIG: 'lernortai_config', LEHRER_ID: 'lernortai_lehrer_id' };
 let cfg = { schoolName: 'LernortAI' };
 let lehrer_id      = null;
 let uploadPages    = [];
+let uploadSchuelerName = '';
+let relayToken     = null;
+let relayPollInterval = null;
+let mobilePhotos   = [];
 let kiPendingData  = null;
 let lernstoffFileObj = null;
 
@@ -571,6 +631,7 @@ function getOrCreateLehrerId() {
 // INIT
 // =============================================================
 document.addEventListener('DOMContentLoaded', async function() {
+  if (initMobileMode()) return; // mobile upload page – no further init needed
   const saved = localStorage.getItem(LS.CONFIG);
   if (saved) { try { const local = JSON.parse(saved); if (local.schoolName) cfg.schoolName = local.schoolName; } catch(e) {} }
   try {
@@ -1243,6 +1304,7 @@ async function loadKorrekturEintraege() {
 // =============================================================
 function openUploadModal(eintragsId, name) {
   uploadPages = [];
+  uploadSchuelerName = name || '';
   document.getElementById('upload-eintrag-id').value = eintragsId;
   document.getElementById('upload-modal-title').textContent = 'Prüfung hochladen: ' + name;
   document.getElementById('pages-preview').innerHTML = '';
@@ -1320,6 +1382,157 @@ async function uploadSeiten() {
     setTimeout(function() { closeModal('upload-modal'); loadKorrekturEintraege(); }, 1000);
   } catch(e) { showToast('Upload-Fehler: ' + e.message, 'error'); }
   finally { document.getElementById('upload-btn').disabled = false; }
+}
+
+// =============================================================
+// QR-CODE RELAY (PC-Seite)
+// =============================================================
+function openQrModal() {
+  const eintragsId = document.getElementById('upload-eintrag-id').value;
+  if (!eintragsId) { showToast('Bitte zuerst einen Schüler-Upload öffnen.', 'error'); return; }
+  relayToken = crypto.randomUUID();
+  const url = location.origin + '/?mode=mobile&t=' + relayToken + '&n=' + encodeURIComponent(uploadSchuelerName || '');
+  document.getElementById('qr-schueler-label').textContent = uploadSchuelerName ? 'Schüler/in: ' + uploadSchuelerName : '';
+  document.getElementById('qr-status').innerHTML = '&#9679; Warten auf Fotos…';
+  document.getElementById('qr-count').classList.add('hidden');
+  document.getElementById('qr-modal').classList.remove('hidden');
+  QRCode.toCanvas(document.getElementById('qr-canvas'), url, { width: 240, margin: 2 }, function(err) {
+    if (err) showToast('QR-Code Fehler: ' + err.message, 'error');
+  });
+  startRelayPolling(relayToken);
+}
+
+function closeQrModal() {
+  stopRelayPolling();
+  document.getElementById('qr-modal').classList.add('hidden');
+}
+
+function startRelayPolling(token) {
+  stopRelayPolling();
+  let receivedCount = 0;
+  let failCount = 0;
+  relayPollInterval = setInterval(async function() {
+    if (document.getElementById('qr-modal').classList.contains('hidden')) { stopRelayPolling(); return; }
+    try {
+      const res = await fetch('/api/relay?t=' + encodeURIComponent(token));
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      failCount = 0;
+      const data = await res.json();
+      if (!data.photos || !data.photos.length) return;
+      for (const p of data.photos) {
+        const blob = dataUrlToBlob(p.data, p.mime);
+        // Photos from mobile are already compressed; no need to re-compress
+        const dataUrl = p.data;
+        uploadPages.push({ file: blob, dataUrl: dataUrl, seitenNr: uploadPages.length + 1 });
+        receivedCount++;
+      }
+      renderPagesPreview();
+      const countEl = document.getElementById('qr-count');
+      countEl.textContent = receivedCount + (receivedCount === 1 ? ' Foto' : ' Fotos') + ' empfangen ✓';
+      countEl.classList.remove('hidden');
+      document.getElementById('qr-status').innerHTML = '&#10003; Fotos kommen an – weitere aufnehmen oder schliessen';
+    } catch(e) {
+      failCount++;
+      console.error('[relay] poll error:', e);
+      if (failCount >= 5) {
+        stopRelayPolling();
+        document.getElementById('qr-status').innerHTML = '<span style="color:var(--danger)">&#10007; Verbindung unterbrochen – bitte manuell hochladen</span>';
+      }
+    }
+  }, 3000);
+}
+
+function stopRelayPolling() {
+  if (relayPollInterval) { clearInterval(relayPollInterval); relayPollInterval = null; }
+}
+
+function dataUrlToBlob(dataUrl, mime) {
+  const arr = dataUrl.split(',');
+  const bstr = atob(arr[1]);
+  const u8 = new Uint8Array(bstr.length);
+  for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
+  return new Blob([u8], { type: mime || 'image/jpeg' });
+}
+
+// =============================================================
+// MOBILE UPLOAD PAGE
+// =============================================================
+function initMobileMode() {
+  const params = new URLSearchParams(location.search);
+  if (params.get('mode') !== 'mobile') return false;
+  const token = params.get('t');
+  if (!token) return false;
+  window._mobileRelayToken = token;
+  const name = params.get('n') || '';
+  document.getElementById('mobile-app').classList.add('active');
+  document.getElementById('app').style.display = 'none';
+  if (name) document.getElementById('mobile-schueler-info').textContent = 'Schüler/in: ' + name;
+  return true;
+}
+
+function mobileAddPhoto(event) {
+  const files = Array.from(event.target.files);
+  event.target.value = '';
+  files.forEach(function(file) {
+    if (!file.type.startsWith('image/')) return;
+    compressImage(file, 1600, 0.82).then(function(compressed) {
+      blobToDataUrl(compressed).then(function(dataUrl) {
+        mobilePhotos.push({ file: compressed, dataUrl: dataUrl });
+        renderMobilePhotos();
+        document.getElementById('mobile-send-btn').disabled = false;
+      });
+    });
+  });
+}
+
+function renderMobilePhotos() {
+  const grid = document.getElementById('mobile-photo-grid');
+  grid.innerHTML = mobilePhotos.map(function(p, i) {
+    return '<div class="mobile-photo-thumb">' +
+      '<img src="' + p.dataUrl + '" alt="Seite ' + (i + 1) + '" />' +
+      '<button class="mobile-photo-del" onclick="mobileRemovePhoto(' + i + ')">&#10005;</button>' +
+      '</div>';
+  }).join('');
+}
+
+function mobileRemovePhoto(i) {
+  mobilePhotos.splice(i, 1);
+  renderMobilePhotos();
+  if (!mobilePhotos.length) document.getElementById('mobile-send-btn').disabled = true;
+}
+
+async function mobileSendPhotos() {
+  const token = window._mobileRelayToken;
+  if (!token || !mobilePhotos.length) return;
+  const btn = document.getElementById('mobile-send-btn');
+  const status = document.getElementById('mobile-send-status');
+  btn.disabled = true;
+  let sent = 0;
+  let failed = 0;
+  const toSend = mobilePhotos.slice();
+  for (let i = 0; i < toSend.length; i++) {
+    const p = toSend[i];
+    status.textContent = 'Sende Foto ' + (i + 1) + ' von ' + toSend.length + '…';
+    try {
+      const res = await fetch('/api/relay?t=' + encodeURIComponent(token), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: p.dataUrl, mime: p.file.type || 'image/jpeg' })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      sent++;
+    } catch(e) {
+      failed++;
+    }
+  }
+  if (failed === 0) {
+    status.innerHTML = '<span style="color:var(--success);font-weight:600">&#10003; ' + sent + ' ' + (sent === 1 ? 'Foto' : 'Fotos') + ' gesendet! Seite kann geschlossen werden.</span>';
+    mobilePhotos = [];
+    renderMobilePhotos();
+  } else {
+    status.innerHTML = '<span style="color:var(--danger)">' + failed + ' Foto(s) fehlgeschlagen – bitte nochmal versuchen.</span>';
+    btn.disabled = false;
+  }
 }
 
 // =============================================================
@@ -1627,7 +1840,10 @@ function showToast(msg, type) {
 }
 
 document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(function(m) { m.classList.add('hidden'); });
+  if (e.key === 'Escape') {
+    if (!document.getElementById('qr-modal').classList.contains('hidden')) stopRelayPolling();
+    document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(function(m) { m.classList.add('hidden'); });
+  }
 });
 </script>
 
