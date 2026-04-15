@@ -585,8 +585,10 @@
     <div class="modal__title">&#9881;&#65039; Einstellungen</div>
     <button class="modal__close" onclick="closeModal('settings-modal')">&#10005;</button>
     <div class="alert alert-info" style="margin-bottom:1rem;font-size:.8rem" id="settings-user-info"></div>
-    <div class="form-group"><label class="form-label">Supabase URL</label><input type="url" id="settings-supabase-url" class="form-control" /></div>
-    <div class="form-group"><label class="form-label">Supabase Anon Key</label><input type="text" id="settings-supabase-key" class="form-control" /></div>
+    <div id="settings-supabase-fields">
+      <div class="form-group"><label class="form-label">Supabase URL</label><input type="url" id="settings-supabase-url" class="form-control" /></div>
+      <div class="form-group"><label class="form-label">Supabase Anon Key</label><input type="text" id="settings-supabase-key" class="form-control" /></div>
+    </div>
     <div class="form-group"><label class="form-label">Schulname</label><input type="text" id="settings-school-name" class="form-control" /></div>
     <div class="form-group"><label class="form-label">Ihr Name (optional)</label><input type="text" id="settings-lehrer-name" class="form-control" placeholder="Vor- und Nachname" /></div>
     <div class="modal__footer">
@@ -658,13 +660,43 @@ let uploadPages    = [];
 let kiPendingData  = null;
 let lernstoffFileObj = null;
 
+async function loadServerConfig() {
+  try {
+    const res = await fetch('/api/config');
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.supabaseUrl)  cfg.supabaseUrl = data.supabaseUrl;
+    if (data.supabaseKey)  cfg.supabaseKey = data.supabaseKey;
+    if (data.schoolName)   cfg.schoolName  = data.schoolName;
+  } catch (e) { /* Fallback: user enters config manually */ }
+}
+
+function serverConfigured() {
+  return !!(cfg.supabaseUrl && cfg.supabaseKey);
+}
+
+function mergeLocalConfig(saved) {
+  if (!saved) return;
+  const local = JSON.parse(saved);
+  if (!cfg.supabaseUrl && local.supabaseUrl) cfg.supabaseUrl = local.supabaseUrl;
+  if (!cfg.supabaseKey && local.supabaseKey) cfg.supabaseKey = local.supabaseKey;
+  if (!cfg.schoolName  && local.schoolName)  cfg.schoolName  = local.schoolName;
+}
+
 // =============================================================
 // INIT
 // =============================================================
 document.addEventListener('DOMContentLoaded', async () => {
+  await loadServerConfig();
   const saved = localStorage.getItem(LS.CONFIG);
-  if (!saved) { showSetup('setup-config'); return; }
-  cfg = { ...cfg, ...JSON.parse(saved) };
+  if (!serverConfigured()) {
+    // Config not from server env — must come from localStorage or manual entry
+    if (!saved) { showSetup('setup-config'); return; }
+    mergeLocalConfig(saved);
+  } else {
+    // Server provided config; also merge any extra local prefs (schoolName override)
+    mergeLocalConfig(saved);
+  }
   applyConfig();
   const ok = await restoreSession();
   if (!ok) { showSetup('setup-auth'); return; }
@@ -690,6 +722,7 @@ function showSetup(step) {
   document.querySelectorAll('.setup-step').forEach(s => s.classList.remove('active'));
   document.getElementById(step).classList.add('active');
 }
+
 
 function saveConfig() {
   const url = document.getElementById('cfg-supabase-url').value.trim();
@@ -1650,8 +1683,14 @@ async function exportNotenCSV() {
 // EINSTELLUNGEN
 // =============================================================
 async function openSettingsModal() {
-  document.getElementById('settings-supabase-url').value  = cfg.supabaseUrl;
-  document.getElementById('settings-supabase-key').value  = cfg.supabaseKey;
+  const sbFields = document.getElementById('settings-supabase-fields');
+  if (serverConfigured()) {
+    sbFields.style.display = 'none';
+  } else {
+    sbFields.style.display = '';
+    document.getElementById('settings-supabase-url').value = cfg.supabaseUrl;
+    document.getElementById('settings-supabase-key').value = cfg.supabaseKey;
+  }
   document.getElementById('settings-school-name').value   = cfg.schoolName;
   document.getElementById('settings-user-info').textContent = 'Angemeldet als: ' + (currentUser && currentUser.email || '–');
   try {
@@ -1662,8 +1701,10 @@ async function openSettingsModal() {
 }
 
 async function saveSettings() {
-  cfg.supabaseUrl  = document.getElementById('settings-supabase-url').value.trim();
-  cfg.supabaseKey  = document.getElementById('settings-supabase-key').value.trim();
+  if (!serverConfigured()) {
+    cfg.supabaseUrl = document.getElementById('settings-supabase-url').value.trim();
+    cfg.supabaseKey = document.getElementById('settings-supabase-key').value.trim();
+  }
   cfg.schoolName   = document.getElementById('settings-school-name').value.trim() || 'LernortAI';
   localStorage.setItem(LS.CONFIG, JSON.stringify(cfg));
   applyConfig();
