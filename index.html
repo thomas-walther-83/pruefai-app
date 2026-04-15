@@ -585,8 +585,9 @@
 // KONFIGURATION & ZUSTAND
 // =============================================================
 const LS = { CONFIG: 'lernortai_config', LEHRER_ID: 'lernortai_lehrer_id' };
-let cfg = { supabaseUrl: '', supabaseKey: '', serviceRoleKey: '', schoolName: 'LernortAI' };
+let cfg = { supabaseUrl: '', supabaseKey: '', schoolName: 'LernortAI' };
 let lehrer_id      = null;
+let useServerProxy = false; // true when Supabase config comes from server env vars
 let uploadPages    = [];
 let kiPendingData  = null;
 let lernstoffFileObj = null;
@@ -596,10 +597,14 @@ async function loadServerConfig() {
     const res = await fetch('/api/config');
     if (!res.ok) return;
     const data = await res.json();
-    if (data.supabaseUrl)    cfg.supabaseUrl    = data.supabaseUrl;
-    if (data.supabaseKey)    cfg.supabaseKey    = data.supabaseKey;
-    if (data.serviceRoleKey) cfg.serviceRoleKey = data.serviceRoleKey;
-    if (data.schoolName)     cfg.schoolName     = data.schoolName;
+    if (data.supabaseUrl && data.supabaseKey) {
+      cfg.supabaseUrl  = data.supabaseUrl;
+      cfg.supabaseKey  = data.supabaseKey;
+      if (data.schoolName) cfg.schoolName = data.schoolName;
+      useServerProxy = true; // server has env vars → use /api/db proxy
+    } else {
+      if (data.schoolName) cfg.schoolName = data.schoolName;
+    }
   } catch (e) { /* Fallback: user enters config manually */ }
 }
 
@@ -610,10 +615,9 @@ function serverConfigured() {
 function mergeLocalConfig(saved) {
   if (!saved) return;
   const local = JSON.parse(saved);
-  if (!cfg.supabaseUrl    && local.supabaseUrl)    cfg.supabaseUrl    = local.supabaseUrl;
-  if (!cfg.supabaseKey    && local.supabaseKey)    cfg.supabaseKey    = local.supabaseKey;
-  if (!cfg.serviceRoleKey && local.serviceRoleKey) cfg.serviceRoleKey = local.serviceRoleKey;
-  if (!cfg.schoolName     && local.schoolName)     cfg.schoolName     = local.schoolName;
+  if (!cfg.supabaseUrl  && local.supabaseUrl)  cfg.supabaseUrl  = local.supabaseUrl;
+  if (!cfg.supabaseKey  && local.supabaseKey)  cfg.supabaseKey  = local.supabaseKey;
+  if (!cfg.schoolName   && local.schoolName)   cfg.schoolName   = local.schoolName;
 }
 
 function getOrCreateLehrerId() {
@@ -680,11 +684,28 @@ function saveConfig() {
 // =============================================================
 async function sbFetch(path, opts) {
   opts = opts || {};
-  const apiKey = cfg.serviceRoleKey || cfg.supabaseKey;
+  // When running on the server (config from /api/config), route through the
+  // server-side proxy so the service_role key is never exposed to the client.
+  if (useServerProxy) {
+    const res = await fetch('/api/db', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        method:  opts.method || 'GET',
+        path,
+        body:    opts.body ? JSON.parse(opts.body) : undefined,
+        prefer:  opts.headers && opts.headers['Prefer'],
+      }),
+    });
+    if (!res.ok) throw new Error('DB ' + res.status + ': ' + await res.text());
+    const text = await res.text();
+    return text ? JSON.parse(text) : [];
+  }
+  // Fallback: direct call with manually entered config (anon key only)
   const url = cfg.supabaseUrl + '/rest/v1/' + path;
   const headers = {
-    'apikey':        apiKey,
-    'Authorization': 'Bearer ' + apiKey,
+    'apikey':        cfg.supabaseKey,
+    'Authorization': 'Bearer ' + cfg.supabaseKey,
     'Content-Type':  'application/json',
     'Prefer':        'return=representation',
   };
@@ -704,13 +725,24 @@ const sb = {
 };
 
 async function sbStorageUpload(bucket, filePath, file) {
-  const apiKey = cfg.serviceRoleKey || cfg.supabaseKey;
+  if (useServerProxy) {
+    // Proxy upload through server so service_role key stays server-side
+    const encodedPath = encodeURIComponent(filePath);
+    const res = await fetch(
+      '/api/storage?action=upload&bucket=' + encodeURIComponent(bucket) +
+      '&filePath=' + encodedPath + '&contentType=' + encodeURIComponent(file.type || 'application/octet-stream'),
+      { method: 'POST', body: file }
+    );
+    if (!res.ok) throw new Error('Storage upload failed: ' + await res.text());
+    return bucket + '/' + filePath;
+  }
+  // Fallback: direct upload with anon key
   const url = cfg.supabaseUrl + '/storage/v1/object/' + bucket + '/' + filePath;
   const res = await fetch(url, {
     method: 'POST',
     headers: {
-      'apikey':        apiKey,
-      'Authorization': 'Bearer ' + apiKey,
+      'apikey':        cfg.supabaseKey,
+      'Authorization': 'Bearer ' + cfg.supabaseKey,
       'Content-Type':  file.type || 'application/octet-stream',
     },
     body: file,
@@ -720,13 +752,23 @@ async function sbStorageUpload(bucket, filePath, file) {
 }
 
 async function sbStorageUrl(bucket, filePath) {
-  const apiKey = cfg.serviceRoleKey || cfg.supabaseKey;
+  if (useServerProxy) {
+    const res = await fetch('/api/storage?action=sign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bucket, filePath }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.signedURL || null;
+  }
+  // Fallback: direct signed URL request with anon key
   const url = cfg.supabaseUrl + '/storage/v1/object/sign/' + bucket + '/' + filePath;
   const result = await fetch(url, {
     method: 'POST',
     headers: {
-      'apikey':        apiKey,
-      'Authorization': 'Bearer ' + apiKey,
+      'apikey':        cfg.supabaseKey,
+      'Authorization': 'Bearer ' + cfg.supabaseKey,
       'Content-Type':  'application/json',
     },
     body: JSON.stringify({ expiresIn: 3600 }),
@@ -1283,8 +1325,8 @@ async function kiKorrigieren(eintragsId) {
       const storagePath = s.storage_pfad.replace(/^pruefungsfotos\//, '');
       const signedUrl = await sbStorageUrl('pruefungsfotos', storagePath);
       const fetchUrl  = signedUrl || (cfg.supabaseUrl + '/storage/v1/object/' + s.storage_pfad);
-      const apiKey = cfg.serviceRoleKey || cfg.supabaseKey;
-      const res = await fetch(fetchUrl, { headers: { 'apikey': apiKey, 'Authorization': 'Bearer ' + apiKey } });
+      const fetchHeaders = signedUrl ? {} : { 'apikey': cfg.supabaseKey, 'Authorization': 'Bearer ' + cfg.supabaseKey };
+      const res = await fetch(fetchUrl, { headers: fetchHeaders });
       const blob = await res.blob();
       const dataUrl = await blobToDataUrl(blob);
       return { type: 'image', source: { type: 'base64', media_type: blob.type || 'image/jpeg', data: dataUrl.split(',')[1] } };
