@@ -7,7 +7,8 @@ async function findCustomerByMeta(stripeKey, metaKey, metaValue) {
   if (metaKey !== 'license_key' && metaKey !== 'schul_code') {
     throw new Error('Invalid metadata key');
   }
-  if (typeof metaValue !== 'string' || metaValue.includes("'")) {
+  const keyRegex = metaKey === 'license_key' ? LICENSE_KEY_RE : SCHUL_CODE_RE;
+  if (typeof metaValue !== 'string' || !keyRegex.test(metaValue)) {
     return null;
   }
   const query = encodeURIComponent(`metadata['${metaKey}']:'${metaValue}'`);

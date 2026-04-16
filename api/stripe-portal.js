@@ -30,7 +30,7 @@ export default async function handler(req, res) {
   if (!licenseKey) {
     return res.status(400).json({ error: 'Missing license_key in request body.' });
   }
-  if (!LICENSE_KEY_RE.test(licenseKey) || licenseKey.includes("'")) {
+  if (!LICENSE_KEY_RE.test(licenseKey)) {
     return res.status(400).json({ error: 'Invalid license_key format.' });
   }
 
