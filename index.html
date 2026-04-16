@@ -424,10 +424,10 @@
           Hier finden Sie schnelle Hilfe, rechtliche Informationen und den KI-Support-Chat.
         </p>
         <div class="help-links" style="margin-bottom:.9rem">
-          <a href="/agb" target="_blank" rel="noopener" class="help-link-card"><strong>AGB</strong><br><small style="color:var(--text-muted)">Allgemeine Geschäftsbedingungen öffnen</small></a>
-          <a href="/datenschutz" target="_blank" rel="noopener" class="help-link-card"><strong>Datenschutz</strong><br><small style="color:var(--text-muted)">Datenschutzerklärung anzeigen</small></a>
-          <a href="/avv" target="_blank" rel="noopener" class="help-link-card"><strong>AVV</strong><br><small style="color:var(--text-muted)">Auftragsverarbeitungsvertrag</small></a>
-          <a href="mailto:info@lernortai.ch" class="help-link-card"><strong>Support kontaktieren</strong><br><small style="color:var(--text-muted)">info@lernortai.ch</small></a>
+          <a href="/agb" target="_blank" rel="noopener" class="help-link-card" aria-label="Allgemeine Geschäftsbedingungen in neuem Tab öffnen"><strong>AGB</strong><br><small style="color:var(--text-muted)">Allgemeine Geschäftsbedingungen öffnen</small></a>
+          <a href="/datenschutz" target="_blank" rel="noopener" class="help-link-card" aria-label="Datenschutzerklärung in neuem Tab öffnen"><strong>Datenschutz</strong><br><small style="color:var(--text-muted)">Datenschutzerklärung anzeigen</small></a>
+          <a href="/avv" target="_blank" rel="noopener" class="help-link-card" aria-label="Auftragsverarbeitungsvertrag in neuem Tab öffnen"><strong>AVV</strong><br><small style="color:var(--text-muted)">Auftragsverarbeitungsvertrag</small></a>
+          <a href="mailto:info@lernortai.ch" class="help-link-card" aria-label="Support per E-Mail kontaktieren"><strong>Support kontaktieren</strong><br><small style="color:var(--text-muted)">info@lernortai.ch</small></a>
         </div>
         <div class="alert alert-info" style="margin:0">
           Tipp: Häufige Fragen finden Sie auch auf der <a href="/landing#faq" target="_blank" rel="noopener" style="font-weight:600">Info-Seite (FAQ)</a>.
@@ -1933,7 +1933,7 @@ async function sendHelpChatMessage() {
       return;
     }
     if (!response.ok) {
-      const statusMap = { 400: 'Ungültige Anfrage.', 401: 'Nicht autorisiert.', 403: 'Zugriff verweigert.', 500: 'Serverfehler bei der KI-Anfrage.', 502: 'KI-Dienst aktuell nicht erreichbar.' };
+      const statusMap = { 400: 'Ungültige Anfrage.', 401: 'Nicht autorisiert.', 403: 'Zugriff verweigert.', 500: 'Serverfehler bei der KI-Anfrage.', 502: 'KI-Dienst aktuell nicht erreichbar.', 503: 'KI-Dienst vorübergehend nicht verfügbar.', 504: 'Zeitüberschreitung beim KI-Dienst.' };
       throw new Error(statusMap[response.status] || ('Claude API-Fehler (' + response.status + ').'));
     }
 
@@ -1945,7 +1945,7 @@ async function sendHelpChatMessage() {
       .join('\n\n')
       .trim();
 
-    helpChatHistory.push({ role: 'assistant', text: answer || 'Ich konnte keine Antwort generieren. Bitte versuchen Sie es erneut.' });
+    helpChatHistory.push({ role: 'assistant', text: answer || 'Die KI-Antwort war leer. Bitte formulieren Sie Ihre Frage anders oder kontaktieren Sie den Support.' });
     renderHelpChat();
   } catch (e) {
     helpChatHistory.push({ role: 'assistant', text: 'Es gab einen Fehler beim KI-Chat: ' + e.message });
