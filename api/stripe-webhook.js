@@ -6,9 +6,19 @@ const PLAN_LABELS = { starter: 'Starter (50 Korrekturen/Monat)', pro: 'Pro (300 
 
 const MAX_PAYMENT_FAILURES = 3;
 
-async function sendLicenseEmail(resendKey, toEmail, licenseKey, plan) {
+function generateSchulCode() {
+  // 6 bytes = 12 hex chars → 281 trillion possible codes, brute-force infeasible
+  return 'SCHULE-' + crypto.randomBytes(6).toString('hex').toUpperCase();
+}
+
+async function sendLicenseEmail(resendKey, toEmail, licenseKey, plan, schulCode) {
   if (!resendKey || !toEmail) return;
   const planLabel = PLAN_LABELS[plan] || plan;
+  const schulCodeSection = schulCode
+    ? `<p style="margin:0 0 .5rem;font-size:.85rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.06em">Schulcode (für alle Lehrpersonen)</p>
+    <div style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;padding:1rem;font-family:'Courier New',monospace;font-size:.95rem;font-weight:700;color:#1a56db;word-break:break-all;margin-bottom:1.5rem">${schulCode}</div>
+    <p style="margin:0 0 1rem;font-size:.85rem;color:#6b7280">Teilen Sie den Schulcode mit Ihren Lehrpersonen. Jede Lehrperson trägt ihn in ⚙️ Einstellungen → «Schulcode» ein.</p>`
+    : '';
   const html = `
 <!DOCTYPE html><html lang="de"><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f9fafb;padding:2rem">
 <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
@@ -21,6 +31,7 @@ async function sendLicenseEmail(resendKey, toEmail, licenseKey, plan) {
     <p style="margin:0 0 1rem">Herzlichen Glückwunsch! Ihr <strong>${planLabel}</strong>-Abonnement ist jetzt aktiv.</p>
     <p style="margin:0 0 .5rem;font-size:.85rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.06em">Ihr Lizenzschlüssel</p>
     <div style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;padding:1rem;font-family:'Courier New',monospace;font-size:.95rem;font-weight:700;color:#1a56db;word-break:break-all;margin-bottom:1.5rem">${licenseKey}</div>
+    ${schulCodeSection}
     <p style="margin:0 0 1rem;font-size:.9rem">So aktivieren Sie Ihr Abo:</p>
     <ol style="margin:0 0 1.5rem;padding-left:1.25rem;font-size:.9rem;line-height:1.8">
       <li>Öffnen Sie <a href="https://lernortai.ch" style="color:#1a56db">lernortai.ch</a></li>
@@ -163,18 +174,23 @@ export default async function handler(req, res) {
       const licenseKey = crypto.randomUUID();
       const today = new Date().toISOString().slice(0, 10);
 
-      await updateCustomerMetadata(stripeKey, customerId, {
+      // For the schule plan also generate a shared schulCode for multi-teacher access
+      const schulCode = plan === 'schule' ? generateSchulCode() : '';
+      const metaUpdate = {
         license_key: licenseKey,
         plan,
         corrections_this_month: '0',
         corrections_reset_date: today,
-      });
+      };
+      if (schulCode) metaUpdate.schul_code = schulCode;
+
+      await updateCustomerMetadata(stripeKey, customerId, metaUpdate);
 
       // Send license key by email (non-blocking, graceful on missing RESEND_API_KEY)
       const resendKey = process.env.RESEND_API_KEY || '';
-      await sendLicenseEmail(resendKey, customerEmail, licenseKey, plan);
+      await sendLicenseEmail(resendKey, customerEmail, licenseKey, plan, schulCode);
 
-      console.log(`Checkout completed: customer=${customerId}, email=${customerEmail}, plan=${plan}, license=${licenseKey}`);
+      console.log(`Checkout completed: customer=${customerId}, email=${customerEmail}, plan=${plan}, license=${licenseKey}${schulCode ? ', schulCode=' + schulCode : ''}`);
     } else if (event.type === 'customer.subscription.updated') {
       const subscription = event.data.object;
       const customerId = subscription.customer;

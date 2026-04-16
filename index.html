@@ -148,7 +148,31 @@
     @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
     @media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
 
-    /* QR Relay Modal */
+    /* Usage bar in header */
+    .usage-bar-wrap { display:none; align-items:center; gap:.4rem; font-size:.7rem; color:#fff; opacity:.9; }
+    .usage-bar-track { width:52px; height:5px; background:rgba(255,255,255,.3); border-radius:3px; overflow:hidden; }
+    .usage-bar-fill { height:100%; background:#fff; border-radius:3px; transition:width .4s; }
+    .usage-bar-warn { background:#fcd34d !important; }
+
+    /* Upsell modal plan cards */
+    .upsell-plans { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.65rem; margin-bottom:1.25rem; }
+    .upsell-plan { border:1px solid var(--border); border-radius:var(--radius); padding:.9rem .75rem; text-align:center; }
+    .upsell-plan--popular { border-color:var(--primary); }
+    .upsell-plan__name { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); margin-bottom:.35rem; }
+    .upsell-plan--popular .upsell-plan__name { color:var(--primary); }
+    .upsell-plan__price { font-size:1.35rem; font-weight:800; margin-bottom:.2rem; }
+    .upsell-plan__desc { font-size:.75rem; color:var(--text-muted); margin-bottom:.65rem; }
+    @media(max-width:420px) { .upsell-plans { grid-template-columns:1fr; } }
+
+    /* Onboarding steps */
+    .onboarding-step { display:flex; align-items:flex-start; gap:.75rem; margin-bottom:.85rem; }
+    .onboarding-num { background:var(--primary); color:#fff; min-width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:700; flex-shrink:0; margin-top:.1rem; }
+
+    /* Cookie banner */
+    #cookie-banner { position:fixed; bottom:0; left:0; right:0; background:#1f2937; color:#e5e7eb; padding:.875rem 1.5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; z-index:9998; font-size:.85rem; }
+    #cookie-banner a { color:#93c5fd; }
+    #cookie-banner.hidden { display:none !important; }
+
     .qr-canvas-wrap { display:flex; justify-content:center; margin:1rem 0; }
     .qr-canvas-wrap canvas { border-radius:8px; border:2px solid var(--border); }
     .qr-status-line { font-size:.875rem; color:var(--text-muted); margin:.5rem 0; }
@@ -223,6 +247,10 @@
     <div class="header__actions">
       <button class="btn btn-icon" onclick="openSettingsModal()" title="Einstellungen">&#9881;&#65039;</button>
       <a id="free-trial-badge" href="/landing" title="Plan wählen" style="display:none;font-size:.75rem;font-weight:600;background:var(--warning-light);color:var(--warning);border:1px solid #fcd34d;border-radius:20px;padding:.25rem .65rem;white-space:nowrap;text-decoration:none">🎓 <span id="free-trial-remaining"></span> gratis</a>
+      <div class="usage-bar-wrap" id="usage-bar-wrap">
+        <span id="usage-bar-label" style="white-space:nowrap"></span>
+        <div class="usage-bar-track"><div class="usage-bar-fill" id="usage-bar-fill"></div></div>
+      </div>
     </div>
   </header>
 
@@ -554,6 +582,11 @@
       <div id="license-info" style="margin-top:.75rem;font-size:.8rem;color:var(--text-muted)">Lizenz wird geprüft...</div>
       <a href="#" onclick="openStripePortal();return false;" style="font-size:.8rem;margin-top:.5rem;display:inline-block">Abo verwalten &#8594;</a>
     </div>
+    <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
+      <div class="form-label" style="margin-bottom:.5rem">&#127979; Schulcode (für Schul-Plan)</div>
+      <input type="text" id="settings-schul-code" class="form-control" placeholder="SCHULE-XXXXXX" style="font-family:monospace;font-size:.8rem;text-transform:uppercase" />
+      <p class="form-hint" style="margin-top:.4rem">Schulcode vom Administrator erhalten? Hier eintragen – kein eigenes Abo nötig.</p>
+    </div>
     <div class="modal__footer">
       <button class="btn btn-secondary" onclick="closeModal('settings-modal')">Abbrechen</button>
       <button class="btn btn-primary" onclick="saveSettings()">Speichern</button>
@@ -594,7 +627,97 @@
   </div>
 </div>
 
-<!-- Mobile Mehr-Menu Modal -->
+<!-- Schulcode-Feld in Settings -->
+<!-- (inserted inline via JS into the existing settings modal) -->
+
+<!-- E-Mail-Capture Modal -->
+<div id="email-capture-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:440px">
+    <div class="modal__title">🎓 Willkommen bei LernortAI!</div>
+    <p style="color:var(--text-muted);margin-bottom:1.25rem;font-size:.9rem">
+      Geben Sie Ihre E-Mail ein, um <strong>3 kostenlose KI-Korrekturen</strong> freizuschalten. Keine Kreditkarte nötig.
+    </p>
+    <div class="form-group">
+      <label class="form-label">Ihr Name (optional)</label>
+      <input type="text" id="capture-name" class="form-control" placeholder="z.B. Maria Müller" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">E-Mail *</label>
+      <input type="email" id="capture-email" class="form-control" placeholder="name@schule.ch" />
+      <div id="capture-error" style="color:var(--danger);font-size:.8rem;margin-top:.4rem;display:none"></div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="skipEmailCapture()">Später</button>
+      <button class="btn btn-primary" onclick="submitEmailCapture()">Freischalten &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- Upsell Modal (shown when trial limit is reached) -->
+<div id="upsell-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:560px">
+    <div class="modal__title">&#11088; Gratis-Kontingent aufgebraucht</div>
+    <button class="modal__close" onclick="closeModal('upsell-modal')">&#10005;</button>
+    <p style="color:var(--text-muted);margin-bottom:1.25rem;font-size:.9rem">
+      Wählen Sie einen Plan, um weiterhin KI-Korrekturen zu nutzen. Monatlich kündbar.
+    </p>
+    <div class="upsell-plans">
+      <div class="upsell-plan">
+        <div class="upsell-plan__name">Starter</div>
+        <div class="upsell-plan__price"><sup style="font-size:.75rem;font-weight:600">CHF</sup>9<span style="font-size:.8rem;font-weight:400;color:var(--text-muted)">/Mt</span></div>
+        <div class="upsell-plan__desc">50 Korrekturen</div>
+        <a href="/api/stripe-checkout?plan=starter" class="btn btn-secondary btn-sm" style="display:block;text-align:center">Wählen</a>
+      </div>
+      <div class="upsell-plan upsell-plan--popular">
+        <div class="upsell-plan__name">&#11088; Pro</div>
+        <div class="upsell-plan__price"><sup style="font-size:.75rem;font-weight:600">CHF</sup>19<span style="font-size:.8rem;font-weight:400;color:var(--text-muted)">/Mt</span></div>
+        <div class="upsell-plan__desc">300 Korrekturen</div>
+        <a href="/api/stripe-checkout?plan=pro" class="btn btn-primary btn-sm" style="display:block;text-align:center">Wählen</a>
+      </div>
+      <div class="upsell-plan">
+        <div class="upsell-plan__name">Schule</div>
+        <div class="upsell-plan__price"><sup style="font-size:.75rem;font-weight:600">CHF</sup>149<span style="font-size:.8rem;font-weight:400;color:var(--text-muted)">/Mt</span></div>
+        <div class="upsell-plan__desc">Unbegrenzt</div>
+        <a href="/api/stripe-checkout?plan=schule" class="btn btn-secondary btn-sm" style="display:block;text-align:center">Wählen</a>
+      </div>
+    </div>
+    <div style="text-align:center">
+      <a href="/landing" style="font-size:.85rem;color:var(--text-muted)">Alle Pläne vergleichen &#8594;</a>
+    </div>
+  </div>
+</div>
+
+<!-- Onboarding Wizard (shown after first license key activation) -->
+<div id="onboarding-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:460px">
+    <div class="modal__title">&#127881; Lizenz aktiviert – Los geht's!</div>
+    <button class="modal__close" onclick="closeModal('onboarding-modal')">&#10005;</button>
+    <p style="color:var(--text-muted);margin-bottom:1.25rem;font-size:.9rem">
+      Ihr Plan ist aktiv. So starten Sie in 4 einfachen Schritten:
+    </p>
+    <div class="onboarding-step">
+      <div class="onboarding-num">1</div>
+      <div><strong>Schulname setzen</strong> – in &#9881;&#65039; Einstellungen oben rechts</div>
+    </div>
+    <div class="onboarding-step">
+      <div class="onboarding-num">2</div>
+      <div><strong>Erste Klasse anlegen</strong> – Tab «&#127979; Klassen» &#8594; «+ Neue Klasse»</div>
+    </div>
+    <div class="onboarding-step">
+      <div class="onboarding-num">3</div>
+      <div><strong>Prüfung erstellen</strong> – Tab «&#128221; Prüfungen» &#8594; «+ Neue Prüfung»</div>
+    </div>
+    <div class="onboarding-step">
+      <div class="onboarding-num">4</div>
+      <div><strong>KI-Korrektur starten</strong> – Tab «&#129302; Korrektur» &#8594; Fotos hochladen &#8594; KI-korrigieren</div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-primary" onclick="closeModal('onboarding-modal')">Los geht's! &#8594;</button>
+    </div>
+  </div>
+</div>
+
+
 <div id="mobile-menu-modal" class="modal-overlay hidden">
   <div class="modal" style="max-width:360px">
     <div class="modal__title">&#8942; Weitere Funktionen</div>
@@ -614,7 +737,7 @@
 // =============================================================
 // KONFIGURATION & ZUSTAND
 // =============================================================
-const LS = { CONFIG: 'lernortai_config', LEHRER_ID: 'lernortai_lehrer_id', FREE_USED: 'lernortai_free_used' };
+const LS = { CONFIG: 'lernortai_config', LEHRER_ID: 'lernortai_lehrer_id', FREE_USED: 'lernortai_free_used', LEAD: 'lernortai_lead_captured', TRIAL_TOKEN: 'lernortai_trial_token', ONBOARDED: 'lernortai_onboarded' };
 const FREE_TRIAL_LIMIT = 3;
 let cfg = { schoolName: 'LernortAI' };
 let lehrer_id      = null;
@@ -650,6 +773,8 @@ document.addEventListener('DOMContentLoaded', async function() {
   applyConfig();
   updateFreeTrialBadge();
   await loadDashboard();
+  maybeShowEmailCapture();
+  loadUsageBar();
 });
 
 // Service Worker registrieren
@@ -1575,26 +1700,35 @@ async function kiKorrigieren(eintragsId) {
     const systemPrompt = 'Du bist ein erfahrener Berufsschullehrer in der Schweiz.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\nAntworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "...", "max": <Zahl>, "erreicht": <Zahl>, "feedback": "..."}]}';
     const userContent = imageBlocks.concat([{ type: 'text', text: 'Prüfung: ' + (pruefung && pruefung.name || '') + '\nSchüler: ' + (schueler && schueler.name || '') + '\nMax. Punkte: ' + (pruefung && pruefung.max_punkte || 100) + (pruefung && pruefung.anweisungen ? '\nAufgabenstellung:\n' + pruefung.anweisungen : '') + '\n\nBitte korrigiere diese Prüfung als JSON.' }]);
     const licenseKey = localStorage.getItem('lernortai_license_key') || '';
-    // Free-trial gate: if no license key, consume one free correction (up to FREE_TRIAL_LIMIT)
-    if (!licenseKey) {
+    const schulCode = localStorage.getItem('lernortai_schul_code') || '';
+    // Free-trial gate: if no license key and no schulCode, consume one free correction (up to FREE_TRIAL_LIMIT)
+    if (!licenseKey && !schulCode) {
       const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
       if (used >= FREE_TRIAL_LIMIT) {
-        showToast('Gratis-Kontingent aufgebraucht. Bitte Plan wählen.', 'error');
-        window.open('/landing', '_blank');
+        document.getElementById('upsell-modal').classList.remove('hidden');
         return 'limit';
       }
       localStorage.setItem(LS.FREE_USED, String(used + 1));
       updateFreeTrialBadge();
     }
+    const headers = { 'content-type': 'application/json' };
+    if (licenseKey) headers['x-license-key'] = licenseKey;
+    if (schulCode) headers['x-schul-code'] = schulCode;
+    if (!licenseKey && !schulCode) {
+      const trialToken = localStorage.getItem(LS.TRIAL_TOKEN) || '';
+      if (trialToken) headers['x-trial-token'] = trialToken;
+    }
     const response = await fetch('/api/claude', {
       method: 'POST',
-      headers: { 'content-type': 'application/json', ...(licenseKey ? { 'x-license-key': licenseKey } : {}) },
+      headers,
       body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: 1024, system: systemPrompt, messages: [{ role: 'user', content: userContent }] }),
     });
-    if (response.status === 402) {
+    // Store updated trial token if returned by server
+    const newTrialToken = response.headers.get('x-trial-token');
+    if (newTrialToken) localStorage.setItem(LS.TRIAL_TOKEN, newTrialToken);
+    if (response.status === 402 || response.status === 429) {
       const d = await response.json();
-      showToast(d.error || 'Kein aktiver Plan.', 'error');
-      window.open('/landing', '_blank');
+      document.getElementById('upsell-modal').classList.remove('hidden');
       return 'limit';
     }
     if (!response.ok) throw new Error('Claude API: ' + response.status + ' ' + await response.text());
@@ -1642,17 +1776,17 @@ async function kiAlleKorrigieren() {
   if (!todo.length) { showToast('Keine hochgeladenen Prüfungen gefunden.', 'info'); return; }
   // Pre-check trial budget
   const licenseKey = localStorage.getItem('lernortai_license_key') || '';
-  if (!licenseKey) {
+  const schulCode = localStorage.getItem('lernortai_schul_code') || '';
+  if (!licenseKey && !schulCode) {
     const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
     const remaining = Math.max(0, FREE_TRIAL_LIMIT - used);
     if (remaining === 0) {
-      showToast('Gratis-Kontingent aufgebraucht. Bitte Plan wählen.', 'error');
-      window.open('/landing', '_blank');
+      document.getElementById('upsell-modal').classList.remove('hidden');
       return;
     }
     if (remaining < todo.length) {
       showToast('Nur noch ' + remaining + ' von ' + FREE_TRIAL_LIMIT + ' Gratis-Korrekturen verfügbar. Bitte Plan wählen.', 'error');
-      window.open('/landing', '_blank');
+      document.getElementById('upsell-modal').classList.remove('hidden');
       return;
     }
   }
@@ -1803,7 +1937,11 @@ async function openSettingsModal() {
   } catch(e) { /* ignore */ }
   const lk = localStorage.getItem('lernortai_license_key') || '';
   document.getElementById('settings-license-key').value = lk;
-  if (lk) { checkLicenseInfo(lk); } else {
+  document.getElementById('settings-schul-code').value = localStorage.getItem('lernortai_schul_code') || '';
+  const sc = localStorage.getItem('lernortai_schul_code') || '';
+  if (lk) { checkLicenseInfo(lk); }
+  else if (sc) { checkLicenseInfo(null, sc); }
+  else {
     const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
     const left = Math.max(0, FREE_TRIAL_LIMIT - used);
     const el = document.getElementById('license-info');
@@ -1830,9 +1968,22 @@ async function saveSettings() {
     }
   } catch(e) { /* ignore */ }
   const lk = document.getElementById('settings-license-key').value.trim();
+  const sc = document.getElementById('settings-schul-code').value.trim().toUpperCase();
+  const hadLicenseBefore = !!localStorage.getItem('lernortai_license_key') || !!localStorage.getItem('lernortai_schul_code');
   if (lk) localStorage.setItem('lernortai_license_key', lk);
   else localStorage.removeItem('lernortai_license_key');
+  if (sc) localStorage.setItem('lernortai_schul_code', sc);
+  else localStorage.removeItem('lernortai_schul_code');
+  const hasLicenseNow = !!lk || !!sc;
   updateFreeTrialBadge();
+  loadUsageBar();
+  // Show onboarding wizard on first license activation
+  if (hasLicenseNow && !hadLicenseBefore && !localStorage.getItem(LS.ONBOARDED)) {
+    localStorage.setItem(LS.ONBOARDED, '1');
+    closeModal('settings-modal'); showToast('Einstellungen gespeichert.', 'success'); loadDashboard();
+    setTimeout(function() { document.getElementById('onboarding-modal').classList.remove('hidden'); }, 300);
+    return;
+  }
   closeModal('settings-modal'); showToast('Einstellungen gespeichert.', 'success'); loadDashboard();
 }
 
@@ -1841,10 +1992,11 @@ async function saveSettings() {
 // =============================================================
 function updateFreeTrialBadge() {
   const lk = localStorage.getItem('lernortai_license_key') || '';
+  const sc = localStorage.getItem('lernortai_schul_code') || '';
   const badge = document.getElementById('free-trial-badge');
   const remaining = document.getElementById('free-trial-remaining');
   if (!badge) return;
-  if (lk) { badge.style.display = 'none'; return; }
+  if (lk || sc) { badge.style.display = 'none'; return; }
   const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
   const left = Math.max(0, FREE_TRIAL_LIMIT - used);
   if (left > 0) {
@@ -1859,9 +2011,10 @@ function updateFreeTrialBadge() {
     badge.title = 'Gratis-Kontingent aufgebraucht – Plan wählen';
   }
 }
-async function checkLicenseInfo(key) {
+async function checkLicenseInfo(key, schulCode) {
   try {
-    const r = await fetch('/api/validate-license', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ license_key: key, action: 'check' }) });
+    const body = schulCode ? { schul_code: schulCode, action: 'check' } : { license_key: key, action: 'check' };
+    const r = await fetch('/api/validate-license', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     const d = await r.json();
     const el = document.getElementById('license-info');
     if (!el) return;
@@ -1875,12 +2028,89 @@ async function checkLicenseInfo(key) {
 
 async function openStripePortal() {
   const lk = localStorage.getItem('lernortai_license_key') || '';
-  if (!lk) { window.open('/landing', '_blank'); return; }
+  if (!lk) {
+    if (localStorage.getItem('lernortai_schul_code')) {
+      showToast('Abo-Verwaltung ist nur für den Account-Inhaber verfügbar. Bitte beim Administrator nachfragen.', 'info');
+      return;
+    }
+    window.open('/landing', '_blank');
+    return;
+  }
   try {
     const r = await fetch('/api/stripe-portal', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ license_key: lk }) });
     const d = await r.json();
     if (d.url) window.location.href = d.url;
   } catch(e) { showToast('Portal konnte nicht geöffnet werden.', 'error'); }
+}
+
+// =============================================================
+// EMAIL CAPTURE
+// =============================================================
+function maybeShowEmailCapture() {
+  if (localStorage.getItem(LS.LEAD)) return;
+  if (localStorage.getItem('lernortai_license_key')) return;
+  if (localStorage.getItem('lernortai_schul_code')) return;
+  setTimeout(function() {
+    document.getElementById('email-capture-modal').classList.remove('hidden');
+  }, 1500);
+}
+
+async function submitEmailCapture() {
+  const email = document.getElementById('capture-email').value.trim();
+  const name = document.getElementById('capture-name').value.trim();
+  const errEl = document.getElementById('capture-error');
+  if (!email || !email.includes('@')) {
+    errEl.textContent = 'Bitte eine gültige E-Mail-Adresse eingeben.';
+    errEl.style.display = '';
+    return;
+  }
+  errEl.style.display = 'none';
+  localStorage.setItem(LS.LEAD, '1');
+  document.getElementById('email-capture-modal').classList.add('hidden');
+  try {
+    await fetch('/api/capture-lead', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name, email }),
+    });
+  } catch(e) { /* ignore – lead email is best-effort */ }
+  showToast('Willkommen! Ihre 3 Korrekturen sind freigeschaltet.', 'success');
+}
+
+function skipEmailCapture() {
+  localStorage.setItem(LS.LEAD, 'skipped');
+  document.getElementById('email-capture-modal').classList.add('hidden');
+}
+
+// =============================================================
+// USAGE BAR
+// =============================================================
+async function loadUsageBar() {
+  const wrap = document.getElementById('usage-bar-wrap');
+  if (!wrap) return;
+  const lk = localStorage.getItem('lernortai_license_key') || '';
+  const sc = localStorage.getItem('lernortai_schul_code') || '';
+  if (!lk && !sc) { wrap.style.display = 'none'; return; }
+  try {
+    const body = sc ? { schul_code: sc, action: 'check' } : { license_key: lk, action: 'check' };
+    const r = await fetch('/api/validate-license', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!d.valid) { wrap.style.display = 'none'; return; }
+    const used = d.corrections_this_month || 0;
+    const limit = d.limit >= 99999 ? null : d.limit;
+    const label = document.getElementById('usage-bar-label');
+    const fill = document.getElementById('usage-bar-fill');
+    if (limit) {
+      const pct = Math.min(100, Math.round((used / limit) * 100));
+      label.textContent = used + '/' + limit;
+      fill.style.width = pct + '%';
+      if (pct >= 80) fill.classList.add('usage-bar-warn');
+    } else {
+      label.textContent = used + ' korr.';
+      fill.style.width = '0%';
+    }
+    wrap.style.display = 'flex';
+  } catch(e) { wrap.style.display = 'none'; }
 }
 
 // =============================================================

@@ -31,6 +31,11 @@ export default async function handler(req, res) {
     'line_items[0][price]': priceId,
     'line_items[0][quantity]': '1',
     'metadata[plan]': plan,
+    // Allow card and SEPA Direct Debit (common for Swiss schools paying via Lastschrift)
+    'payment_method_types[0]': 'card',
+    'payment_method_types[1]': 'sepa_debit',
+    // Enable automatic invoice creation so schools can request paper invoices
+    'invoice_creation[enabled]': 'true',
     success_url: `${appUrl}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/`,
   });
