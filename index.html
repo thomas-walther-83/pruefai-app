@@ -782,6 +782,9 @@
 // =============================================================
 const LS = { CONFIG: 'lernortai_config', LEHRER_ID: 'lernortai_lehrer_id', FREE_USED: 'lernortai_free_used', LEAD: 'lernortai_lead_captured', TRIAL_TOKEN: 'lernortai_trial_token', ONBOARDED: 'lernortai_onboarded' };
 const FREE_TRIAL_LIMIT = 3;
+const HELP_CHAT_MAX_MESSAGE_LENGTH = 2000;
+const HELP_CHAT_HISTORY_LIMIT = 10;
+const HELP_CHAT_MAX_TOKENS = 700;
 let cfg = { schoolName: 'LernortAI' };
 let lehrer_id      = null;
 let uploadPages    = [];
@@ -1877,7 +1880,7 @@ async function sendHelpChatMessage() {
   if (!input || !btn) return;
   const text = input.value.trim();
   if (!text) return;
-  if (text.length > 2000) { showToast('Bitte Nachricht auf max. 2000 Zeichen kürzen.', 'error'); return; }
+  if (text.length > HELP_CHAT_MAX_MESSAGE_LENGTH) { showToast('Bitte Nachricht auf max. ' + HELP_CHAT_MAX_MESSAGE_LENGTH + ' Zeichen kürzen.', 'error'); return; }
 
   helpChatHistory.push({ role: 'user', text: text });
   input.value = '';
@@ -1910,13 +1913,13 @@ async function sendHelpChatMessage() {
 
     const systemPrompt = 'Du bist der Hilfe-Chatbot für LernortAI. Antworte auf Deutsch, präzise, freundlich und praxisnah. Gib nur produktspezifische Hilfestellung zur Bedienung von LernortAI. Bei rechtlichen Fragen verweise auf AGB/Datenschutz/AVV. Gib keinen Rechtsrat und erfinde keine Funktionen.';
     const messages = helpChatHistory
-      .slice(-10)
+      .slice(-HELP_CHAT_HISTORY_LIMIT)
       .map(function(m) { return { role: m.role === 'assistant' ? 'assistant' : 'user', content: [{ type: 'text', text: m.text }] }; });
 
     const response = await fetch('/api/claude', {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: 700, system: systemPrompt, messages: messages }),
+      body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: HELP_CHAT_MAX_TOKENS, system: systemPrompt, messages: messages }),
     });
 
     const newTrialToken = response.headers.get('x-trial-token');
