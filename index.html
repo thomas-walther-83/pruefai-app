@@ -441,7 +441,7 @@
         </p>
         <div id="help-chat-log" class="help-chat-box"></div>
         <div style="display:flex;gap:.6rem;align-items:flex-end;margin-top:.75rem;flex-wrap:wrap">
-          <textarea id="help-chat-input" class="form-control" rows="3" placeholder="z.B. Wie importiere ich Daten auf ein neues Gerät?" aria-label="Nachricht für den KI-Chatbot" style="flex:1;min-width:220px;resize:vertical"></textarea>
+          <textarea id="help-chat-input" class="form-control" rows="3" placeholder="z.B. Wie importiere ich Daten auf ein neues Gerät?" aria-label="Nachricht für den KI-Chatbot" maxlength="2000" style="flex:1;min-width:220px;resize:vertical"></textarea>
           <button class="btn btn-primary" id="help-chat-send-btn" onclick="sendHelpChatMessage()">Senden</button>
           <button class="btn btn-secondary" onclick="resetHelpChat()">Zurücksetzen</button>
         </div>
@@ -1912,6 +1912,7 @@ async function sendHelpChatMessage() {
       if (trialToken) headers['x-trial-token'] = trialToken;
     }
 
+    // System-Prompt wird separat als `system`-Parameter an die API übergeben.
     const messages = helpChatHistory
       .slice(-HELP_CHAT_HISTORY_LIMIT)
       .map(function(m) { return { role: m.role === 'assistant' ? 'assistant' : 'user', content: [{ type: 'text', text: m.text }] }; });
@@ -1931,10 +1932,13 @@ async function sendHelpChatMessage() {
       renderHelpChat();
       return;
     }
-    if (!response.ok) throw new Error('Claude API: ' + response.status);
+    if (!response.ok) {
+      const statusMap = { 400: 'Ungültige Anfrage.', 401: 'Nicht autorisiert.', 403: 'Zugriff verweigert.', 500: 'Serverfehler bei der KI-Anfrage.', 502: 'KI-Dienst aktuell nicht erreichbar.' };
+      throw new Error(statusMap[response.status] || ('Claude API-Fehler (' + response.status + ').'));
+    }
 
     const data = await response.json();
-    const blocks = Array.isArray(data.content) ? data.content : [];
+    const blocks = (data && Array.isArray(data.content)) ? data.content : [];
     const answer = blocks
       .filter(function(b) { return b && b.type === 'text' && typeof b.text === 'string'; })
       .map(function(b) { return b.text.trim(); })
