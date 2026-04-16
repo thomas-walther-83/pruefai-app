@@ -7,8 +7,8 @@ const PLAN_LABELS = { starter: 'Starter (50 Korrekturen/Monat)', pro: 'Pro (300 
 const MAX_PAYMENT_FAILURES = 3;
 
 function generateSchulCode() {
-  // Short human-readable school code, e.g. SCHULE-A3BF9C
-  return 'SCHULE-' + crypto.randomBytes(3).toString('hex').toUpperCase();
+  // 6 bytes = 12 hex chars → 281 trillion possible codes, brute-force infeasible
+  return 'SCHULE-' + crypto.randomBytes(6).toString('hex').toUpperCase();
 }
 
 async function sendLicenseEmail(resendKey, toEmail, licenseKey, plan, schulCode) {

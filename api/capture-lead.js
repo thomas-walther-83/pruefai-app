@@ -8,6 +8,15 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Ungültige E-Mail-Adresse.' });
   }
 
+  function escHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
+  const safeName = escHtml(name);
+  const safeEmail = escHtml(email);
+
   const resendKey = process.env.RESEND_API_KEY;
   const adminEmail = process.env.ADMIN_EMAIL || 'info@lernortai.ch';
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lernortai.ch';
@@ -22,7 +31,7 @@ export default async function handler(req, res) {
     <p style="margin:.5rem 0 0;opacity:.9">Ihre 3 Gratis-Korrekturen sind freigeschaltet.</p>
   </div>
   <div style="padding:2rem">
-    <p style="margin:0 0 1rem">Hallo${name ? ' ' + name : ''},</p>
+    <p style="margin:0 0 1rem">Hallo${safeName ? ' ' + safeName : ''},</p>
     <p style="margin:0 0 1rem">Ihre kostenlose Testphase ist jetzt aktiv. Sie haben <strong>3 KI-Korrekturen</strong> gratis – keine Kreditkarte nötig.</p>
     <p style="margin:0 0 1rem;font-size:.9rem">So geht's:</p>
     <ol style="margin:0 0 1.5rem;padding-left:1.25rem;font-size:.9rem;line-height:1.8">
@@ -55,8 +64,8 @@ export default async function handler(req, res) {
       body: JSON.stringify({
         from: 'LernortAI <noreply@lernortai.ch>',
         to: [adminEmail],
-        subject: `Neuer Trial-Lead: ${name || email}`,
-        html: `<p><strong>Name:</strong> ${name || '–'}</p><p><strong>E-Mail:</strong> ${email}</p>`,
+        subject: `Neuer Trial-Lead: ${safeName || safeEmail}`,
+        html: `<p><strong>Name:</strong> ${safeName || '–'}</p><p><strong>E-Mail:</strong> ${safeEmail}</p>`,
       }),
     }).catch((err) => console.error('Admin notification failed:', err.message));
   }

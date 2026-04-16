@@ -52,6 +52,14 @@ function parseTrialToken(secret, token) {
 }
 
 async function findCustomerByMeta(stripeKey, metaKey, metaValue) {
+  // Only allow known metadata keys to prevent query injection
+  if (metaKey !== 'license_key' && metaKey !== 'schul_code') {
+    throw new Error('Invalid metadata key');
+  }
+  // Stripe metadata query uses single-quoted values; reject values containing single quotes
+  if (typeof metaValue !== 'string' || metaValue.includes("'")) {
+    return null;
+  }
   const query = encodeURIComponent(`metadata['${metaKey}']:'${metaValue}'`);
   const res = await fetch(`https://api.stripe.com/v1/customers/search?query=${query}&limit=1`, {
     headers: { Authorization: `Bearer ${stripeKey}` },

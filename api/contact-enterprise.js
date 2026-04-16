@@ -12,6 +12,20 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Institution fehlt.' });
   }
 
+  function escHtml(str) {
+    return String(str || '')
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+  }
+
+  const safeInstitution = escHtml(institution);
+  const safeKanton = escHtml(kanton);
+  const safeAnzahl = escHtml(anzahl);
+  const safeFachbereich = escHtml(fachbereich);
+  const safeStarttermin = escHtml(starttermin);
+  const safeName = escHtml(name);
+  const safeEmail = escHtml(email);
+
   const resendKey = process.env.RESEND_API_KEY;
   const adminEmail = process.env.ADMIN_EMAIL || 'info@lernortai.ch';
 
@@ -20,13 +34,13 @@ export default async function handler(req, res) {
     const adminHtml = `<!DOCTYPE html><html lang="de"><body style="font-family:Arial,sans-serif;padding:2rem">
 <h2 style="color:#1a56db">Neue Enterprise-Anfrage</h2>
 <table style="border-collapse:collapse;font-size:.95rem">
-  <tr><td style="padding:.4rem 1rem .4rem 0;font-weight:600;color:#6b7280">Institution</td><td>${institution}</td></tr>
-  <tr><td style="padding:.4rem 1rem .4rem 0;font-weight:600;color:#6b7280">Kanton</td><td>${kanton || '–'}</td></tr>
-  <tr><td style="padding:.4rem 1rem .4rem 0;font-weight:600;color:#6b7280">Anzahl Lehrpersonen</td><td>${anzahl || '–'}</td></tr>
-  <tr><td style="padding:.4rem 1rem .4rem 0;font-weight:600;color:#6b7280">Fachbereich</td><td>${fachbereich || '–'}</td></tr>
-  <tr><td style="padding:.4rem 1rem .4rem 0;font-weight:600;color:#6b7280">Gewünschter Start</td><td>${starttermin || '–'}</td></tr>
-  <tr><td style="padding:.4rem 1rem .4rem 0;font-weight:600;color:#6b7280">Kontaktperson</td><td>${name || '–'}</td></tr>
-  <tr><td style="padding:.4rem 1rem .4rem 0;font-weight:600;color:#6b7280">E-Mail</td><td><a href="mailto:${email}">${email}</a></td></tr>
+  <tr><td style="padding:.4rem 1rem .4rem 0;font-weight:600;color:#6b7280">Institution</td><td>${safeInstitution}</td></tr>
+  <tr><td style="padding:.4rem 1rem .4rem 0;font-weight:600;color:#6b7280">Kanton</td><td>${safeKanton || '–'}</td></tr>
+  <tr><td style="padding:.4rem 1rem .4rem 0;font-weight:600;color:#6b7280">Anzahl Lehrpersonen</td><td>${safeAnzahl || '–'}</td></tr>
+  <tr><td style="padding:.4rem 1rem .4rem 0;font-weight:600;color:#6b7280">Fachbereich</td><td>${safeFachbereich || '–'}</td></tr>
+  <tr><td style="padding:.4rem 1rem .4rem 0;font-weight:600;color:#6b7280">Gewünschter Start</td><td>${safeStarttermin || '–'}</td></tr>
+  <tr><td style="padding:.4rem 1rem .4rem 0;font-weight:600;color:#6b7280">Kontaktperson</td><td>${safeName || '–'}</td></tr>
+  <tr><td style="padding:.4rem 1rem .4rem 0;font-weight:600;color:#6b7280">E-Mail</td><td><a href="mailto:${safeEmail}">${safeEmail}</a></td></tr>
 </table>
 </body></html>`;
 
@@ -50,8 +64,8 @@ export default async function handler(req, res) {
     <h1 style="margin:0;font-size:1.5rem;font-weight:800">Vielen Dank für Ihre Anfrage!</h1>
   </div>
   <div style="padding:2rem">
-    <p style="margin:0 0 1rem">Guten Tag${name ? ' ' + name : ''},</p>
-    <p style="margin:0 0 1rem">Wir haben Ihre Anfrage für <strong>${institution}</strong> erhalten und melden uns innerhalb von <strong>1–2 Werktagen</strong> bei Ihnen.</p>
+    <p style="margin:0 0 1rem">Guten Tag${safeName ? ' ' + safeName : ''},</p>
+    <p style="margin:0 0 1rem">Wir haben Ihre Anfrage für <strong>${safeInstitution}</strong> erhalten und melden uns innerhalb von <strong>1–2 Werktagen</strong> bei Ihnen.</p>
     <p style="margin:0;font-size:.9rem;color:#6b7280">Mit freundlichen Grüssen<br>Das LernortAI-Team</p>
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:2rem 0">
     <p style="margin:0;font-size:.8rem;color:#9ca3af">Fragen? <a href="mailto:info@lernortai.ch" style="color:#1a56db">info@lernortai.ch</a></p>
