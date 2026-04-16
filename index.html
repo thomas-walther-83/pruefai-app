@@ -441,7 +441,7 @@
         </p>
         <div id="help-chat-log" class="help-chat-box"></div>
         <div style="display:flex;gap:.6rem;align-items:flex-end;margin-top:.75rem;flex-wrap:wrap">
-          <textarea id="help-chat-input" class="form-control" rows="3" placeholder="z.B. Wie importiere ich Daten auf ein neues Gerät?" style="flex:1;min-width:220px;resize:vertical"></textarea>
+          <textarea id="help-chat-input" class="form-control" rows="3" placeholder="z.B. Wie importiere ich Daten auf ein neues Gerät?" aria-label="Nachricht für den KI-Chatbot" style="flex:1;min-width:220px;resize:vertical"></textarea>
           <button class="btn btn-primary" id="help-chat-send-btn" onclick="sendHelpChatMessage()">Senden</button>
           <button class="btn btn-secondary" onclick="resetHelpChat()">Zurücksetzen</button>
         </div>
@@ -782,9 +782,10 @@
 // =============================================================
 const LS = { CONFIG: 'lernortai_config', LEHRER_ID: 'lernortai_lehrer_id', FREE_USED: 'lernortai_free_used', LEAD: 'lernortai_lead_captured', TRIAL_TOKEN: 'lernortai_trial_token', ONBOARDED: 'lernortai_onboarded' };
 const FREE_TRIAL_LIMIT = 3;
-const HELP_CHAT_MAX_MESSAGE_LENGTH = 2000;
-const HELP_CHAT_HISTORY_LIMIT = 10;
-const HELP_CHAT_MAX_TOKENS = 700;
+const HELP_CHAT_MAX_MESSAGE_LENGTH = 2000; // max. Nutzerzeichen pro Chat-Nachricht
+const HELP_CHAT_HISTORY_LIMIT = 10; // Anzahl letzter Nachrichten als Kontext
+const HELP_CHAT_MAX_TOKENS = 700; // Obergrenze für KI-Antwortlänge
+const HELP_CHAT_SYSTEM_PROMPT = 'Du bist der Hilfe-Chatbot für LernortAI. Antworte auf Deutsch, präzise, freundlich und praxisnah. Gib nur produktspezifische Hilfestellung zur Bedienung von LernortAI. Bei rechtlichen Fragen verweise auf AGB/Datenschutz/AVV. Gib keinen Rechtsrat und erfinde keine Funktionen.';
 let cfg = { schoolName: 'LernortAI' };
 let lehrer_id      = null;
 let uploadPages    = [];
@@ -1911,7 +1912,6 @@ async function sendHelpChatMessage() {
       if (trialToken) headers['x-trial-token'] = trialToken;
     }
 
-    const systemPrompt = 'Du bist der Hilfe-Chatbot für LernortAI. Antworte auf Deutsch, präzise, freundlich und praxisnah. Gib nur produktspezifische Hilfestellung zur Bedienung von LernortAI. Bei rechtlichen Fragen verweise auf AGB/Datenschutz/AVV. Gib keinen Rechtsrat und erfinde keine Funktionen.';
     const messages = helpChatHistory
       .slice(-HELP_CHAT_HISTORY_LIMIT)
       .map(function(m) { return { role: m.role === 'assistant' ? 'assistant' : 'user', content: [{ type: 'text', text: m.text }] }; });
@@ -1919,7 +1919,7 @@ async function sendHelpChatMessage() {
     const response = await fetch('/api/claude', {
       method: 'POST',
       headers: headers,
-      body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: HELP_CHAT_MAX_TOKENS, system: systemPrompt, messages: messages }),
+      body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: HELP_CHAT_MAX_TOKENS, system: HELP_CHAT_SYSTEM_PROMPT, messages: messages }),
     });
 
     const newTrialToken = response.headers.get('x-trial-token');
