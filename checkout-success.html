@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zahlung erfolgreich – LernortAI</title>
+  <meta name="description" content="Ihr Abonnement ist aktiv. Hier finden Sie Ihren Lizenzschlüssel." />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #1a56db;
+      --primary-dark: #1245b7;
+      --primary-light: #e8f0fe;
+      --text: #111827;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --bg: #f9fafb;
+      --card: #ffffff;
+      --success: #059669;
+      --success-light: #d1fae5;
+      --radius: 10px;
+      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06);
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: var(--text); background: var(--bg); line-height: 1.6; min-height: 100vh; display: flex; flex-direction: column; }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    nav { background: var(--card); border-bottom: 1px solid var(--border); }
+    .nav-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: .875rem 1.5rem; }
+    .nav-logo { font-size: 1.25rem; font-weight: 700; color: var(--primary); text-decoration: none; }
+
+    main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem 1.5rem; }
+
+    .card { background: var(--card); border-radius: 16px; box-shadow: var(--shadow); max-width: 540px; width: 100%; padding: 2.5rem 2rem; text-align: center; }
+
+    .icon-circle { width: 72px; height: 72px; border-radius: 50%; background: var(--success-light); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2rem; }
+
+    h1 { font-size: 1.75rem; font-weight: 800; margin-bottom: .5rem; }
+    .subtitle { color: var(--text-muted); margin-bottom: 2rem; }
+
+    .license-box { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.5rem; }
+    .license-label { font-size: .75rem; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); font-weight: 600; margin-bottom: .5rem; }
+    .license-key { font-family: 'SF Mono', 'Fira Code', 'Courier New', monospace; font-size: 1rem; font-weight: 700; color: var(--primary); letter-spacing: .05em; word-break: break-all; margin-bottom: .75rem; }
+    .copy-btn { background: var(--primary-light); color: var(--primary); border: none; border-radius: 6px; padding: .45rem 1rem; font-size: .85rem; font-weight: 600; cursor: pointer; transition: background .15s; }
+    .copy-btn:hover { background: #d1e0fc; }
+    .copy-btn.copied { background: var(--success-light); color: var(--success); }
+
+    .plan-badge { display: inline-block; background: var(--primary); color: #fff; padding: .25rem .75rem; border-radius: 20px; font-size: .8rem; font-weight: 600; margin-bottom: 1.5rem; }
+
+    .steps { text-align: left; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.75rem; }
+    .steps-title { font-size: .85rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .8rem; }
+    .step { display: flex; align-items: flex-start; gap: .75rem; margin-bottom: .65rem; font-size: .9rem; }
+    .step:last-child { margin-bottom: 0; }
+    .step-num { background: var(--primary); color: #fff; width: 22px; height: 22px; border-radius: 50%; font-size: .75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: .1rem; }
+
+    .btn-primary { display: inline-block; background: var(--primary); color: #fff; padding: .875rem 2rem; border-radius: var(--radius); font-weight: 700; font-size: 1rem; transition: background .15s; margin-bottom: .75rem; width: 100%; }
+    .btn-primary:hover { background: var(--primary-dark); text-decoration: none; }
+    .btn-secondary { display: inline-block; color: var(--text-muted); font-size: .875rem; }
+
+    .loading { color: var(--text-muted); font-size: .9rem; padding: 1rem 0; }
+    .error-msg { color: #b91c1c; background: #fee2e2; border-radius: 8px; padding: .875rem 1rem; font-size: .875rem; margin-bottom: 1.25rem; display: none; }
+
+    footer { background: #1f2937; color: #9ca3af; padding: 1.5rem; text-align: center; font-size: .8rem; }
+    footer a { color: #9ca3af; }
+    footer a:hover { color: #fff; }
+    .footer-links { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-bottom: .5rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="/">🎓 LernortAI</a>
+  </div>
+</nav>
+
+<main>
+  <div class="card">
+    <div class="icon-circle">✅</div>
+    <h1>Zahlung erfolgreich!</h1>
+    <p class="subtitle">Willkommen bei LernortAI. Ihr Abonnement ist jetzt aktiv.</p>
+
+    <div id="loadingState" class="loading">⏳ Lizenzschlüssel wird abgerufen…</div>
+    <div id="errorState" class="error-msg"></div>
+
+    <div id="successState" style="display:none">
+      <div id="planBadge" class="plan-badge"></div>
+
+      <div class="license-box">
+        <div class="license-label">Ihr Lizenzschlüssel</div>
+        <div id="licenseKey" class="license-key"></div>
+        <button class="copy-btn" id="copyBtn" onclick="copyKey()">📋 Kopieren</button>
+      </div>
+
+      <div class="steps">
+        <div class="steps-title">So aktivieren Sie Ihr Abo</div>
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>Klicken Sie auf «App starten» (Button unten)</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>Öffnen Sie die <strong>Einstellungen</strong> (⚙️ oben rechts)</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div>Fügen Sie Ihren Lizenzschlüssel im Feld <strong>«Lizenzschlüssel»</strong> ein und speichern Sie</div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div>Fertig – KI-Korrekturen sind jetzt entsperrt 🎉</div>
+        </div>
+      </div>
+
+      <a href="/" class="btn-primary">App starten →</a>
+      <br>
+      <a href="mailto:info@lernortai.ch" class="btn-secondary">Fragen? info@lernortai.ch</a>
+    </div>
+
+    <div id="fallbackState" style="display:none">
+      <p style="color:var(--text-muted);font-size:.9rem;margin-bottom:1.5rem">Ihr Lizenzschlüssel wird in Kürze per E-Mail zugestellt. Falls Sie keine E-Mail erhalten, wenden Sie sich bitte an den Support.</p>
+      <a href="/" class="btn-primary">App starten →</a>
+      <br>
+      <a href="mailto:info@lernortai.ch" class="btn-secondary">Support: info@lernortai.ch</a>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-links">
+    <a href="/datenschutz">Datenschutz</a>
+    <a href="/agb">AGB</a>
+    <a href="mailto:info@lernortai.ch">Kontakt</a>
+  </div>
+  <div>&copy; 2025 LernortAI – Thomas Walther, Schweiz</div>
+</footer>
+
+<script>
+  const PLAN_LABELS = { starter: 'Starter-Plan', pro: 'Pro-Plan', schule: 'Schul-Plan' };
+
+  async function loadLicense() {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session_id');
+
+    if (!sessionId) {
+      show('fallbackState');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/get-license?session_id=${encodeURIComponent(sessionId)}`);
+      if (!res.ok) throw new Error('Fehler beim Abrufen');
+      const data = await res.json();
+
+      if (!data.licenseKey) {
+        // Webhook may not have fired yet – retry once after 3 seconds
+        await new Promise(r => setTimeout(r, 3000));
+        const res2 = await fetch(`/api/get-license?session_id=${encodeURIComponent(sessionId)}`);
+        const data2 = await res2.json();
+        if (!data2.licenseKey) {
+          show('fallbackState');
+          return;
+        }
+        renderSuccess(data2.licenseKey, data2.plan);
+      } else {
+        renderSuccess(data.licenseKey, data.plan);
+      }
+    } catch (e) {
+      show('fallbackState');
+    }
+  }
+
+  function renderSuccess(key, plan) {
+    document.getElementById('licenseKey').textContent = key;
+    const planLabel = PLAN_LABELS[plan] || (plan ? plan.charAt(0).toUpperCase() + plan.slice(1) + '-Plan' : 'Ihr Plan');
+    document.getElementById('planBadge').textContent = '✓ ' + planLabel + ' aktiv';
+    show('successState');
+  }
+
+  function show(id) {
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById(id).style.display = '';
+  }
+
+  function copyKey() {
+    const key = document.getElementById('licenseKey').textContent;
+    navigator.clipboard.writeText(key).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '✅ Kopiert!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '📋 Kopieren';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  }
+
+  loadLicense();
+</script>
+
+</body>
+</html>

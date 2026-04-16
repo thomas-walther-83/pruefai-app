@@ -1,5 +1,10 @@
 {
   "rewrites": [
+    { "source": "/landing", "destination": "/landing.html" },
+    { "source": "/datenschutz", "destination": "/datenschutz.html" },
+    { "source": "/agb", "destination": "/agb.html" },
+    { "source": "/avv", "destination": "/avv.html" },
+    { "source": "/checkout-success", "destination": "/checkout-success.html" },
     { "source": "/api/:path*", "destination": "/api/:path*" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
