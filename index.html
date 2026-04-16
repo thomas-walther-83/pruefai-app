@@ -224,6 +224,15 @@
     .lernmaterial-item__name { flex: 1; font-size: .875rem; font-weight: 500; }
     .lernmaterial-item__meta { font-size: .75rem; color: var(--text-muted); }
 
+    /* Hilfe / KI-Chat */
+    .help-chat-box { border: 1px solid var(--border); border-radius: var(--radius); background: #fff; max-height: 340px; overflow-y: auto; padding: .75rem; display: flex; flex-direction: column; gap: .6rem; }
+    .help-chat-msg { max-width: 90%; padding: .55rem .7rem; border-radius: 10px; font-size: .875rem; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
+    .help-chat-msg--user { margin-left: auto; background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+    .help-chat-msg--bot { margin-right: auto; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .help-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .65rem; }
+    .help-link-card { display: block; padding: .75rem; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--text); }
+    .help-link-card:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+
     /* Mobile: hide desktop nav, show mobile nav + FAB */
     @media (max-width: 768px) {
       .nav-tabs { display: none; }
@@ -284,6 +293,7 @@
     <button class="nav-tab" onclick="showView('lernstoff')" id="tab-lernstoff" title="Unterlagen für die KI-Korrektur hochladen">&#128196; Lernstoff</button>
     <button class="nav-tab" onclick="showView('korrektur')" id="tab-korrektur" title="KI-Korrekturen starten und prüfen">&#129302; Korrektur</button>
     <button class="nav-tab" onclick="showView('noten')" id="tab-noten" title="Notenübersicht und Exporte anzeigen">&#128200; Noten</button>
+    <button class="nav-tab" onclick="showView('hilfe')" id="tab-hilfe" title="Hilfe und Rechtliches">&#10067; Hilfe</button>
   </nav>
 
   <!-- Mobile Bottom Navigation -->
@@ -451,6 +461,38 @@
       <div id="noten-histogram-wrap" class="card hidden" style="margin-top:1rem">
         <div class="card__title">&#128202; Notenverteilung <span class="help-hint" tabindex="0" data-tip="Balken zeigen, wie oft jede Note in der gewählten Prüfung vorkommt."></span></div>
         <div id="noten-histogram"></div>
+      </div>
+    </div>
+
+    <!-- Hilfe -->
+    <div id="view-hilfe" class="view">
+      <div class="card">
+        <div class="card__title">&#10067; Hilfe &amp; Unterstützung</div>
+        <p style="font-size:.875rem;color:var(--text-muted);margin-bottom:.85rem">
+          Hier finden Sie schnelle Hilfe, rechtliche Informationen und den KI-Support-Chat.
+        </p>
+        <div class="help-links" style="margin-bottom:.9rem">
+          <a href="/agb" target="_blank" rel="noopener" class="help-link-card" aria-label="Allgemeine Geschäftsbedingungen in neuem Tab öffnen"><strong>AGB</strong><br><small style="color:var(--text-muted)">Allgemeine Geschäftsbedingungen öffnen</small></a>
+          <a href="/datenschutz" target="_blank" rel="noopener" class="help-link-card" aria-label="Datenschutzerklärung in neuem Tab öffnen"><strong>Datenschutz</strong><br><small style="color:var(--text-muted)">Datenschutzerklärung anzeigen</small></a>
+          <a href="/avv" target="_blank" rel="noopener" class="help-link-card" aria-label="Auftragsverarbeitungsvertrag in neuem Tab öffnen"><strong>AVV</strong><br><small style="color:var(--text-muted)">Auftragsverarbeitungsvertrag</small></a>
+          <a href="mailto:info@lernortai.ch" class="help-link-card" aria-label="Support per E-Mail kontaktieren"><strong>Support kontaktieren</strong><br><small style="color:var(--text-muted)">info@lernortai.ch</small></a>
+        </div>
+        <div class="alert alert-info" style="margin:0">
+          Tipp: Häufige Fragen finden Sie auch auf der <a href="/landing#faq" target="_blank" rel="noopener" style="font-weight:600">Info-Seite (FAQ)</a>.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__title">&#129302; KI-Chatbot</div>
+        <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.75rem">
+          Stellen Sie Fragen zur Nutzung von LernortAI. Der Chatbot gibt allgemeine Hilfestellung (kein Rechtsrat). KI-Chat-Anfragen zählen als KI-Nutzung.
+        </p>
+        <div id="help-chat-log" class="help-chat-box"></div>
+        <div style="display:flex;gap:.6rem;align-items:flex-end;margin-top:.75rem;flex-wrap:wrap">
+          <textarea id="help-chat-input" class="form-control" rows="3" placeholder="z.B. Wie importiere ich Daten auf ein neues Gerät?" aria-label="Nachricht für den KI-Chatbot" maxlength="2000" style="flex:1;min-width:220px;resize:vertical"></textarea>
+          <button class="btn btn-primary" id="help-chat-send-btn" onclick="sendHelpChatMessage()">Senden</button>
+          <button class="btn btn-secondary" onclick="resetHelpChat()">Zurücksetzen</button>
+        </div>
       </div>
     </div>
 
@@ -775,6 +817,7 @@
       <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('faecher')">&#128218; Fächer</button>
       <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('pruefungen')">&#128221; Prüfungen</button>
       <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('lernstoff')">&#128196; Lernstoff</button>
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('hilfe')">&#10067; Hilfe</button>
     </div>
   </div>
 </div>
@@ -787,6 +830,10 @@
 // =============================================================
 const LS = { CONFIG: 'lernortai_config', LEHRER_ID: 'lernortai_lehrer_id', FREE_USED: 'lernortai_free_used', LEAD: 'lernortai_lead_captured', TRIAL_TOKEN: 'lernortai_trial_token', ONBOARDED: 'lernortai_onboarded' };
 const FREE_TRIAL_LIMIT = 3;
+const HELP_CHAT_MAX_MESSAGE_LENGTH = 2000; // max. Nutzerzeichen pro Chat-Nachricht
+const HELP_CHAT_HISTORY_LIMIT = 10; // Anzahl letzter Nachrichten als Kontext
+const HELP_CHAT_MAX_TOKENS = 700; // Obergrenze für KI-Antwortlänge
+const HELP_CHAT_SYSTEM_PROMPT = 'Du bist der Hilfe-Chatbot für LernortAI. Antworte auf Deutsch, präzise, freundlich und praxisnah. Gib nur produktspezifische Hilfestellung zur Bedienung von LernortAI. Bei rechtlichen Fragen verweise auf AGB/Datenschutz/AVV. Gib keinen Rechtsrat und erfinde keine Funktionen.';
 let cfg = { schoolName: 'LernortAI' };
 let lehrer_id      = null;
 let uploadPages    = [];
@@ -796,6 +843,7 @@ let relayPollInterval = null;
 let mobilePhotos   = [];
 let kiPendingData  = null;
 let lernstoffFileObj = null;
+let helpChatHistory = [];
 
 function getOrCreateLehrerId() {
   let id = localStorage.getItem(LS.LEHRER_ID);
@@ -1062,6 +1110,7 @@ function showView(name) {
   if (name === 'lernstoff')  { loadPruefungenIntoSelect('lernstoff-filter-pruefung', true); loadLernstoff(); }
   if (name === 'korrektur')  { loadPruefungenIntoSelect('korrektur-pruefung-select'); loadKlassenIntoSelect('korrektur-klasse-select'); }
   if (name === 'noten')      { loadPruefungenIntoSelect('noten-pruefung-select'); loadKlassenIntoSelect('noten-klasse-select'); }
+  if (name === 'hilfe')      { initHelpView(); }
 }
 
 function showMobileMenu() { document.getElementById('mobile-menu-modal').classList.remove('hidden'); }
@@ -1847,6 +1896,112 @@ async function kiAlleKorrigieren() {
     showToast('Korrigiert: ' + done + '/' + todo.length, 'info');
   }
   showToast('Alle Korrekturen abgeschlossen.', 'success');
+}
+
+// =============================================================
+// HILFE / KI-CHATBOT
+// =============================================================
+function initHelpView() {
+  if (!helpChatHistory.length) {
+    helpChatHistory.push({ role: 'assistant', text: 'Hallo! Ich helfe Ihnen bei Fragen zu LernortAI (z.B. Klassen, Prüfungen, Upload, Korrektur, Export, Lizenz).' });
+  }
+  renderHelpChat();
+}
+
+function renderHelpChat() {
+  const log = document.getElementById('help-chat-log');
+  if (!log) return;
+  log.innerHTML = helpChatHistory.map(function(m) {
+    const cls = m.role === 'user' ? 'help-chat-msg help-chat-msg--user' : 'help-chat-msg help-chat-msg--bot';
+    return '<div class="' + cls + '">' + escHtml(m.text || '') + '</div>';
+  }).join('');
+  log.scrollTop = log.scrollHeight;
+}
+
+function resetHelpChat() {
+  helpChatHistory = [{ role: 'assistant', text: 'Chat zurückgesetzt. Wobei kann ich helfen?' }];
+  renderHelpChat();
+}
+
+async function sendHelpChatMessage() {
+  const input = document.getElementById('help-chat-input');
+  const btn = document.getElementById('help-chat-send-btn');
+  if (!input || !btn) return;
+  const text = input.value.trim();
+  if (!text) return;
+  if (text.length > HELP_CHAT_MAX_MESSAGE_LENGTH) { showToast('Bitte Nachricht auf max. ' + HELP_CHAT_MAX_MESSAGE_LENGTH + ' Zeichen kürzen.', 'error'); return; }
+
+  helpChatHistory.push({ role: 'user', text: text });
+  input.value = '';
+  renderHelpChat();
+  btn.disabled = true;
+  btn.textContent = 'Antwortet…';
+
+  try {
+    const licenseKey = localStorage.getItem('lernortai_license_key') || '';
+    const schulCode = localStorage.getItem('lernortai_schul_code') || '';
+    if (!licenseKey && !schulCode) {
+      const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
+      if (used >= FREE_TRIAL_LIMIT) {
+        document.getElementById('upsell-modal').classList.remove('hidden');
+        helpChatHistory.push({ role: 'assistant', text: 'Ihr Gratis-Kontingent ist aufgebraucht. Bitte wählen Sie einen Plan, um den KI-Chat weiter zu nutzen.' });
+        renderHelpChat();
+        return;
+      }
+      localStorage.setItem(LS.FREE_USED, String(used + 1));
+      updateFreeTrialBadge();
+    }
+
+    const headers = { 'content-type': 'application/json' };
+    if (licenseKey) headers['x-license-key'] = licenseKey;
+    if (schulCode) headers['x-schul-code'] = schulCode;
+    if (!licenseKey && !schulCode) {
+      const trialToken = localStorage.getItem(LS.TRIAL_TOKEN) || '';
+      if (trialToken) headers['x-trial-token'] = trialToken;
+    }
+
+    // System-Prompt wird separat als `system`-Parameter an die API übergeben.
+    const messages = helpChatHistory
+      .slice(-HELP_CHAT_HISTORY_LIMIT)
+      .map(function(m) { return { role: m.role === 'assistant' ? 'assistant' : 'user', content: [{ type: 'text', text: m.text }] }; });
+
+    const response = await fetch('/api/claude', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: HELP_CHAT_MAX_TOKENS, system: HELP_CHAT_SYSTEM_PROMPT, messages: messages }),
+    });
+
+    const newTrialToken = response.headers.get('x-trial-token');
+    if (newTrialToken) localStorage.setItem(LS.TRIAL_TOKEN, newTrialToken);
+
+    if (response.status === 402 || response.status === 429) {
+      document.getElementById('upsell-modal').classList.remove('hidden');
+      helpChatHistory.push({ role: 'assistant', text: 'Für weitere KI-Anfragen benötigen Sie einen aktiven Plan. Bitte öffnen Sie «Plan wählen».' });
+      renderHelpChat();
+      return;
+    }
+    if (!response.ok) {
+      const statusMap = { 400: 'Ungültige Anfrage.', 401: 'Nicht autorisiert.', 403: 'Zugriff verweigert.', 500: 'Serverfehler bei der KI-Anfrage.', 502: 'KI-Dienst aktuell nicht erreichbar.', 503: 'KI-Dienst vorübergehend nicht verfügbar.', 504: 'Zeitüberschreitung beim KI-Dienst.' };
+      throw new Error(statusMap[response.status] || ('Claude API-Fehler (' + response.status + ').'));
+    }
+
+    const data = await response.json();
+    const blocks = (data && Array.isArray(data.content)) ? data.content : [];
+    const answer = blocks
+      .filter(function(b) { return b && b.type === 'text' && typeof b.text === 'string'; })
+      .map(function(b) { return b.text.trim(); })
+      .join('\n\n')
+      .trim();
+
+    helpChatHistory.push({ role: 'assistant', text: answer || 'Die KI-Antwort war leer. Bitte formulieren Sie Ihre Frage anders oder kontaktieren Sie den Support.' });
+    renderHelpChat();
+  } catch (e) {
+    helpChatHistory.push({ role: 'assistant', text: 'Es gab einen Fehler beim KI-Chat: ' + e.message });
+    renderHelpChat();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Senden';
+  }
 }
 
 async function noteManuelleingabe(eintragsId) {
