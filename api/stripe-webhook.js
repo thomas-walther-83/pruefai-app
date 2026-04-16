@@ -4,6 +4,8 @@ import crypto from 'crypto';
 
 const PLAN_LABELS = { starter: 'Starter (50 Korrekturen/Monat)', pro: 'Pro (300 Korrekturen/Monat)', schule: 'Schule (unbegrenzt)' };
 
+const MAX_PAYMENT_FAILURES = 3;
+
 async function sendLicenseEmail(resendKey, toEmail, licenseKey, plan) {
   if (!resendKey || !toEmail) return;
   const planLabel = PLAN_LABELS[plan] || plan;
@@ -75,10 +77,11 @@ function verifyStripeSignature(rawBody, sigHeader, secret) {
 
   if (!timestamp || v1Sigs.length === 0) return false;
 
-  // Reject webhooks older than 5 minutes to prevent replay attacks
+  // Reject webhooks with timestamps more than 5 minutes in the past (replay attack prevention)
   const TOLERANCE_SECONDS = 300;
   const nowSeconds = Math.floor(Date.now() / 1000);
-  if (Math.abs(nowSeconds - parseInt(timestamp, 10)) > TOLERANCE_SECONDS) return false;
+  const ts = parseInt(timestamp, 10);
+  if (nowSeconds - ts > TOLERANCE_SECONDS || ts > nowSeconds) return false;
 
   const signedPayload = `${timestamp}.${rawBody}`;
   const expected = crypto
@@ -212,8 +215,8 @@ export default async function handler(req, res) {
       const customerEmail = invoice.customer_email || '';
       const attemptCount = invoice.attempt_count || 1;
 
-      // After 3 failed attempts, revoke access
-      if (attemptCount >= 3) {
+      // After MAX_PAYMENT_FAILURES failed attempts, revoke access
+      if (attemptCount >= MAX_PAYMENT_FAILURES) {
         await updateCustomerMetadata(stripeKey, customerId, {
           license_key: '',
           plan: 'none',
