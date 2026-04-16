@@ -222,6 +222,7 @@
     </div>
     <div class="header__actions">
       <button class="btn btn-icon" onclick="openSettingsModal()" title="Einstellungen">&#9881;&#65039;</button>
+      <a id="free-trial-badge" href="/landing" title="Plan wählen" style="display:none;font-size:.75rem;font-weight:600;background:var(--warning-light);color:var(--warning);border:1px solid #fcd34d;border-radius:20px;padding:.25rem .65rem;white-space:nowrap;text-decoration:none">🎓 <span id="free-trial-remaining"></span> gratis</a>
     </div>
   </header>
 
@@ -613,7 +614,8 @@
 // =============================================================
 // KONFIGURATION & ZUSTAND
 // =============================================================
-const LS = { CONFIG: 'lernortai_config', LEHRER_ID: 'lernortai_lehrer_id' };
+const LS = { CONFIG: 'lernortai_config', LEHRER_ID: 'lernortai_lehrer_id', FREE_USED: 'lernortai_free_used' };
+const FREE_TRIAL_LIMIT = 3;
 let cfg = { schoolName: 'LernortAI' };
 let lehrer_id      = null;
 let uploadPages    = [];
@@ -646,6 +648,7 @@ document.addEventListener('DOMContentLoaded', async function() {
   } catch(e) {}
   lehrer_id = getOrCreateLehrerId();
   applyConfig();
+  updateFreeTrialBadge();
   await loadDashboard();
 });
 
@@ -1569,6 +1572,17 @@ async function kiKorrigieren(eintragsId) {
     const systemPrompt = 'Du bist ein erfahrener Berufsschullehrer in der Schweiz.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\nAntworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "...", "max": <Zahl>, "erreicht": <Zahl>, "feedback": "..."}]}';
     const userContent = imageBlocks.concat([{ type: 'text', text: 'Prüfung: ' + (pruefung && pruefung.name || '') + '\nSchüler: ' + (schueler && schueler.name || '') + '\nMax. Punkte: ' + (pruefung && pruefung.max_punkte || 100) + (pruefung && pruefung.anweisungen ? '\nAufgabenstellung:\n' + pruefung.anweisungen : '') + '\n\nBitte korrigiere diese Prüfung als JSON.' }]);
     const licenseKey = localStorage.getItem('lernortai_license_key') || '';
+    // Free-trial gate: if no license key, consume one free correction (up to FREE_TRIAL_LIMIT)
+    if (!licenseKey) {
+      const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
+      if (used >= FREE_TRIAL_LIMIT) {
+        showToast('Gratis-Kontingent aufgebraucht. Bitte Plan wählen.', 'error');
+        window.open('/landing', '_blank');
+        return;
+      }
+      localStorage.setItem(LS.FREE_USED, String(used + 1));
+      updateFreeTrialBadge();
+    }
     const response = await fetch('/api/claude', {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...(licenseKey ? { 'x-license-key': licenseKey } : {}) },
@@ -1577,7 +1591,7 @@ async function kiKorrigieren(eintragsId) {
     if (response.status === 402) {
       const d = await response.json();
       showToast(d.error || 'Kein aktiver Plan.', 'error');
-      window.open('/landing.html', '_blank');
+      window.open('/landing', '_blank');
       return;
     }
     if (!response.ok) throw new Error('Claude API: ' + response.status + ' ' + await response.text());
@@ -1764,7 +1778,16 @@ async function openSettingsModal() {
   } catch(e) { /* ignore */ }
   const lk = localStorage.getItem('lernortai_license_key') || '';
   document.getElementById('settings-license-key').value = lk;
-  if (lk) { checkLicenseInfo(lk); } else { document.getElementById('license-info').textContent = 'Kein Lizenzschlüssel eingegeben.'; }
+  if (lk) { checkLicenseInfo(lk); } else {
+    const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
+    const left = Math.max(0, FREE_TRIAL_LIMIT - used);
+    const el = document.getElementById('license-info');
+    if (left > 0) {
+      el.innerHTML = '🎓 Testphase – noch <strong>' + left + '</strong> von ' + FREE_TRIAL_LIMIT + ' Gratis-Korrekturen verfügbar. <a href="/landing">Plan wählen &#8594;</a>';
+    } else {
+      el.innerHTML = '&#9888;&#65039; Gratis-Kontingent aufgebraucht. <a href="/landing">Plan wählen &#8594;</a>';
+    }
+  }
   document.getElementById('settings-modal').classList.remove('hidden');
 }
 
@@ -1784,12 +1807,33 @@ async function saveSettings() {
   const lk = document.getElementById('settings-license-key').value.trim();
   if (lk) localStorage.setItem('lernortai_license_key', lk);
   else localStorage.removeItem('lernortai_license_key');
+  updateFreeTrialBadge();
   closeModal('settings-modal'); showToast('Einstellungen gespeichert.', 'success'); loadDashboard();
 }
 
 // =============================================================
 // LICENSE & STRIPE
 // =============================================================
+function updateFreeTrialBadge() {
+  const lk = localStorage.getItem('lernortai_license_key') || '';
+  const badge = document.getElementById('free-trial-badge');
+  const remaining = document.getElementById('free-trial-remaining');
+  if (!badge) return;
+  if (lk) { badge.style.display = 'none'; return; }
+  const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
+  const left = Math.max(0, FREE_TRIAL_LIMIT - used);
+  if (left > 0) {
+    remaining.textContent = left + '\u00d7';
+    badge.style.display = '';
+  } else {
+    remaining.textContent = '0\u00d7';
+    badge.style.display = '';
+    badge.style.background = 'var(--danger-light)';
+    badge.style.color = 'var(--danger)';
+    badge.style.borderColor = '#fca5a5';
+    badge.title = 'Gratis-Kontingent aufgebraucht – Plan wählen';
+  }
+}
 async function checkLicenseInfo(key) {
   try {
     const r = await fetch('/api/validate-license', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ license_key: key, action: 'check' }) });
@@ -1799,14 +1843,14 @@ async function checkLicenseInfo(key) {
     if (d.valid) {
       el.innerHTML = '&#10003;&#65039; Aktiv – Plan: <strong>' + d.plan + '</strong> | Korrekturen: ' + d.corrections_this_month + ' / ' + (d.limit >= 99999 ? '&#8734;' : d.limit);
     } else {
-      el.innerHTML = '&#10060; Ungültig oder abgelaufen. <a href="/landing.html">Plan wählen &#8594;</a>';
+      el.innerHTML = '&#10060; Ungültig oder abgelaufen. <a href="/landing">Plan wählen &#8594;</a>';
     }
   } catch(e) { /* ignore */ }
 }
 
 async function openStripePortal() {
   const lk = localStorage.getItem('lernortai_license_key') || '';
-  if (!lk) { window.open('/landing.html', '_blank'); return; }
+  if (!lk) { window.open('/landing', '_blank'); return; }
   try {
     const r = await fetch('/api/stripe-portal', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ license_key: lk }) });
     const d = await r.json();

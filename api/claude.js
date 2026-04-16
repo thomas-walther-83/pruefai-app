@@ -68,7 +68,7 @@ export default async function handler(req, res) {
 
     const licenseKey = req.headers['x-license-key'] || bodyLicenseKey || '';
     if (!licenseKey) {
-      return res.status(402).json({ error: 'Kein aktiver Plan. Bitte abonnieren.', upgradeUrl: '/landing.html' });
+      return res.status(402).json({ error: 'Kein aktiver Plan. Bitte abonnieren.', upgradeUrl: '/landing' });
     }
 
     let customer;
@@ -80,7 +80,7 @@ export default async function handler(req, res) {
     }
 
     if (!customer) {
-      return res.status(402).json({ error: 'Kein aktiver Plan. Bitte abonnieren.', upgradeUrl: '/landing.html' });
+      return res.status(402).json({ error: 'Kein aktiver Plan. Bitte abonnieren.', upgradeUrl: '/landing' });
     }
 
     const meta = customer.metadata || {};
@@ -88,7 +88,7 @@ export default async function handler(req, res) {
     const limit = PLAN_LIMITS[plan] ?? 0;
 
     if (plan === 'none' || limit === 0) {
-      return res.status(402).json({ error: 'Kein aktiver Plan. Bitte abonnieren.', upgradeUrl: '/landing.html' });
+      return res.status(402).json({ error: 'Kein aktiver Plan. Bitte abonnieren.', upgradeUrl: '/landing' });
     }
 
     const today = new Date().toISOString().slice(0, 10);
@@ -102,7 +102,7 @@ export default async function handler(req, res) {
     }
 
     if (correctionsThisMonth >= limit) {
-      return res.status(429).json({ error: 'Monatliches Limit erreicht.', upgradeUrl: '/landing.html' });
+      return res.status(429).json({ error: 'Monatliches Limit erreicht.', upgradeUrl: '/landing' });
     }
 
     // Increment usage (fire and forget — don't block the Claude request)
