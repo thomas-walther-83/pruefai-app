@@ -1,11 +1,11 @@
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
 const PLAN_LIMITS = { starter: 50, pro: 300, schule: 99999 };
-const LICENSE_KEY_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const LICENSE_KEY_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 const SCHUL_CODE_RE = /^SCHULE-[0-9A-F]{12}$/;
 
 async function findCustomerByMeta(stripeKey, metaKey, metaValue) {
   if (metaKey !== 'license_key' && metaKey !== 'schul_code') {
-    throw new Error('Invalid metadata key');
+    throw new Error('Metadata key must be either license_key or schul_code');
   }
   const keyRegex = metaKey === 'license_key' ? LICENSE_KEY_RE : SCHUL_CODE_RE;
   if (typeof metaValue !== 'string' || !keyRegex.test(metaValue)) {
