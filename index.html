@@ -25,7 +25,7 @@
       --radius: 12px; --shadow: 0 3px 14px rgba(15,23,42,.07); --shadow-lg: 0 18px 44px rgba(15,23,42,.18);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: radial-gradient(circle at top left, #e8f0ff 0, var(--bg) 28%) fixed; color: var(--text); min-height: 100vh; line-height: 1.45; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: linear-gradient(180deg, #eef3ff 0, var(--bg) 200px) fixed; color: var(--text); min-height: 100vh; line-height: 1.45; }
     button { cursor: pointer; font-family: inherit; }
     input, select, textarea { font-family: inherit; }
     a { color: var(--primary); text-decoration: none; }
@@ -164,6 +164,10 @@
     }
     .help-hint:hover::after, .help-hint:focus-visible::after { opacity: 1; transform: translateX(-50%) translateY(0); }
     .help-hint:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+    .sr-only {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+    }
 
     @media (max-width: 768px) { .main { padding: .9rem .75rem; } }
     @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
@@ -311,7 +315,7 @@
         <div class="stat-card"><div class="stat-card__num" id="stat-korrigiert">–</div><div class="stat-card__lbl">Korrigiert</div></div>
       </div>
       <div class="card">
-        <div class="card__title">&#128197; Nächste Prüfungen <span class="help-hint" tabindex="0" aria-label="Info: Hier sehen Sie die nächsten Termine über alle Klassen hinweg." data-tip="Hier sehen Sie die nächsten Termine über alle Klassen hinweg."></span></div>
+        <div class="card__title">&#128197; Nächste Prüfungen <span class="help-hint" tabindex="0" role="button" aria-label="Info" aria-describedby="tip-next-exams" data-tip="Hier sehen Sie die nächsten Termine über alle Klassen hinweg."></span><span class="sr-only" id="tip-next-exams">Hier sehen Sie die nächsten Termine über alle Klassen hinweg.</span></div>
         <div id="dashboard-pruefungen-list"><p style="color:var(--text-muted);font-size:.875rem">Keine anstehenden Prüfungen.</p></div>
       </div>
     </div>
@@ -449,7 +453,7 @@
       </div>
       <div id="noten-tabelle-wrap"></div>
       <div id="noten-histogram-wrap" class="card hidden" style="margin-top:1rem">
-        <div class="card__title">&#128202; Notenverteilung <span class="help-hint" tabindex="0" aria-label="Info: Balken zeigen, wie oft jede Note in der gewählten Prüfung vorkommt." data-tip="Balken zeigen, wie oft jede Note in der gewählten Prüfung vorkommt."></span></div>
+        <div class="card__title">&#128202; Notenverteilung <span class="help-hint" tabindex="0" role="button" aria-label="Info" aria-describedby="tip-grade-distribution" data-tip="Balken zeigen, wie oft jede Note in der gewählten Prüfung vorkommt."></span><span class="sr-only" id="tip-grade-distribution">Balken zeigen, wie oft jede Note in der gewählten Prüfung vorkommt.</span></div>
         <div id="noten-histogram"></div>
       </div>
     </div>
