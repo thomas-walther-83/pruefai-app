@@ -25,7 +25,7 @@
       --radius: 12px; --shadow: 0 3px 14px rgba(15,23,42,.07); --shadow-lg: 0 18px 44px rgba(15,23,42,.18);
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: "Inter", "Segoe UI", Roboto, Arial, sans-serif; background: radial-gradient(circle at top left, #e8f0ff 0, var(--bg) 28%) fixed; color: var(--text); min-height: 100vh; line-height: 1.45; }
+    body { font-family: "Segoe UI", Roboto, Arial, sans-serif; background: radial-gradient(circle at top left, #e8f0ff 0, var(--bg) 28%) fixed; color: var(--text); min-height: 100vh; line-height: 1.45; }
     button { cursor: pointer; font-family: inherit; }
     input, select, textarea { font-family: inherit; }
     a { color: var(--primary); text-decoration: none; }
@@ -394,9 +394,9 @@
       </div>
       <div style="margin-bottom:.75rem">
         <label class="form-label">Filtern nach Prüfung</label>
-          <select class="form-control" id="lernstoff-filter-pruefung" style="max-width:320px" onchange="loadLernstoff()" title="Materialien nach Prüfung filtern">
-            <option value="">Alle Materialien</option>
-          </select>
+        <select class="form-control" id="lernstoff-filter-pruefung" style="max-width:320px" onchange="loadLernstoff()" title="Materialien nach Prüfung filtern">
+          <option value="">Alle Materialien</option>
+        </select>
       </div>
       <div id="lernstoff-list">
         <p style="color:var(--text-muted);font-size:.875rem">Noch keine Materialien hochgeladen.</p>
