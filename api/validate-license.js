@@ -1,17 +1,17 @@
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
 const PLAN_LIMITS = { starter: 50, pro: 300, schule: 99999 };
+const LICENSE_KEY_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+const SCHUL_CODE_RE = /^SCHULE-[0-9A-F]{12}$/;
 
-async function findCustomerByLicenseKey(stripeKey, licenseKey) {
-  const query = encodeURIComponent(`metadata['license_key']:'${licenseKey}'`);
-  const res = await fetch(`https://api.stripe.com/v1/customers/search?query=${query}&limit=1`, {
-    headers: { Authorization: `Bearer ${stripeKey}` },
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error?.message || 'Stripe search error');
-  return data.data && data.data.length > 0 ? data.data[0] : null;
-}
-
-async function findCustomerBySchulCode(stripeKey, schulCode) {
-  const query = encodeURIComponent(`metadata['schul_code']:'${schulCode}'`);
+async function findCustomerByMeta(stripeKey, metaKey, metaValue) {
+  if (metaKey !== 'license_key' && metaKey !== 'schul_code') {
+    throw new Error('Metadata key must be either license_key or schul_code');
+  }
+  const keyRegex = metaKey === 'license_key' ? LICENSE_KEY_RE : SCHUL_CODE_RE;
+  if (typeof metaValue !== 'string' || !keyRegex.test(metaValue)) {
+    return null;
+  }
+  const query = encodeURIComponent(`metadata['${metaKey}']:'${metaValue}'`);
   const res = await fetch(`https://api.stripe.com/v1/customers/search?query=${query}&limit=1`, {
     headers: { Authorization: `Bearer ${stripeKey}` },
   });
@@ -39,25 +39,50 @@ async function updateCustomerMetadata(stripeKey, customerId, metadata) {
 }
 
 export default async function handler(req, res) {
+  const origin = req.headers.origin || '';
+
+  if (origin && ALLOWED_ORIGINS.length > 0 && !ALLOWED_ORIGINS.includes(origin)) {
+    return res.status(403).json({ error: 'Origin not allowed.' });
+  }
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Vary', 'Origin');
+  }
+  if (req.method === 'OPTIONS') return res.status(204).end();
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
+  res.setHeader('Cache-Control', 'no-store');
 
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeKey) {
     return res.status(500).json({ error: 'STRIPE_SECRET_KEY not configured.' });
   }
 
-  const { license_key, schul_code, action } = req.body || {};
-  if (!license_key && !schul_code) {
+  const rawLicenseKey = typeof req.body?.license_key === 'string' ? req.body.license_key.trim() : '';
+  const rawSchulCode = typeof req.body?.schul_code === 'string' ? req.body.schul_code.trim().toUpperCase() : '';
+  const action = req.body?.action;
+  if (!rawLicenseKey && !rawSchulCode) {
     return res.status(400).json({ error: 'Missing license_key or schul_code.' });
+  }
+  if (rawLicenseKey && rawSchulCode) {
+    return res.status(400).json({ error: 'Provide either license_key or schul_code, not both.' });
+  }
+  if (rawLicenseKey && !LICENSE_KEY_RE.test(rawLicenseKey)) {
+    return res.status(200).json({ valid: false });
+  }
+  if (rawSchulCode && !SCHUL_CODE_RE.test(rawSchulCode)) {
+    return res.status(200).json({ valid: false });
   }
 
   let customer;
   try {
-    customer = schul_code
-      ? await findCustomerBySchulCode(stripeKey, schul_code)
-      : await findCustomerByLicenseKey(stripeKey, license_key);
+    customer = rawSchulCode
+      ? await findCustomerByMeta(stripeKey, 'schul_code', rawSchulCode)
+      : await findCustomerByMeta(stripeKey, 'license_key', rawLicenseKey);
   } catch (err) {
     return res.status(502).json({ error: 'Failed to reach Stripe API: ' + err.message });
   }
