@@ -172,6 +172,30 @@ export default async function handler(req, res) {
       await sendLicenseEmail(resendKey, customerEmail, licenseKey, plan);
 
       console.log(`Checkout completed: customer=${customerId}, email=${customerEmail}, plan=${plan}, license=${licenseKey}`);
+    } else if (event.type === 'customer.subscription.updated') {
+      const subscription = event.data.object;
+      const customerId = subscription.customer;
+      const priceId = subscription.items?.data?.[0]?.price?.id;
+
+      if (priceId) {
+        // Resolve the plan label from the price's product metadata (set in Stripe dashboard)
+        // Fall back to inspecting the price metadata directly
+        const priceRes = await fetch(`https://api.stripe.com/v1/prices/${priceId}?expand[]=product`, {
+          headers: { Authorization: `Bearer ${stripeKey}` },
+        });
+        const priceData = await priceRes.json();
+        const newPlan =
+          priceData.metadata?.plan ||
+          priceData.product?.metadata?.plan ||
+          null;
+
+        if (newPlan) {
+          await updateCustomerMetadata(stripeKey, customerId, { plan: newPlan });
+          console.log(`Subscription updated: customer=${customerId}, newPlan=${newPlan}`);
+        } else {
+          console.warn(`Subscription updated for customer=${customerId} but no plan metadata found on price ${priceId}`);
+        }
+      }
     } else if (event.type === 'customer.subscription.deleted') {
       const subscription = event.data.object;
       const customerId = subscription.customer;
@@ -182,6 +206,22 @@ export default async function handler(req, res) {
       });
 
       console.log(`Subscription deleted: customer=${customerId}`);
+    } else if (event.type === 'invoice.payment_failed') {
+      const invoice = event.data.object;
+      const customerId = invoice.customer;
+      const customerEmail = invoice.customer_email || '';
+      const attemptCount = invoice.attempt_count || 1;
+
+      // After 3 failed attempts, revoke access
+      if (attemptCount >= 3) {
+        await updateCustomerMetadata(stripeKey, customerId, {
+          license_key: '',
+          plan: 'none',
+        });
+        console.log(`Payment failed 3+ times, access revoked: customer=${customerId}`);
+      } else {
+        console.log(`Payment failed (attempt ${attemptCount}): customer=${customerId}, email=${customerEmail}`);
+      }
     }
   } catch (err) {
     console.error('Webhook handler error:', err.message);

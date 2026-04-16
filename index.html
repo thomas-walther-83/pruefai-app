@@ -1578,7 +1578,7 @@ async function kiKorrigieren(eintragsId) {
       if (used >= FREE_TRIAL_LIMIT) {
         showToast('Gratis-Kontingent aufgebraucht. Bitte Plan wählen.', 'error');
         window.open('/landing', '_blank');
-        return;
+        return 'limit';
       }
       localStorage.setItem(LS.FREE_USED, String(used + 1));
       updateFreeTrialBadge();
@@ -1592,7 +1592,7 @@ async function kiKorrigieren(eintragsId) {
       const d = await response.json();
       showToast(d.error || 'Kein aktiver Plan.', 'error');
       window.open('/landing', '_blank');
-      return;
+      return 'limit';
     }
     if (!response.ok) throw new Error('Claude API: ' + response.status + ' ' + await response.text());
     const data = await response.json();
@@ -1637,8 +1637,30 @@ async function kiAlleKorrigieren() {
   const sIds = new Set(schueler.map(function(s) { return s.id; }));
   const todo = eintraege.filter(function(e) { return sIds.has(e.schueler_id) && e.status === 'hochgeladen'; });
   if (!todo.length) { showToast('Keine hochgeladenen Prüfungen gefunden.', 'info'); return; }
+  // Pre-check trial budget
+  const licenseKey = localStorage.getItem('lernortai_license_key') || '';
+  if (!licenseKey) {
+    const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
+    const remaining = Math.max(0, FREE_TRIAL_LIMIT - used);
+    if (remaining === 0) {
+      showToast('Gratis-Kontingent aufgebraucht. Bitte Plan wählen.', 'error');
+      window.open('/landing', '_blank');
+      return;
+    }
+    if (remaining < todo.length) {
+      showToast('Nur noch ' + remaining + ' von ' + FREE_TRIAL_LIMIT + ' Gratis-Korrekturen verfügbar. Bitte Plan wählen.', 'error');
+      window.open('/landing', '_blank');
+      return;
+    }
+  }
   if (!confirm(todo.length + ' Prüfungen mit KI korrigieren?')) return;
-  for (let i = 0; i < todo.length; i++) { await kiKorrigieren(todo[i].id); showToast('Korrigiert: ' + (i+1) + '/' + todo.length, 'info'); }
+  let done = 0;
+  for (let i = 0; i < todo.length; i++) {
+    const result = await kiKorrigieren(todo[i].id);
+    if (result === 'limit') { showToast('Limit erreicht – ' + done + ' von ' + todo.length + ' Korrekturen abgeschlossen.', 'error'); return; }
+    done++;
+    showToast('Korrigiert: ' + done + '/' + todo.length, 'info');
+  }
   showToast('Alle Korrekturen abgeschlossen.', 'success');
 }
 
