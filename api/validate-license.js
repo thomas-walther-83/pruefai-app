@@ -10,6 +10,16 @@ async function findCustomerByLicenseKey(stripeKey, licenseKey) {
   return data.data && data.data.length > 0 ? data.data[0] : null;
 }
 
+async function findCustomerBySchulCode(stripeKey, schulCode) {
+  const query = encodeURIComponent(`metadata['schul_code']:'${schulCode}'`);
+  const res = await fetch(`https://api.stripe.com/v1/customers/search?query=${query}&limit=1`, {
+    headers: { Authorization: `Bearer ${stripeKey}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || 'Stripe search error');
+  return data.data && data.data.length > 0 ? data.data[0] : null;
+}
+
 async function updateCustomerMetadata(stripeKey, customerId, metadata) {
   const params = new URLSearchParams();
   for (const [k, v] of Object.entries(metadata)) {
@@ -38,14 +48,16 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'STRIPE_SECRET_KEY not configured.' });
   }
 
-  const { license_key, action } = req.body || {};
-  if (!license_key) {
-    return res.status(400).json({ error: 'Missing license_key.' });
+  const { license_key, schul_code, action } = req.body || {};
+  if (!license_key && !schul_code) {
+    return res.status(400).json({ error: 'Missing license_key or schul_code.' });
   }
 
   let customer;
   try {
-    customer = await findCustomerByLicenseKey(stripeKey, license_key);
+    customer = schul_code
+      ? await findCustomerBySchulCode(stripeKey, schul_code)
+      : await findCustomerByLicenseKey(stripeKey, license_key);
   } catch (err) {
     return res.status(502).json({ error: 'Failed to reach Stripe API: ' + err.message });
   }
