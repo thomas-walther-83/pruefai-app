@@ -365,8 +365,8 @@
         <button class="btn btn-primary" onclick="openModal('fach-modal')">+ Neues Fach</button>
       </div>
       <div class="card"><div class="table-wrap"><table>
-        <thead><tr><th>Fach</th><th>Kürzel</th><th>Aktionen</th></tr></thead>
-        <tbody id="faecher-tbody"><tr><td colspan="3" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Fächer erfasst.</td></tr></tbody>
+        <thead><tr><th>Fach</th><th>Kürzel</th><th>KI-Profil</th><th>Aktionen</th></tr></thead>
+        <tbody id="faecher-tbody"><tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Fächer erfasst.</td></tr></tbody>
       </table></div></div>
 
     <!-- Prüfungen -->
@@ -1402,8 +1402,8 @@ async function loadFaecher() {
     if (!rows.length) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Fächer erfasst.</td></tr>'; return; }
     const profilLabels = { mathematik: 'Mathematik', sprache: 'Sprache', naturwissenschaften: 'Naturwiss.', ict: 'ICT', wirtschaft: 'Wirtschaft' };
     tbody.innerHTML = rows.map(function(f) {
-      const profilBadge = f.ki_profil ? '<span class="badge badge-blue" style="margin-left:.4rem">' + (profilLabels[f.ki_profil] || f.ki_profil) + '</span>' : '';
-      return '<tr><td><strong>' + escHtml(f.name) + '</strong>' + profilBadge + '</td><td><span class="badge badge-blue">' + escHtml(f.kuerzel) + '</span></td><td>' +
+      const profilCell = f.ki_profil ? '<span class="badge badge-blue">' + escHtml(profilLabels[f.ki_profil] || f.ki_profil) + '</span>' : '<span style="color:var(--text-muted);font-size:.8rem">Standard</span>';
+      return '<tr><td><strong>' + escHtml(f.name) + '</strong></td><td><span class="badge badge-blue">' + escHtml(f.kuerzel) + '</span></td><td>' + profilCell + '</td><td>' +
       '<button class="btn btn-sm btn-secondary" onclick="editFach(\'' + f.id + '\')">&#9998;</button> ' +
       '<button class="btn btn-sm btn-danger" onclick="deleteFach(\'' + f.id + '\')">&#128465;</button></td></tr>';
     }).join('');
@@ -1972,7 +1972,7 @@ async function kiKorrigieren(eintragsId) {
     const data = await response.json();
     const raw = data.content && data.content[0] && data.content[0].text || '';
     let result;
-    try { const m = raw.match(/\{[\s\S]*\}/); result = JSON.parse(m ? m[0] : raw); }
+    try { const m = raw.match(/\{[\s\S]*\}/); result = JSON.parse(m ? m[0] : raw); result.ki_qualitaet_unsicher = false; }
     catch(pe) { throw new Error('KI-Antwort konnte nicht geparst werden: ' + raw); }
     kiPendingData = { eintragsId, result };
     showKiErgebnis(result, schueler && schueler.name || 'Schüler', pruefung && pruefung.max_punkte || 100);
@@ -2584,7 +2584,7 @@ async function runQualitaetsCheck() {
       const dataUrl = await blobToDataUrl(blob);
       return { type: 'image', source: { type: 'base64', media_type: blob.type || 'image/jpeg', data: dataUrl.split(',')[1] } };
     }))).filter(function(b) { return b !== null; });
-    const systemPrompt = 'Du bist ein zweiter unabhängiger Korrekteur. Eine erste KI hat folgendes Ergebnis erzielt: Note ' + result.note + ', Punkte ' + result.punkte + '. Kommentar: ' + (result.kommentar || '') + '. Bitte überprüfe kritisch, ob diese Bewertung korrekt ist. Antworte als JSON: {"bestaetigt": true/false, "note_vorschlag": <1.0-6.0>, "begruendung": "<string>", "abweichung": "<string oder null>"}';
+    const systemPrompt = 'Du bist ein zweiter unabhängiger Korrekteur. Eine erste KI hat folgendes Ergebnis erzielt: Note ' + Number(result.note) + ', Punkte ' + Number(result.punkte) + '. Kommentar: ' + JSON.stringify(result.kommentar || '') + '. Bitte überprüfe kritisch, ob diese Bewertung korrekt ist. Antworte als JSON: {"bestaetigt": true/false, "note_vorschlag": <1.0-6.0>, "begruendung": "<string>", "abweichung": "<string oder null>"}';
     const licenseKey = localStorage.getItem('lernortai_license_key') || '';
     const schulCode = localStorage.getItem('lernortai_schul_code') || '';
     const headers = { 'content-type': 'application/json' };
@@ -2645,7 +2645,8 @@ function parseCsvSchueler(text) {
   const lines = text.split(/\r?\n/).map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
   const rows = [];
   lines.forEach(function(line, idx) {
-    if (idx === 0 && !line.includes(';')) return; // skip header without semicolons
+    // Skip first line if it looks like a header (contains letters and no numeric first column)
+    if (idx === 0 && !/^\d/.test(line) && !line.match(/^[^;]+;/)) return;
     const parts = line.split(';');
     const name = (parts[0] || '').trim();
     const nummer = (parts[1] || '').trim();
@@ -2839,7 +2840,7 @@ function renderAnalytikContent(trendData, errorKeywords, schueler, eintraege) {
 
 function extractErrorKeywords(feedbacks) {
   // Simple keyword frequency analysis – filter stopwords
-  const stopwords = new Set(['und','die','der','das','des','den','dem','ist','ein','eine','einer','einer','nicht','auch','für','mit','von','in','an','zu','als','bei','es','auf','oder','so','wie','am','im','aus','nach','dass','wird','sind','haben','hat','sie','er','ich','wir','aber','noch','wird','kann','einer','wenn','dem','beim','nach','zum','zur','vor','durch','eine','sich','Schüler','kein','keine','mehr','sehr','gut','richtig','falsch','leider','bitte','noch','sollte','muss','alle','alle','sollten','viele']);
+  const stopwords = new Set(['und','die','der','das','des','den','dem','ist','ein','eine','einer','nicht','auch','für','mit','von','in','an','zu','als','bei','es','auf','oder','so','wie','am','im','aus','nach','dass','wird','sind','haben','hat','sie','er','ich','wir','aber','noch','kann','wenn','beim','zum','zur','vor','durch','eine','sich','kein','keine','mehr','sehr','gut','richtig','falsch','leider','bitte','sollte','muss','alle','sollten','viele']);
   const wordFreq = {};
   feedbacks.forEach(function(text) {
     if (!text) return;
