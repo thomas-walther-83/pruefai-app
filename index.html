@@ -1472,11 +1472,13 @@ async function saveKlasse() {
   if (!name || !schuljahr || (isBerufsschule && !beruf)) { showToast('Bitte alle Pflichtfelder ausfüllen.', 'error'); return; }
   if (isBerufsschule && !Number.isFinite(lehrjahr)) { showToast('Bitte ein Lehrjahr wählen.', 'error'); return; }
   try {
-    const payload = { name, beruf: isBerufsschule ? beruf : '', lehrjahr: lehrjahr, schuljahr };
+    const payload = isBerufsschule
+      ? { name, beruf, lehrjahr, schuljahr }
+      : { name, beruf: '', lehrjahr: null, schuljahr };
     if (id) {
       await sb.update('klassen', id, payload);
     } else {
-      await sb.insert('klassen', Object.assign(payload, { lehrer_id: lehrer_id }));
+      await sb.insert('klassen', { ...payload, lehrer_id: lehrer_id });
     }
     closeModal('klasse-modal'); showToast('Klasse gespeichert.', 'success'); loadKlassen(); loadDashboard();
   } catch(e) { showToast(e.message, 'error'); }
