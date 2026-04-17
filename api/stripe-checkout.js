@@ -24,11 +24,10 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'STRIPE_SECRET_KEY not configured.' });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lernortai.ch';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://pruefai.ch';
 
   const params = new URLSearchParams({
     mode: 'subscription',
-    'line_items[0][price]': priceId,
     'line_items[0][quantity]': '1',
     'metadata[plan]': plan,
     // Let Stripe automatically offer all payment methods enabled in the Dashboard

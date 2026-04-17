@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'STRIPE_SECRET_KEY not configured.' });
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lernortai.ch';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://pruefai.ch';
 
   const licenseKey = typeof req.body?.license_key === 'string' ? req.body.license_key.trim() : '';
   if (!licenseKey) {
