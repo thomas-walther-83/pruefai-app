@@ -7,6 +7,7 @@ export default async function handler(req, res) {
   const planMap = {
     starter: process.env.STRIPE_PRICE_STARTER,
     pro: process.env.STRIPE_PRICE_PRO,
+    max: process.env.STRIPE_PRICE_MAX || process.env.STRIPE_PRICE_SCHULE,
     schule: process.env.STRIPE_PRICE_SCHULE,
   };
 
@@ -34,7 +35,7 @@ export default async function handler(req, res) {
     // Let Stripe automatically offer all payment methods enabled in the Dashboard
     // (e.g. card, SEPA Direct Debit, TWINT for Swiss customers, etc.)
     'automatic_payment_methods[enabled]': 'true',
-    // Enable automatic invoice creation so schools can request paper invoices
+    // Enable automatic invoice creation
     'invoice_creation[enabled]': 'true',
     success_url: `${appUrl}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/`,

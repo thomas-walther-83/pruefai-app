@@ -771,9 +771,9 @@
       <a href="#" onclick="openStripePortal();return false;" style="font-size:.8rem;margin-top:.5rem;display:inline-block">Abo verwalten &#8594;</a>
     </div>
     <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
-      <div class="form-label" style="margin-bottom:.5rem">&#127979; Schulcode (für Schul-Plan)</div>
+      <div class="form-label" style="margin-bottom:.5rem">&#127979; Schulcode (nur für bestehende Schul-Lizenzen)</div>
       <input type="text" id="settings-schul-code" class="form-control" placeholder="SCHULE-XXXXXX" style="font-family:monospace;font-size:.8rem;text-transform:uppercase" />
-      <p class="form-hint" style="margin-top:.4rem">Schulcode vom Administrator erhalten? Hier eintragen – kein eigenes Abo nötig.</p>
+      <p class="form-hint" style="margin-top:.4rem">Nur für bestehende Teams mit Schulcode. Neue Abos sind auf Einzelpersonen ausgerichtet.</p>
     </div>
     <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
       <div class="form-label" style="margin-bottom:.5rem">&#128172; Feedback-Textbausteine <span class="pro-badge">Pro</span></div>
@@ -872,10 +872,10 @@
         <a href="/api/stripe-checkout?plan=pro" class="btn btn-primary btn-sm" style="display:block;text-align:center">Wählen</a>
       </div>
       <div class="upsell-plan">
-        <div class="upsell-plan__name">Schule</div>
-        <div class="upsell-plan__price"><sup style="font-size:.75rem;font-weight:600">CHF</sup>149<span style="font-size:.8rem;font-weight:400;color:var(--text-muted)">/Mt</span></div>
-        <div class="upsell-plan__desc">Unbegrenzt</div>
-        <a href="/api/stripe-checkout?plan=schule" class="btn btn-secondary btn-sm" style="display:block;text-align:center">Wählen</a>
+        <div class="upsell-plan__name">Max</div>
+        <div class="upsell-plan__price"><sup style="font-size:.75rem;font-weight:600">CHF</sup>49<span style="font-size:.8rem;font-weight:400;color:var(--text-muted)">/Mt</span></div>
+        <div class="upsell-plan__desc">5'000 Korrekturen</div>
+        <a href="/api/stripe-checkout?plan=max" class="btn btn-secondary btn-sm" style="display:block;text-align:center">Wählen</a>
       </div>
     </div>
     <div style="text-align:center">
@@ -1057,12 +1057,12 @@ function getOrCreateLehrerId() {
 // =============================================================
 function isPro() {
   const plan = localStorage.getItem('lernortai_plan') || '';
-  return plan === 'pro' || plan === 'schule';
+  return plan === 'pro' || plan === 'max' || plan === 'schule';
 }
 
 function requirePro(featureName) {
   if (isPro()) return true;
-  showToast('&#128274; ' + featureName + ' ist nur im Pro- oder Schul-Plan verfügbar.', 'info');
+  showToast('&#128274; ' + featureName + ' ist nur im Pro- oder Max-Plan verfügbar.', 'info');
   document.getElementById('upsell-modal').classList.remove('hidden');
   return false;
 }

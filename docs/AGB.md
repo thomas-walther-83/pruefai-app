@@ -41,7 +41,7 @@ Der Vertrag kommt durch die Bestellung eines kostenpflichtigen Plans über die Z
 
 - Das Konto ist nicht übertragbar.
 - Der Lizenzschlüssel darf nur für eigene schulische Zwecke verwendet werden.
-- Eine Weitergabe des Lizenzschlüssels an Dritte ist nicht gestattet (ausser im Rahmen des «Schule»-Plans für den internen Schulbetrieb).
+- Eine Weitergabe des Lizenzschlüssels an Dritte ist nicht gestattet.
 
 ---
 
@@ -55,7 +55,7 @@ Alle Preise sind in Schweizer Franken (CHF) angegeben und verstehen sich inklusi
 |------|-------|------------------|
 | Starter | CHF 9/Monat | 50 |
 | Pro | CHF 19/Monat | 300 |
-| Schule | CHF 149/Monat | Unbegrenzt |
+| Max | CHF 49/Monat | 5'000 |
 
 ### 4.2 Zahlung
 
