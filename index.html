@@ -366,10 +366,10 @@
           <h2 class="section-title">Klassen</h2>
           <p class="section-subtitle">Legen Sie Klassen als Grundlage für Schüler, Prüfungen und Noten an.</p>
         </div>
-        <button class="btn btn-primary" onclick="openModal('klasse-modal')" title="Neue Klasse mit Beruf und Schuljahr anlegen">+ Neue Klasse</button>
+        <button class="btn btn-primary" id="add-klasse-btn" onclick="openModal('klasse-modal')" title="Neue Klasse anlegen">+ Neue Klasse</button>
       </div>
       <div class="card"><div class="table-wrap"><table>
-        <thead><tr><th>Klasse</th><th>Beruf</th><th>Lehrjahr</th><th>Schuljahr</th><th>Schüler</th><th>Aktionen</th></tr></thead>
+        <thead><tr><th>Klasse</th><th id="klassen-th-beruf">Beruf</th><th id="klassen-th-lehrjahr">Lehrjahr</th><th>Schuljahr</th><th>Schüler</th><th>Aktionen</th></tr></thead>
         <tbody id="klassen-tbody"><tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Klassen erfasst.</td></tr></tbody>
       </table></div></div>
     </div>
@@ -570,14 +570,15 @@
     <input type="hidden" id="klasse-id" />
     <div class="form-row">
       <div class="form-group"><label class="form-label">Klassenname *</label><input type="text" id="klasse-name" class="form-control" placeholder="z.B. 1BI-A" /></div>
-      <div class="form-group"><label class="form-label">Beruf *</label><input type="text" id="klasse-beruf" class="form-control" placeholder="z.B. Informatiker/in" /></div>
+      <div class="form-group" id="klasse-beruf-group"><label class="form-label" id="klasse-beruf-label">Beruf *</label><input type="text" id="klasse-beruf" class="form-control" placeholder="z.B. Informatiker/in" /></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Lehrjahr *</label>
+      <div class="form-group" id="klasse-lehrjahr-group"><label class="form-label" id="klasse-lehrjahr-label">Lehrjahr *</label>
         <select id="klasse-lehrjahr" class="form-control"><option value="1">1. Lehrjahr</option><option value="2">2. Lehrjahr</option><option value="3">3. Lehrjahr</option><option value="4">4. Lehrjahr</option></select>
       </div>
       <div class="form-group"><label class="form-label">Schuljahr *</label><input type="text" id="klasse-schuljahr" class="form-control" placeholder="z.B. 2024/2025" /></div>
     </div>
+    <p id="klasse-schooltype-hint" class="form-hint" style="margin-bottom:.9rem"></p>
     <div class="modal__footer">
       <button class="btn btn-secondary" onclick="closeModal('klasse-modal')">Abbrechen</button>
       <button class="btn btn-primary" onclick="saveKlasse()">Speichern</button>
@@ -1093,6 +1094,29 @@ if ('serviceWorker' in navigator) {
 
 function applyConfig() {
   document.getElementById('header-school').textContent = cfg.schoolName || 'Pruefai';
+  updateKlassenSchoolTypeUI();
+  const klassenView = document.getElementById('view-klassen');
+  if (klassenView && klassenView.classList.contains('active')) loadKlassen();
+}
+
+function isBerufsschuleType() {
+  return (cfg.schoolType || '') === 'berufsschule';
+}
+
+function updateKlassenSchoolTypeUI() {
+  const isBerufsschule = isBerufsschuleType();
+  const berufGroup = document.getElementById('klasse-beruf-group');
+  const lehrjahrGroup = document.getElementById('klasse-lehrjahr-group');
+  const berufHeader = document.getElementById('klassen-th-beruf');
+  const lehrjahrHeader = document.getElementById('klassen-th-lehrjahr');
+  const hint = document.getElementById('klasse-schooltype-hint');
+  const addBtn = document.getElementById('add-klasse-btn');
+  if (berufGroup) berufGroup.style.display = isBerufsschule ? '' : 'none';
+  if (lehrjahrGroup) lehrjahrGroup.style.display = isBerufsschule ? '' : 'none';
+  if (berufHeader) berufHeader.style.display = isBerufsschule ? '' : 'none';
+  if (lehrjahrHeader) lehrjahrHeader.style.display = isBerufsschule ? '' : 'none';
+  if (hint) hint.textContent = isBerufsschule ? 'Beruf und Lehrjahr sind für Berufsschulen erforderlich.' : 'Für diesen Schultyp werden nur Klassenname und Schuljahr benötigt.';
+  if (addBtn) addBtn.title = isBerufsschule ? 'Neue Klasse mit Beruf und Schuljahr anlegen' : 'Neue Klasse anlegen';
 }
 
 // =============================================================
@@ -1366,12 +1390,20 @@ async function loadDashboard() {
 // =============================================================
 async function loadKlassen() {
   try {
+    updateKlassenSchoolTypeUI();
     const [rows, schueler] = await Promise.all([sb.select('klassen'), sb.select('schueler')]);
+    const isBerufsschule = isBerufsschuleType();
     const tbody = document.getElementById('klassen-tbody');
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Klassen erfasst.</td></tr>'; return; }
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="' + (isBerufsschule ? '6' : '4') + '" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Klassen erfasst.</td></tr>';
+      return;
+    }
     tbody.innerHTML = rows.map(function(k) {
       const cnt = schueler.filter(function(s) { return s.klasse_id === k.id; }).length;
-      return '<tr><td><strong>' + escHtml(k.name) + '</strong></td><td>' + escHtml(k.beruf) + '</td><td>' + k.lehrjahr + '. Lehrjahr</td><td>' + escHtml(k.schuljahr) + '</td><td>' + cnt + '</td><td>' +
+      const lehrjahrText = k.lehrjahr ? (k.lehrjahr + '. Lehrjahr') : '–';
+      return '<tr><td><strong>' + escHtml(k.name) + '</strong></td>' +
+        (isBerufsschule ? '<td>' + escHtml(k.beruf) + '</td><td>' + lehrjahrText + '</td>' : '') +
+        '<td>' + escHtml(k.schuljahr) + '</td><td>' + cnt + '</td><td>' +
         '<button class="btn btn-sm btn-secondary" onclick="editKlasse(\'' + k.id + '\')">&#9998;</button> ' +
         '<button class="btn btn-sm btn-danger" onclick="deleteKlasse(\'' + k.id + '\')">&#128465;</button></td></tr>';
     }).join('');
@@ -1380,6 +1412,7 @@ async function loadKlassen() {
 
 async function openModal(id) {
   if (id === 'klasse-modal') {
+    updateKlassenSchoolTypeUI();
     document.getElementById('klasse-id').value = '';
     document.getElementById('klasse-name').value = '';
     document.getElementById('klasse-beruf').value = '';
@@ -1419,10 +1452,11 @@ function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 async function editKlasse(id) {
   const rows = await sb.select('klassen', 'id=eq.' + id);
   const k = rows[0]; if (!k) return;
+  updateKlassenSchoolTypeUI();
   document.getElementById('klasse-id').value = k.id;
   document.getElementById('klasse-name').value = k.name;
-  document.getElementById('klasse-beruf').value = k.beruf;
-  document.getElementById('klasse-lehrjahr').value = k.lehrjahr;
+  document.getElementById('klasse-beruf').value = k.beruf || '';
+  document.getElementById('klasse-lehrjahr').value = String(k.lehrjahr || '1');
   document.getElementById('klasse-schuljahr').value = k.schuljahr;
   document.getElementById('klasse-modal-title').textContent = 'Klasse bearbeiten';
   document.getElementById('klasse-modal').classList.remove('hidden');
@@ -1431,15 +1465,18 @@ async function editKlasse(id) {
 async function saveKlasse() {
   const id = document.getElementById('klasse-id').value;
   const name = document.getElementById('klasse-name').value.trim();
+  const isBerufsschule = isBerufsschuleType();
   const beruf = document.getElementById('klasse-beruf').value.trim();
-  const lehrjahr = parseInt(document.getElementById('klasse-lehrjahr').value);
+  const lehrjahr = parseInt(document.getElementById('klasse-lehrjahr').value, 10);
   const schuljahr = document.getElementById('klasse-schuljahr').value.trim();
-  if (!name || !beruf || !schuljahr) { showToast('Bitte alle Pflichtfelder ausfüllen.', 'error'); return; }
+  if (!name || !schuljahr || (isBerufsschule && !beruf)) { showToast('Bitte alle Pflichtfelder ausfüllen.', 'error'); return; }
+  if (isBerufsschule && !Number.isFinite(lehrjahr)) { showToast('Bitte ein Lehrjahr wählen.', 'error'); return; }
   try {
+    const payload = { name, beruf: isBerufsschule ? beruf : '', lehrjahr: isBerufsschule ? lehrjahr : null, schuljahr };
     if (id) {
-      await sb.update('klassen', id, { name, beruf, lehrjahr, schuljahr });
+      await sb.update('klassen', id, payload);
     } else {
-      await sb.insert('klassen', { name, beruf, lehrjahr, schuljahr, lehrer_id: lehrer_id });
+      await sb.insert('klassen', Object.assign(payload, { lehrer_id: lehrer_id }));
     }
     closeModal('klasse-modal'); showToast('Klasse gespeichert.', 'success'); loadKlassen(); loadDashboard();
   } catch(e) { showToast(e.message, 'error'); }
