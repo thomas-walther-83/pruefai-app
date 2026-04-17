@@ -28,6 +28,7 @@ export default async function handler(req, res) {
 
   const params = new URLSearchParams({
     mode: 'subscription',
+    'line_items[0][price]': priceId,
     'line_items[0][quantity]': '1',
     'metadata[plan]': plan,
     // Let Stripe automatically offer all payment methods enabled in the Dashboard
