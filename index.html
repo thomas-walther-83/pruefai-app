@@ -2216,11 +2216,18 @@ async function sendHelpChatMessage() {
     const messages = (firstUserIdx > 0 ? apiMessages.slice(firstUserIdx) : apiMessages)
       .map(function(m) { return { role: m.role === 'assistant' ? 'assistant' : 'user', content: [{ type: 'text', text: m.text }] }; });
 
-    const response = await fetch('/api/claude', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: HELP_CHAT_MAX_TOKENS, system: HELP_CHAT_SYSTEM_PROMPT, messages: messages }),
-    });
+    let response;
+    try {
+      response = await fetch('/api/claude', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: HELP_CHAT_MAX_TOKENS, system: HELP_CHAT_SYSTEM_PROMPT, messages: messages }),
+      });
+    } catch (networkErr) {
+      helpChatHistory.push({ role: 'assistant', text: '⚠️ Der Hilfe-Server ist aktuell nicht erreichbar. Bitte prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.' });
+      renderHelpChat();
+      return;
+    }
 
     const newTrialToken = response.headers.get('x-trial-token');
     if (newTrialToken) localStorage.setItem(LS.TRIAL_TOKEN, newTrialToken);
@@ -2232,8 +2239,18 @@ async function sendHelpChatMessage() {
       return;
     }
     if (!response.ok) {
-      const statusMap = { 400: 'Ungültige Anfrage.', 401: 'Nicht autorisiert.', 403: 'Zugriff verweigert.', 500: 'Serverfehler bei der KI-Anfrage.', 502: 'KI-Dienst aktuell nicht erreichbar.', 503: 'KI-Dienst vorübergehend nicht verfügbar.', 504: 'Zeitüberschreitung beim KI-Dienst.' };
-      throw new Error(statusMap[response.status] || ('Claude API-Fehler (' + response.status + ').'));
+      const retryable = response.status === 502 || response.status === 503 || response.status === 504;
+      const statusMap = {
+        400: 'Ungültige Anfrage.',
+        401: 'Nicht autorisiert.',
+        403: 'Zugriff verweigert.',
+        500: 'Serverfehler bei der KI-Anfrage.',
+        502: 'KI-Dienst aktuell nicht erreichbar.',
+        503: 'KI-Dienst vorübergehend nicht verfügbar.',
+        504: 'Zeitüberschreitung beim KI-Dienst.',
+      };
+      const base = statusMap[response.status] || ('KI-Fehler (' + response.status + ').');
+      throw new Error(base + (retryable ? ' Bitte versuchen Sie es in einem Moment erneut.' : ''));
     }
     if (isTrialUser) {
       const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
@@ -2252,7 +2269,7 @@ async function sendHelpChatMessage() {
     helpChatHistory.push({ role: 'assistant', text: answer || 'Die KI-Antwort war leer. Bitte formulieren Sie Ihre Frage anders oder kontaktieren Sie den Support.' });
     renderHelpChat();
   } catch (e) {
-    helpChatHistory.push({ role: 'assistant', text: 'Es gab einen Fehler beim KI-Chat: ' + e.message });
+    helpChatHistory.push({ role: 'assistant', text: '⚠️ ' + e.message });
     renderHelpChat();
   } finally {
     btn.disabled = false;
