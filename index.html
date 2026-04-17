@@ -3090,11 +3090,11 @@ async function loadAnalytik() {
       e.ergebnis.aufgaben.forEach(function(a) { if (a.feedback) allFeedbacks.push(a.feedback); });
     });
     const errorKeywords = extractErrorKeywords(allFeedbacks);
-    el.innerHTML = renderAnalytikContent(trendData, errorKeywords, schueler, eintraege);
+    el.innerHTML = renderAnalytikContent(trendData, errorKeywords, schueler, eintraege, relevantPruefungen);
   } catch(e) { el.innerHTML = '<div class="alert alert-danger">Fehler: ' + escHtml(e.message) + '</div>'; }
 }
 
-function renderAnalytikContent(trendData, errorKeywords, schueler, eintraege) {
+function renderAnalytikContent(trendData, errorKeywords, schueler, eintraege, relevantPruefungen) {
   const sIds = new Set(schueler.map(function(s) { return s.id; }));
   let html = '';
   // Trend chart
@@ -3144,6 +3144,94 @@ function renderAnalytikContent(trendData, errorKeywords, schueler, eintraege) {
     });
     html += '</tbody></table></div>';
   }
+  html += '</div>';
+  // Jahresübersicht pro Schüler
+  if (relevantPruefungen && relevantPruefungen.length) {
+    html += renderJahresuebersicht(schueler, eintraege, relevantPruefungen);
+  }
+  return html;
+}
+
+function roundToHalf(n) { return Math.round(n * 2) / 2; }
+
+// Returns 1 for HJ1 (Aug–Jan) or 2 for HJ2 (Feb–Jul) based on exam date (YYYY-MM-DD)
+function getHalbjahr(datum) {
+  if (!datum) return null;
+  const month = parseInt(datum.slice(5, 7), 10);
+  return (month >= 8 && month <= 12) || month === 1 ? 1 : 2;
+}
+
+function renderJahresuebersicht(schueler, eintraege, relevantPruefungen) {
+  const pruefungMap = {};
+  relevantPruefungen.forEach(function(p) { pruefungMap[p.id] = p; });
+
+  // Categorise exams into HJ1 / HJ2
+  const hj1Exams = relevantPruefungen.filter(function(p) { return getHalbjahr(p.datum) === 1; });
+  const hj2Exams = relevantPruefungen.filter(function(p) { return getHalbjahr(p.datum) === 2; });
+  const hasHj1 = hj1Exams.length > 0;
+  const hasHj2 = hj2Exams.length > 0;
+
+  let html = '<div class="card" style="margin-top:1rem">';
+  html += '<div class="card__title">&#128203; Jahresübersicht pro Schüler/in <span class="pro-badge">Pro</span></div>';
+  html += '<p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.75rem">Noten über das gesamte Schuljahr, Halbjahresdurchschnitt und vorgeschlagene Zeugnisnote (gerundet auf 0.5)</p>';
+  html += '<div class="table-wrap"><table><thead><tr>';
+  html += '<th>Name</th>';
+  if (hasHj1) { html += '<th>HJ 1 – Noten</th><th>Ø HJ 1</th><th>Zeugnisnote HJ 1</th>'; }
+  if (hasHj2) { html += '<th>HJ 2 – Noten</th><th>Ø HJ 2</th><th>Zeugnisnote HJ 2</th>'; }
+  html += '<th>Jahresschnitt</th>';
+  html += '</tr></thead><tbody>';
+
+  const sortedSchueler = schueler.slice().sort(function(a, b) { return a.name.localeCompare(b.name); });
+
+  sortedSchueler.forEach(function(s) {
+    const sEintraege = eintraege.filter(function(e) { return e.schueler_id === s.id; });
+
+    function getNote(pruefungId) {
+      const e = sEintraege.find(function(e) { return e.pruefung_id === pruefungId; });
+      if (!e) return null;
+      const n = e.note_manuell || e.note;
+      return (n !== null && n !== undefined) ? parseFloat(n) : null;
+    }
+
+    function calcHj(exams) {
+      const notes = exams.map(function(p) { return getNote(p.id); }).filter(function(n) { return n !== null; });
+      const avg = notes.length ? notes.reduce(function(s, n) { return s + n; }, 0) / notes.length : null;
+      const zn = avg !== null ? roundToHalf(avg) : null;
+      return { notes: notes, avg: avg, zn: zn };
+    }
+
+    const hj1 = hasHj1 ? calcHj(hj1Exams) : null;
+    const hj2 = hasHj2 ? calcHj(hj2Exams) : null;
+    const allNotes = relevantPruefungen.map(function(p) { return getNote(p.id); }).filter(function(n) { return n !== null; });
+    const jahresAvg = allNotes.length ? allNotes.reduce(function(s, n) { return s + n; }, 0) / allNotes.length : null;
+
+    html += '<tr>';
+    html += '<td><strong>' + escHtml(s.name) + '</strong></td>';
+    if (hasHj1) {
+      if (hj1.notes.length) {
+        const noteSpans = hj1.notes.map(function(n) { return '<span class="badge ' + noteClass(n) + '" style="margin:1px">' + n.toFixed(1) + '</span>'; }).join('');
+        html += '<td>' + noteSpans + '</td>';
+        html += '<td>' + noteHtml(hj1.avg) + '</td>';
+        html += '<td>' + noteHtml(hj1.zn) + '</td>';
+      } else {
+        html += '<td colspan="3" style="color:var(--text-muted);font-size:.8rem">Keine Noten</td>';
+      }
+    }
+    if (hasHj2) {
+      if (hj2.notes.length) {
+        const noteSpans = hj2.notes.map(function(n) { return '<span class="badge ' + noteClass(n) + '" style="margin:1px">' + n.toFixed(1) + '</span>'; }).join('');
+        html += '<td>' + noteSpans + '</td>';
+        html += '<td>' + noteHtml(hj2.avg) + '</td>';
+        html += '<td>' + noteHtml(hj2.zn) + '</td>';
+      } else {
+        html += '<td colspan="3" style="color:var(--text-muted);font-size:.8rem">Keine Noten</td>';
+      }
+    }
+    html += '<td>' + (jahresAvg !== null ? noteHtml(jahresAvg) : '<span style="color:var(--text-muted)">–</span>') + '</td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
   html += '</div>';
   return html;
 }
