@@ -240,6 +240,37 @@
       .fab { display: flex; }
       .main { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
     }
+
+    /* Pro badge & lock overlay */
+    .pro-badge { display:inline-flex;align-items:center;gap:.2rem;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;padding:.1rem .45rem;border-radius:999px;font-size:.6rem;font-weight:700;vertical-align:middle;margin-left:.3rem; }
+    .pro-lock-wrap { position:relative; }
+    .pro-lock-overlay { position:absolute;inset:0;background:rgba(249,250,251,.92);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;z-index:10;flex-direction:column;gap:.5rem;text-align:center;padding:1rem; }
+    .pro-lock-overlay .pro-badge { font-size:.8rem;padding:.3rem .8rem; }
+
+    /* Rubric criteria */
+    .rubric-kriterium { display:flex;align-items:center;gap:.75rem;padding:.65rem .75rem;border:1px solid var(--border);border-radius:6px;margin-bottom:.5rem;background:var(--bg); }
+    .rubric-kriterium__name { flex:1;font-size:.875rem;font-weight:500; }
+    .rubric-kriterium__pts { font-size:.8rem;color:var(--text-muted);white-space:nowrap; }
+
+    /* Analytik trend chart */
+    .trend-chart-wrap { display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-end;margin-top:.75rem; }
+    .trend-col { display:flex;flex-direction:column;align-items:center;gap:.2rem;flex:1;min-width:60px; }
+    .trend-bar { width:100%;border-radius:3px 3px 0 0;min-height:4px;transition:opacity .15s; }
+    .trend-bar:hover { opacity:.75; }
+    .trend-lbl { font-size:.65rem;color:var(--text-muted);text-align:center;word-break:break-all; }
+    .trend-val { font-size:.75rem;font-weight:700; }
+
+    /* Textbausteine */
+    .textbaustein-chip { display:inline-flex;align-items:center;gap:.3rem;background:var(--primary-light);color:var(--primary);border:1px solid rgba(26,86,219,.25);border-radius:999px;padding:.25rem .65rem;font-size:.78rem;cursor:pointer;margin:.2rem;transition:background .1s; }
+    .textbaustein-chip:hover { background:#d4e3fe; }
+    .textbaustein-list-item { display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;border:1px solid var(--border);border-radius:6px;margin-bottom:.4rem;background:var(--bg); }
+    .textbaustein-list-item__text { flex:1;font-size:.875rem; }
+
+    /* CSV import preview */
+    .csv-preview-table { max-height:260px;overflow-y:auto; }
+
+    /* Quality check badge */
+    .badge-unsicher { background:#fef3c7;color:#92400e;border:1px solid #fcd34d; }
   </style>
 </head>
 <body>
@@ -293,6 +324,8 @@
     <button class="nav-tab" onclick="showView('lernstoff')" id="tab-lernstoff" title="Unterlagen für die KI-Korrektur hochladen">&#128196; Lernstoff</button>
     <button class="nav-tab" onclick="showView('korrektur')" id="tab-korrektur" title="KI-Korrekturen starten und prüfen">&#129302; Korrektur</button>
     <button class="nav-tab" onclick="showView('noten')" id="tab-noten" title="Notenübersicht und Exporte anzeigen">&#128200; Noten</button>
+    <button class="nav-tab" onclick="showView('rubrics')" id="tab-rubrics" title="Bewertungsraster definieren und wiederverwenden">&#128203; Rubrics <span class="pro-badge">Pro</span></button>
+    <button class="nav-tab" onclick="showView('analytik')" id="tab-analytik" title="Notentrends und Fehlerkatalog anzeigen">&#128201; Analytik <span class="pro-badge">Pro</span></button>
     <button class="nav-tab" onclick="showView('hilfe')" id="tab-hilfe" title="Hilfe und Rechtliches">&#10067; Hilfe</button>
   </nav>
 
@@ -352,6 +385,7 @@
           <select class="form-control" id="schueler-filter-klasse" style="width:auto" onchange="loadSchueler()" title="Liste nach Klasse filtern">
             <option value="">Alle Klassen</option>
           </select>
+          <button class="btn btn-secondary" onclick="openCsvImportModal()">&#128229; CSV-Import</button>
           <button class="btn btn-primary" onclick="openModal('schueler-modal')" title="Neuen Schüler erfassen">+ Neuer Schüler</button>
         </div>
       </div>
@@ -371,10 +405,9 @@
         <button class="btn btn-primary" onclick="openModal('fach-modal')" title="Neues Fach hinzufügen">+ Neues Fach</button>
       </div>
       <div class="card"><div class="table-wrap"><table>
-        <thead><tr><th>Fach</th><th>Kürzel</th><th>Aktionen</th></tr></thead>
-        <tbody id="faecher-tbody"><tr><td colspan="3" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Fächer erfasst.</td></tr></tbody>
+        <thead><tr><th>Fach</th><th>Kürzel</th><th>KI-Profil</th><th>Aktionen</th></tr></thead>
+        <tbody id="faecher-tbody"><tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Fächer erfasst.</td></tr></tbody>
       </table></div></div>
-    </div>
 
     <!-- Prüfungen -->
     <div id="view-pruefungen" class="view">
@@ -461,6 +494,34 @@
       <div id="noten-histogram-wrap" class="card hidden" style="margin-top:1rem">
         <div class="card__title">&#128202; Notenverteilung <span class="help-hint" tabindex="0" data-tip="Balken zeigen, wie oft jede Note in der gewählten Prüfung vorkommt."></span></div>
         <div id="noten-histogram"></div>
+      </div>
+    </div>
+
+    <!-- Rubrics (Pro) -->
+    <div id="view-rubrics" class="view">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h2 style="font-size:1.25rem;font-weight:700">&#128203; Bewertungsraster <span class="pro-badge">Pro</span></h2>
+        <button class="btn btn-primary" id="btn-new-rubric" onclick="openRubricModal()">+ Neues Raster</button>
+      </div>
+      <div class="alert alert-info" style="margin-bottom:1rem">
+        Definiere Bewertungsraster einmal und weise sie Prüfungen zu. Die KI nutzt das Raster als Korrekturgrundlage.
+      </div>
+      <div id="rubrics-list">
+        <p style="color:var(--text-muted);font-size:.875rem">Noch keine Bewertungsraster erstellt.</p>
+      </div>
+    </div>
+
+    <!-- Analytik (Pro) -->
+    <div id="view-analytik" class="view">
+      <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:1rem">&#128201; Analytik <span class="pro-badge">Pro</span></h2>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;align-items:flex-end">
+        <div style="flex:1;min-width:160px">
+          <label class="form-label">Klasse</label>
+          <select class="form-control" id="analytik-klasse-select" onchange="loadAnalytik()"><option value="">– wählen –</option></select>
+        </div>
+      </div>
+      <div id="analytik-content">
+        <div class="alert alert-info">Klasse wählen, um Trends und Fehlerkatalog anzuzeigen.</div>
       </div>
     </div>
 
@@ -552,6 +613,18 @@
       <div class="form-group"><label class="form-label">Fachname *</label><input type="text" id="fach-name" class="form-control" placeholder="z.B. Mathematik" /></div>
       <div class="form-group"><label class="form-label">Kürzel *</label><input type="text" id="fach-kuerzel" class="form-control" placeholder="z.B. M" maxlength="8" /></div>
     </div>
+    <div class="form-group">
+      <label class="form-label">KI-Korrekturprofil <span class="pro-badge">Pro</span></label>
+      <select id="fach-ki-profil" class="form-control">
+        <option value="">Standard</option>
+        <option value="mathematik">Mathematik – Rechenweg &amp; Genauigkeit</option>
+        <option value="sprache">Sprache &amp; Ausdruck – Grammatik, Stil, Kohärenz</option>
+        <option value="naturwissenschaften">Naturwissenschaften – Methodik &amp; Fachterminologie</option>
+        <option value="ict">ICT/Informatik – Korrektheit &amp; Best Practices</option>
+        <option value="wirtschaft">Wirtschaft/BWL – Fachkonzepte &amp; Praxisbezug</option>
+      </select>
+      <p class="form-hint">Beeinflusst, worauf die KI bei der Korrektur besonders achtet (Pro-Feature).</p>
+    </div>
     <div class="modal__footer">
       <button class="btn btn-secondary" onclick="closeModal('fach-modal')">Abbrechen</button>
       <button class="btn btn-primary" onclick="saveFach()">Speichern</button>
@@ -578,6 +651,11 @@
       <div id="pruefung-klassen-checkboxes" style="display:flex;flex-wrap:wrap;gap:.5rem;padding:.5rem;border:1px solid var(--border);border-radius:6px;max-height:120px;overflow-y:auto">
         <span style="color:var(--text-muted);font-size:.8rem">Klassen werden geladen…</span>
       </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Bewertungsraster <span class="pro-badge">Pro</span></label>
+      <select id="pruefung-rubric-id" class="form-control"><option value="">– kein Raster –</option></select>
+      <p class="form-hint">Wird als Korrekturgrundlage an die KI übergeben.</p>
     </div>
     <div class="form-group">
       <label class="form-label">KI-Anweisungen (Aufgabenstellung für die Korrektur)</label>
@@ -628,6 +706,13 @@
     <div class="modal__title">&#129302; KI-Korrektur Ergebnis</div>
     <button class="modal__close" onclick="closeModal('ki-ergebnis-modal')">&#10005;</button>
     <div id="ki-ergebnis-content"></div>
+    <div id="ki-qualitaets-wrap" class="hidden" style="margin-top:.75rem">
+      <div class="alert alert-warning">
+        &#9888;&#65039; <strong>Grenzfall</strong> – Note liegt im Bereich 3.5–4.5. Qualitätsprüfung empfohlen.
+        <button class="btn btn-sm btn-secondary" style="margin-left:auto;display:block;margin-top:.5rem" onclick="runQualitaetsCheck()">&#128270; Qualitätscheck starten <span class="pro-badge">Pro</span></button>
+      </div>
+      <div id="ki-qualitaets-result" class="hidden"></div>
+    </div>
     <div class="modal__footer">
       <button class="btn btn-secondary" onclick="closeModal('ki-ergebnis-modal')">Schliessen</button>
       <button class="btn btn-success" onclick="saveKiErgebnis()">&#10003; Note übernehmen</button>
@@ -676,6 +761,15 @@
       <div class="form-label" style="margin-bottom:.5rem">&#127979; Schulcode (für Schul-Plan)</div>
       <input type="text" id="settings-schul-code" class="form-control" placeholder="SCHULE-XXXXXX" style="font-family:monospace;font-size:.8rem;text-transform:uppercase" />
       <p class="form-hint" style="margin-top:.4rem">Schulcode vom Administrator erhalten? Hier eintragen – kein eigenes Abo nötig.</p>
+    </div>
+    <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
+      <div class="form-label" style="margin-bottom:.5rem">&#128172; Feedback-Textbausteine <span class="pro-badge">Pro</span></div>
+      <p class="form-hint" style="margin-bottom:.65rem">Häufige Rückmeldungen als 1-Klick-Bausteine speichern.</p>
+      <div id="textbausteine-settings-list"></div>
+      <div style="display:flex;gap:.5rem;margin-top:.65rem">
+        <input type="text" id="new-textbaustein-input" class="form-control" placeholder="z.B. Rechenweg fehlt" style="flex:1" />
+        <button class="btn btn-secondary btn-sm" onclick="addTextbaustein()">+ Hinzufügen</button>
+      </div>
     </div>
     <div class="modal__footer">
       <button class="btn btn-secondary" onclick="closeModal('settings-modal')">Abbrechen</button>
@@ -817,7 +911,97 @@
       <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('faecher')">&#128218; Fächer</button>
       <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('pruefungen')">&#128221; Prüfungen</button>
       <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('lernstoff')">&#128196; Lernstoff</button>
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('rubrics')">&#128203; Rubrics <span class="pro-badge">Pro</span></button>
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('analytik')">&#128201; Analytik <span class="pro-badge">Pro</span></button>
       <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('hilfe')">&#10067; Hilfe</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rubric Modal -->
+<div id="rubric-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:620px">
+    <div class="modal__title" id="rubric-modal-title">Neues Bewertungsraster</div>
+    <button class="modal__close" onclick="closeModal('rubric-modal')">&#10005;</button>
+    <input type="hidden" id="rubric-id" />
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Rastername *</label><input type="text" id="rubric-name" class="form-control" placeholder="z.B. Semesterprüfung Mathe" /></div>
+      <div class="form-group"><label class="form-label">Fach (optional)</label><select id="rubric-fach-id" class="form-control"><option value="">– beliebig –</option></select></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kriterien</label>
+      <div id="rubric-kriterien-list"></div>
+      <button class="btn btn-secondary btn-sm" style="margin-top:.5rem" onclick="addRubricKriterium()">+ Kriterium hinzufügen</button>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('rubric-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveRubric()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- CSV-Import Modal -->
+<div id="csv-import-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:620px">
+    <div class="modal__title">&#128229; Schüler per CSV importieren</div>
+    <button class="modal__close" onclick="closeModal('csv-import-modal')">&#10005;</button>
+    <div class="alert alert-info" style="margin-bottom:1rem">
+      CSV-Format: <strong>Name;Schülernummer;Klassenname</strong> (1 Schüler pro Zeile, erste Zeile wird als Kopfzeile ignoriert, wenn sie kein Semikolon enthält).
+    </div>
+    <div class="form-group">
+      <label class="form-label">Zielklasse *</label>
+      <select id="csv-import-klasse" class="form-control"><option value="">– wählen –</option></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">CSV-Datei *</label>
+      <div class="upload-zone" onclick="document.getElementById('csv-file-input').click()">
+        <div class="upload-zone__icon">&#128229;</div>
+        <div id="csv-file-name">CSV-Datei auswählen…</div>
+        <div style="font-size:.75rem;margin-top:.25rem;opacity:.8">.csv oder .txt – Trennzeichen: Semikolon (;)</div>
+      </div>
+      <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none" onchange="handleCsvFile(event)" />
+    </div>
+    <div id="csv-preview-wrap" class="hidden">
+      <label class="form-label">Vorschau (<span id="csv-preview-count">0</span> Schüler erkannt)</label>
+      <div class="csv-preview-table card" style="padding:.5rem">
+        <div class="table-wrap">
+          <table><thead><tr><th>Name</th><th>Nummer</th></tr></thead>
+          <tbody id="csv-preview-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('csv-import-modal')">Abbrechen</button>
+      <button class="btn btn-primary" id="csv-import-btn" onclick="doImportSchueler()" disabled>&#128229; Importieren</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manuelle Note Modal (mit Textbausteinen) -->
+<div id="manual-note-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:500px">
+    <div class="modal__title">&#9998; Note &amp; Feedback erfassen</div>
+    <button class="modal__close" onclick="closeModal('manual-note-modal')">&#10005;</button>
+    <input type="hidden" id="manual-note-eintrag-id" />
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Note * (1.0–6.0)</label>
+        <input type="number" id="manual-note-value" class="form-control" min="1" max="6" step="0.5" placeholder="z.B. 4.5" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Punkte (optional)</label>
+        <input type="number" id="manual-note-punkte" class="form-control" min="0" placeholder="z.B. 78" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kommentar / Feedback</label>
+      <textarea id="manual-note-kommentar" class="form-control" rows="3" placeholder="Rückmeldung für Schüler/in…"></textarea>
+      <div id="textbausteine-chips" style="margin-top:.5rem"></div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('manual-note-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveManualNote()">Speichern</button>
     </div>
   </div>
 </div>
@@ -843,6 +1027,7 @@ let relayPollInterval = null;
 let mobilePhotos   = [];
 let kiPendingData  = null;
 let lernstoffFileObj = null;
+let csvParsedRows   = [];
 let helpChatHistory = [];
 
 function getOrCreateLehrerId() {
@@ -852,6 +1037,21 @@ function getOrCreateLehrerId() {
     localStorage.setItem(LS.LEHRER_ID, id);
   }
   return id;
+}
+
+// =============================================================
+// PRO PLAN GATING
+// =============================================================
+function isPro() {
+  const plan = localStorage.getItem('lernortai_plan') || '';
+  return plan === 'pro' || plan === 'schule';
+}
+
+function requirePro(featureName) {
+  if (isPro()) return true;
+  showToast('&#128274; ' + featureName + ' ist nur im Pro- oder Schul-Plan verfügbar.', 'info');
+  document.getElementById('upsell-modal').classList.remove('hidden');
+  return false;
 }
 
 // =============================================================
@@ -886,9 +1086,10 @@ function applyConfig() {
 // LOKALE DATENBANK (IndexedDB)
 // =============================================================
 const IDB_NAME = 'lernortai';
-const IDB_VERSION = 1;
+const IDB_VERSION = 2;
 const IDB_STORES = ['lehrer','klassen','schueler','faecher','fach_klassen',
-  'pruefungen','pruefung_klassen','eintraege','seiten_uploads','lernmaterial','_files'];
+  'pruefungen','pruefung_klassen','eintraege','seiten_uploads','lernmaterial','_files',
+  'rubrics','textbausteine'];
 let _idb = null;
 
 function idbOpen() {
@@ -1110,6 +1311,8 @@ function showView(name) {
   if (name === 'lernstoff')  { loadPruefungenIntoSelect('lernstoff-filter-pruefung', true); loadLernstoff(); }
   if (name === 'korrektur')  { loadPruefungenIntoSelect('korrektur-pruefung-select'); loadKlassenIntoSelect('korrektur-klasse-select'); }
   if (name === 'noten')      { loadPruefungenIntoSelect('noten-pruefung-select'); loadKlassenIntoSelect('noten-klasse-select'); }
+  if (name === 'rubrics')    { if (!requirePro('Bewertungsraster')) { showView('dashboard'); return; } loadRubrics(); }
+  if (name === 'analytik')   { if (!requirePro('Analytik')) { showView('dashboard'); return; } loadKlassenIntoSelect('analytik-klasse-select'); }
   if (name === 'hilfe')      { initHelpView(); }
 }
 
@@ -1193,6 +1396,7 @@ async function openModal(id) {
     document.getElementById('pruefung-modal-title').textContent = 'Neue Prüfung';
     await loadFaecherIntoSelect('pruefung-fach-id');
     await loadKlassenCheckboxes();
+    await loadRubricsIntoSelect('pruefung-rubric-id');
   }
   document.getElementById(id).classList.remove('hidden');
 }
@@ -1292,9 +1496,11 @@ async function loadFaecher() {
   try {
     const rows = await sb.select('faecher');
     const tbody = document.getElementById('faecher-tbody');
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="3" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Fächer erfasst.</td></tr>'; return; }
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Fächer erfasst.</td></tr>'; return; }
+    const profilLabels = { mathematik: 'Mathematik', sprache: 'Sprache', naturwissenschaften: 'Naturwiss.', ict: 'ICT', wirtschaft: 'Wirtschaft' };
     tbody.innerHTML = rows.map(function(f) {
-      return '<tr><td><strong>' + escHtml(f.name) + '</strong></td><td><span class="badge badge-blue">' + escHtml(f.kuerzel) + '</span></td><td>' +
+      const profilCell = f.ki_profil ? '<span class="badge badge-blue">' + escHtml(profilLabels[f.ki_profil] || f.ki_profil) + '</span>' : '<span style="color:var(--text-muted);font-size:.8rem">Standard</span>';
+      return '<tr><td><strong>' + escHtml(f.name) + '</strong></td><td><span class="badge badge-blue">' + escHtml(f.kuerzel) + '</span></td><td>' + profilCell + '</td><td>' +
       '<button class="btn btn-sm btn-secondary" onclick="editFach(\'' + f.id + '\')">&#9998;</button> ' +
       '<button class="btn btn-sm btn-danger" onclick="deleteFach(\'' + f.id + '\')">&#128465;</button></td></tr>';
     }).join('');
@@ -1307,6 +1513,7 @@ async function editFach(id) {
   document.getElementById('fach-id').value = f.id;
   document.getElementById('fach-name').value = f.name;
   document.getElementById('fach-kuerzel').value = f.kuerzel;
+  document.getElementById('fach-ki-profil').value = f.ki_profil || '';
   document.getElementById('fach-modal-title').textContent = 'Fach bearbeiten';
   document.getElementById('fach-modal').classList.remove('hidden');
 }
@@ -1315,12 +1522,13 @@ async function saveFach() {
   const id = document.getElementById('fach-id').value;
   const name = document.getElementById('fach-name').value.trim();
   const kuerzel = document.getElementById('fach-kuerzel').value.trim().toUpperCase();
+  const ki_profil = document.getElementById('fach-ki-profil').value || null;
   if (!name || !kuerzel) { showToast('Bitte alle Pflichtfelder ausfüllen.', 'error'); return; }
   try {
     if (id) {
-      await sb.update('faecher', id, { name, kuerzel });
+      await sb.update('faecher', id, { name, kuerzel, ki_profil });
     } else {
-      await sb.insert('faecher', { name, kuerzel, lehrer_id: lehrer_id });
+      await sb.insert('faecher', { name, kuerzel, ki_profil, lehrer_id: lehrer_id });
     }
     closeModal('fach-modal'); showToast('Fach gespeichert.', 'success'); loadFaecher();
   } catch(e) { showToast(e.message, 'error'); }
@@ -1364,12 +1572,14 @@ async function editPruefung(id) {
   const p = rows[0]; if (!p) return;
   await loadFaecherIntoSelect('pruefung-fach-id');
   await loadKlassenCheckboxes(id);
+  await loadRubricsIntoSelect('pruefung-rubric-id');
   document.getElementById('pruefung-id').value = p.id;
   document.getElementById('pruefung-name').value = p.name;
   document.getElementById('pruefung-datum').value = p.datum || '';
   document.getElementById('pruefung-fach-id').value = p.fach_id || '';
   document.getElementById('pruefung-max-punkte').value = p.max_punkte;
   document.getElementById('pruefung-anweisungen').value = p.anweisungen || '';
+  document.getElementById('pruefung-rubric-id').value = p.rubric_id || '';
   document.getElementById('pruefung-modal-title').textContent = 'Prüfung bearbeiten';
   document.getElementById('pruefung-modal').classList.remove('hidden');
 }
@@ -1381,11 +1591,12 @@ async function savePruefung() {
   const fachId = document.getElementById('pruefung-fach-id').value || null;
   const maxPunkte = parseFloat(document.getElementById('pruefung-max-punkte').value) || 100;
   const anweisungen = document.getElementById('pruefung-anweisungen').value.trim() || null;
+  const rubricId = document.getElementById('pruefung-rubric-id').value || null;
   if (!name) { showToast('Name ist ein Pflichtfeld.', 'error'); return; }
   const checked = Array.from(document.querySelectorAll('#pruefung-klassen-checkboxes input[type=checkbox]:checked')).map(function(cb) { return cb.value; });
   try {
     let pruefungId = id;
-    const payload = { name, datum, fach_id: fachId, max_punkte: maxPunkte, anweisungen };
+    const payload = { name, datum, fach_id: fachId, max_punkte: maxPunkte, anweisungen, rubric_id: rubricId };
     if (id) {
       await sb.update('pruefungen', id, payload);
     } else {
@@ -1785,6 +1996,32 @@ async function kiKorrigieren(eintragsId) {
     ]);
     const pruefung = pruefungen[0]; const schueler = schuelerRows[0];
     showToast('KI-Korrektur läuft…', 'info');
+
+    // Load fach ki_profil and rubric (Pro features, gracefully optional)
+    let kiProfilInstruction = '';
+    if (pruefung && pruefung.fach_id) {
+      const fachRows = await sb.select('faecher', 'id=eq.' + pruefung.fach_id);
+      const fach = fachRows[0];
+      if (fach && fach.ki_profil && isPro()) {
+        const profilMap = {
+          mathematik: 'Achte besonders auf korrekte Rechenwege, Zwischenschritte und mathematische Genauigkeit.',
+          sprache: 'Achte besonders auf Grammatik, Orthographie, Stil, Kohärenz und sprachlichen Ausdruck.',
+          naturwissenschaften: 'Achte besonders auf korrekte Fachterminologie, wissenschaftliche Methodik und logischen Aufbau.',
+          ict: 'Achte besonders auf Korrektheit, Best Practices, Effizienz und Vollständigkeit des Codes / der Lösung.',
+          wirtschaft: 'Achte besonders auf korrekte Fachbegriffe, wirtschaftliche Konzepte und Praxisbezug.',
+        };
+        kiProfilInstruction = profilMap[fach.ki_profil] || '';
+      }
+    }
+    let rubricInstruction = '';
+    if (pruefung && pruefung.rubric_id && isPro()) {
+      const rubricRows = await sb.select('rubrics', 'id=eq.' + pruefung.rubric_id);
+      const rubric = rubricRows[0];
+      if (rubric && rubric.kriterien && rubric.kriterien.length) {
+        rubricInstruction = '\nBewertungsraster "' + rubric.name + '":\n' +
+          rubric.kriterien.map(function(k) { return '- ' + k.name + ' (' + k.max_punkte + ' Pkt)' + (k.beschreibung ? ': ' + k.beschreibung : ''); }).join('\n');
+      }
+    }
     const imageBlocks = (await Promise.all(seiten.map(async function(s) {
       const storagePath = s.storage_pfad.replace(/^pruefungsfotos\//, '');
       const fetchUrl = await sbStorageUrl('pruefungsfotos', storagePath);
@@ -1794,7 +2031,7 @@ async function kiKorrigieren(eintragsId) {
       const dataUrl = await blobToDataUrl(blob);
       return { type: 'image', source: { type: 'base64', media_type: blob.type || 'image/jpeg', data: dataUrl.split(',')[1] } };
     }))).filter(function(b) { return b !== null; });
-    const systemPrompt = 'Du bist ein erfahrener Berufsschullehrer in der Schweiz.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\nAntworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "...", "max": <Zahl>, "erreicht": <Zahl>, "feedback": "..."}]}';
+    const systemPrompt = 'Du bist ein erfahrener Berufsschullehrer in der Schweiz.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\n' + (kiProfilInstruction ? kiProfilInstruction + '\n' : '') + (rubricInstruction ? rubricInstruction + '\n' : '') + 'Antworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "...", "max": <Zahl>, "erreicht": <Zahl>, "feedback": "..."}]}';
     const userContent = imageBlocks.concat([{ type: 'text', text: 'Prüfung: ' + (pruefung && pruefung.name || '') + '\nSchüler: ' + (schueler && schueler.name || '') + '\nMax. Punkte: ' + (pruefung && pruefung.max_punkte || 100) + (pruefung && pruefung.anweisungen ? '\nAufgabenstellung:\n' + pruefung.anweisungen : '') + '\n\nBitte korrigiere diese Prüfung als JSON.' }]);
     const licenseKey = localStorage.getItem('lernortai_license_key') || '';
     const schulCode = localStorage.getItem('lernortai_schul_code') || '';
@@ -1832,7 +2069,7 @@ async function kiKorrigieren(eintragsId) {
     const data = await response.json();
     const raw = data.content && data.content[0] && data.content[0].text || '';
     let result;
-    try { const m = raw.match(/\{[\s\S]*\}/); result = JSON.parse(m ? m[0] : raw); }
+    try { const m = raw.match(/\{[\s\S]*\}/); result = JSON.parse(m ? m[0] : raw); result.ki_qualitaet_unsicher = false; }
     catch(pe) { throw new Error('KI-Antwort konnte nicht geparst werden: ' + raw); }
     kiPendingData = { eintragsId, result };
     showKiErgebnis(result, schueler && schueler.name || 'Schüler', pruefung && pruefung.max_punkte || 100);
@@ -1844,12 +2081,24 @@ function showKiErgebnis(result, name, maxPunkte) {
   document.getElementById('ki-ergebnis-content').innerHTML =
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">' +
     '<div><strong>' + escHtml(name) + '</strong><div style="font-size:.8rem;color:var(--text-muted)">' + (result.punkte || '–') + ' / ' + maxPunkte + ' Punkte</div></div>' +
-    '<div class="stat-card" style="text-align:center;padding:.75rem 1.5rem"><div class="stat-card__num ' + noteClass(n) + '">' + n.toFixed(1) + '</div><div class="stat-card__lbl">Note</div></div></div>' +
+    '<div class="stat-card" style="text-align:center;padding:.75rem 1.5rem"><div class="stat-card__num ' + noteClass(n) + '">' + n.toFixed(1) + '</div>' +
+    (result.ki_qualitaet_unsicher ? '<div class="badge badge-unsicher" style="margin-top:.25rem">&#9888;&#65039; Grenzfall</div>' : '') +
+    '<div class="stat-card__lbl">Note</div></div></div>' +
     '<div class="alert ' + (n >= 4.0 ? 'alert-success' : 'alert-danger') + '" style="margin-bottom:1rem">' + (n >= 4.0 ? '&#10003; Bestanden' : '&#10007; Nicht bestanden') + '</div>' +
     (result.kommentar ? '<p style="margin-bottom:1rem;font-size:.875rem"><strong>Kommentar:</strong> ' + escHtml(result.kommentar) + '</p>' : '') +
     ((result.aufgaben || []).length ? '<div class="table-wrap"><table><thead><tr><th>Aufgabe</th><th>Max.</th><th>Erreicht</th><th>Feedback</th></tr></thead><tbody>' +
       result.aufgaben.map(function(a) { return '<tr><td>' + escHtml(a.bezeichnung || '') + '</td><td>' + (a.max || '') + '</td><td>' + (a.erreicht || '') + '</td><td><small>' + escHtml(a.feedback || '') + '</small></td></tr>'; }).join('') +
       '</tbody></table></div>' : '');
+  // Show quality check option for borderline grades (Pro feature)
+  const qualWrap = document.getElementById('ki-qualitaets-wrap');
+  const qualResult = document.getElementById('ki-qualitaets-result');
+  qualResult.classList.add('hidden');
+  qualResult.innerHTML = '';
+  if (n >= 3.5 && n <= 4.5) {
+    qualWrap.classList.remove('hidden');
+  } else {
+    qualWrap.classList.add('hidden');
+  }
   document.getElementById('ki-ergebnis-modal').classList.remove('hidden');
 }
 
@@ -2005,12 +2254,27 @@ async function sendHelpChatMessage() {
 }
 
 async function noteManuelleingabe(eintragsId) {
-  const noteStr = prompt('Manuelle Note eingeben (1.0–6.0):');
-  if (noteStr === null) return;
-  const note = parseFloat(noteStr.replace(',', '.'));
-  if (isNaN(note) || note < 1.0 || note > 6.0) { showToast('Ungültige Note.', 'error'); return; }
-  try { await sb.update('eintraege', eintragsId, { note_manuell: note, status: 'abgeschlossen' }); showToast('Note gespeichert.', 'success'); loadKorrekturEintraege(); }
-  catch(e) { showToast(e.message, 'error'); }
+  document.getElementById('manual-note-eintrag-id').value = eintragsId;
+  document.getElementById('manual-note-value').value = '';
+  document.getElementById('manual-note-punkte').value = '';
+  document.getElementById('manual-note-kommentar').value = '';
+  await renderTextbausteineChips();
+  document.getElementById('manual-note-modal').classList.remove('hidden');
+}
+
+async function saveManualNote() {
+  const eintragsId = document.getElementById('manual-note-eintrag-id').value;
+  const noteStr = document.getElementById('manual-note-value').value.replace(',', '.');
+  const note = parseFloat(noteStr);
+  if (isNaN(note) || note < 1.0 || note > 6.0) { showToast('Ungültige Note (1.0–6.0).', 'error'); return; }
+  const punkte = parseFloat(document.getElementById('manual-note-punkte').value) || null;
+  const kommentar = document.getElementById('manual-note-kommentar').value.trim() || null;
+  try {
+    await sb.update('eintraege', eintragsId, { note_manuell: note, punkte: punkte, kommentar: kommentar, status: 'abgeschlossen' });
+    closeModal('manual-note-modal');
+    showToast('Note gespeichert.', 'success');
+    loadKorrekturEintraege();
+  } catch(e) { showToast(e.message, 'error'); }
 }
 
 // =============================================================
@@ -2154,6 +2418,7 @@ async function openSettingsModal() {
       el.innerHTML = '&#9888;&#65039; Gratis-Kontingent aufgebraucht. <a href="/landing">Plan wählen &#8594;</a>';
     }
   }
+  await loadTextbausteineSettings();
   document.getElementById('settings-modal').classList.remove('hidden');
 }
 
@@ -2222,8 +2487,10 @@ async function checkLicenseInfo(key, schulCode) {
     const el = document.getElementById('license-info');
     if (!el) return;
     if (d.valid) {
+      localStorage.setItem('lernortai_plan', d.plan || '');
       el.innerHTML = '&#10003;&#65039; Aktiv – Plan: <strong>' + d.plan + '</strong> | Korrekturen: ' + d.corrections_this_month + ' / ' + (d.limit >= 99999 ? '&#8734;' : d.limit);
     } else {
+      localStorage.removeItem('lernortai_plan');
       el.innerHTML = '&#10060; Ungültig oder abgelaufen. <a href="/landing">Plan wählen &#8594;</a>';
     }
   } catch(e) { /* ignore */ }
@@ -2393,6 +2660,405 @@ document.addEventListener('keydown', function(e) {
     document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(function(m) { m.classList.add('hidden'); });
   }
 });
+
+// =============================================================
+// RUBRICS (Bewertungsraster) – Pro Feature
+// =============================================================
+async function loadRubrics() {
+  try {
+    const [rows, faecher] = await Promise.all([sb.select('rubrics'), sb.select('faecher')]);
+    const fm = {};
+    faecher.forEach(function(f) { fm[f.id] = f.name; });
+    const el = document.getElementById('rubrics-list');
+    if (!rows.length) { el.innerHTML = '<p style="color:var(--text-muted);font-size:.875rem">Noch keine Bewertungsraster erstellt.</p>'; return; }
+    el.innerHTML = rows.map(function(r) {
+      const kriterien = (r.kriterien || []);
+      const totalPts = kriterien.reduce(function(s, k) { return s + (k.max_punkte || 0); }, 0);
+      return '<div class="card" style="margin-bottom:.75rem">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem">' +
+        '<div><div class="card__title" style="margin-bottom:.25rem">&#128203; ' + escHtml(r.name) + '</div>' +
+        '<div style="font-size:.8rem;color:var(--text-muted)">' + (r.fach_id && fm[r.fach_id] ? escHtml(fm[r.fach_id]) + ' · ' : '') + kriterien.length + ' Kriterien · ' + totalPts + ' Punkte total</div></div>' +
+        '<div style="display:flex;gap:.5rem">' +
+        '<button class="btn btn-sm btn-secondary" onclick="editRubric(\'' + r.id + '\')">&#9998;</button> ' +
+        '<button class="btn btn-sm btn-danger" onclick="deleteRubric(\'' + r.id + '\')">&#128465;</button></div></div>' +
+        (kriterien.length ? '<div>' + kriterien.map(function(k) {
+          return '<div class="rubric-kriterium"><span class="rubric-kriterium__name">' + escHtml(k.name) + (k.beschreibung ? '<span style="font-size:.75rem;color:var(--text-muted);display:block">' + escHtml(k.beschreibung) + '</span>' : '') + '</span><span class="rubric-kriterium__pts">' + k.max_punkte + ' Pkt</span></div>';
+        }).join('') + '</div>' : '') + '</div>';
+    }).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function openRubricModal() {
+  document.getElementById('rubric-id').value = '';
+  document.getElementById('rubric-name').value = '';
+  await loadFaecherIntoSelect('rubric-fach-id');
+  document.getElementById('rubric-kriterien-list').innerHTML = '';
+  document.getElementById('rubric-modal-title').textContent = 'Neues Bewertungsraster';
+  document.getElementById('rubric-modal').classList.remove('hidden');
+}
+
+async function editRubric(id) {
+  const rows = await sb.select('rubrics', 'id=eq.' + id);
+  const r = rows[0]; if (!r) return;
+  await loadFaecherIntoSelect('rubric-fach-id');
+  document.getElementById('rubric-id').value = r.id;
+  document.getElementById('rubric-name').value = r.name;
+  document.getElementById('rubric-fach-id').value = r.fach_id || '';
+  const list = document.getElementById('rubric-kriterien-list');
+  list.innerHTML = '';
+  (r.kriterien || []).forEach(function(k) { appendRubricKriteriumRow(k.name, k.max_punkte, k.beschreibung); });
+  document.getElementById('rubric-modal-title').textContent = 'Bewertungsraster bearbeiten';
+  document.getElementById('rubric-modal').classList.remove('hidden');
+}
+
+function addRubricKriterium() { appendRubricKriteriumRow('', 10, ''); }
+
+function appendRubricKriteriumRow(name, pts, beschreibung) {
+  const row = document.createElement('div');
+  row.className = 'rubric-kriterium';
+  row.innerHTML = '<input type="text" class="form-control rk-name" placeholder="Kriteriumname *" value="' + escHtml(name) + '" style="flex:2" />' +
+    '<input type="number" class="form-control rk-pts" placeholder="Pkt" value="' + (pts || '') + '" min="0" style="width:70px;flex:none" />' +
+    '<input type="text" class="form-control rk-desc" placeholder="Beschreibung (opt.)" value="' + escHtml(beschreibung || '') + '" style="flex:3" />' +
+    '<button class="btn btn-sm btn-danger" onclick="this.closest(\'.rubric-kriterium\').remove()">&#10005;</button>';
+  document.getElementById('rubric-kriterien-list').appendChild(row);
+}
+
+async function saveRubric() {
+  const id = document.getElementById('rubric-id').value;
+  const name = document.getElementById('rubric-name').value.trim();
+  const fachId = document.getElementById('rubric-fach-id').value || null;
+  if (!name) { showToast('Rastername ist Pflicht.', 'error'); return; }
+  const rows = document.querySelectorAll('#rubric-kriterien-list .rubric-kriterium');
+  const kriterien = [];
+  let valid = true;
+  rows.forEach(function(row) {
+    const n = row.querySelector('.rk-name').value.trim();
+    const p = parseFloat(row.querySelector('.rk-pts').value) || 0;
+    const d = row.querySelector('.rk-desc').value.trim();
+    if (!n) { valid = false; return; }
+    kriterien.push({ name: n, max_punkte: p, beschreibung: d || null });
+  });
+  if (!valid) { showToast('Alle Kriterien benötigen einen Namen.', 'error'); return; }
+  try {
+    const payload = { name, fach_id: fachId, kriterien };
+    if (id) { await sb.update('rubrics', id, payload); }
+    else { await sb.insert('rubrics', payload); }
+    closeModal('rubric-modal'); showToast('Bewertungsraster gespeichert.', 'success'); loadRubrics();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteRubric(id) {
+  if (!confirm('Bewertungsraster wirklich löschen?')) return;
+  try { await sb.delete('rubrics', id); showToast('Raster gelöscht.', 'success'); loadRubrics(); }
+  catch(e) { showToast(e.message, 'error'); }
+}
+
+async function loadRubricsIntoSelect(selectId) {
+  try {
+    const rows = await sb.select('rubrics');
+    const el = document.getElementById(selectId); if (!el) return;
+    const cur = el.value;
+    el.innerHTML = '<option value="">– kein Raster –</option>' + rows.map(function(r) {
+      return '<option value="' + r.id + '">' + escHtml(r.name) + '</option>';
+    }).join('');
+    if (cur) el.value = cur;
+  } catch(e) { /* ignore */ }
+}
+
+// =============================================================
+// QUALITÄTSMODUS – Pro Feature
+// =============================================================
+async function runQualitaetsCheck() {
+  if (!requirePro('Qualitätscheck')) return;
+  if (!kiPendingData) return;
+  const btn = document.querySelector('#ki-qualitaets-wrap button');
+  if (btn) { btn.disabled = true; btn.textContent = '&#8987; Prüfe…'; }
+  try {
+    const { eintragsId, result } = kiPendingData;
+    const eintraege = await sb.select('eintraege', 'id=eq.' + eintragsId);
+    const eintrag = eintraege[0];
+    const seiten = await sb.select('seiten_uploads', 'eintrag_id=eq.' + eintragsId + '&order=seitennummer.asc');
+    const imageBlocks = (await Promise.all(seiten.map(async function(s) {
+      const storagePath = s.storage_pfad.replace(/^pruefungsfotos\//, '');
+      const fetchUrl = await sbStorageUrl('pruefungsfotos', storagePath);
+      if (!fetchUrl) return null;
+      const res = await fetch(fetchUrl);
+      const blob = await res.blob();
+      const dataUrl = await blobToDataUrl(blob);
+      return { type: 'image', source: { type: 'base64', media_type: blob.type || 'image/jpeg', data: dataUrl.split(',')[1] } };
+    }))).filter(function(b) { return b !== null; });
+    const systemPrompt = 'Du bist ein zweiter unabhängiger Korrekteur. Eine erste KI hat folgendes Ergebnis erzielt: Note ' + Number(result.note) + ', Punkte ' + Number(result.punkte) + '. Kommentar: ' + JSON.stringify(result.kommentar || '') + '. Bitte überprüfe kritisch, ob diese Bewertung korrekt ist. Antworte als JSON: {"bestaetigt": true/false, "note_vorschlag": <1.0-6.0>, "begruendung": "<string>", "abweichung": "<string oder null>"}';
+    const licenseKey = localStorage.getItem('lernortai_license_key') || '';
+    const schulCode = localStorage.getItem('lernortai_schul_code') || '';
+    const headers = { 'content-type': 'application/json' };
+    if (licenseKey) headers['x-license-key'] = licenseKey;
+    if (schulCode) headers['x-schul-code'] = schulCode;
+    const response = await fetch('/api/claude', {
+      method: 'POST', headers,
+      body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: 512, system: systemPrompt, messages: [{ role: 'user', content: imageBlocks.concat([{ type: 'text', text: 'Bitte überprüfe diese Prüfungskorrektur.' }]) }] }),
+    });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const data = await response.json();
+    const raw = data.content && data.content[0] && data.content[0].text || '';
+    let qResult;
+    try { const m = raw.match(/\{[\s\S]*\}/); qResult = JSON.parse(m ? m[0] : raw); }
+    catch(pe) { throw new Error('Qualitätscheck-Antwort konnte nicht geparst werden.'); }
+    const wrap = document.getElementById('ki-qualitaets-result');
+    if (qResult.bestaetigt) {
+      wrap.innerHTML = '<div class="alert alert-success">&#10003; Zweiter Korrekteur bestätigt Note ' + result.note + '. ' + escHtml(qResult.begruendung || '') + '</div>';
+      kiPendingData.result.ki_qualitaet_unsicher = false;
+    } else {
+      wrap.innerHTML = '<div class="alert alert-warning">&#9888;&#65039; Abweichung erkannt! Vorschlag: <strong>' + qResult.note_vorschlag + '</strong> – ' + escHtml(qResult.begruendung || '') + (qResult.abweichung ? '<br><small>' + escHtml(qResult.abweichung) + '</small>' : '') + '</div>';
+      kiPendingData.result.ki_qualitaet_unsicher = true;
+      if (qResult.note_vorschlag) kiPendingData.result.note = qResult.note_vorschlag;
+    }
+    wrap.classList.remove('hidden');
+    showToast('Qualitätscheck abgeschlossen.', 'success');
+  } catch(e) { showToast('Qualitätscheck-Fehler: ' + e.message, 'error'); }
+  finally { if (btn) { btn.disabled = false; btn.innerHTML = '&#128270; Qualitätscheck starten <span class="pro-badge">Pro</span>'; } }
+}
+
+// =============================================================
+// CSV-IMPORT (Schüler)
+// =============================================================
+function openCsvImportModal() {
+  document.getElementById('csv-file-name').textContent = 'CSV-Datei auswählen…';
+  document.getElementById('csv-preview-wrap').classList.add('hidden');
+  document.getElementById('csv-import-btn').disabled = true;
+  csvParsedRows = [];
+  loadKlassenIntoSelect('csv-import-klasse');
+  document.getElementById('csv-import-modal').classList.remove('hidden');
+}
+
+function handleCsvFile(event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  document.getElementById('csv-file-name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    csvParsedRows = parseCsvSchueler(text);
+    renderCsvPreview(csvParsedRows);
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCsvSchueler(text) {
+  const lines = text.split(/\r?\n/).map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+  const rows = [];
+  lines.forEach(function(line, idx) {
+    // Skip first line if it looks like a header (contains letters and no numeric first column)
+    if (idx === 0 && !/^\d/.test(line) && !line.match(/^[^;]+;/)) return;
+    const parts = line.split(';');
+    const name = (parts[0] || '').trim();
+    const nummer = (parts[1] || '').trim();
+    if (!name) return;
+    rows.push({ name: name, nummer: nummer });
+  });
+  return rows;
+}
+
+function renderCsvPreview(rows) {
+  document.getElementById('csv-preview-count').textContent = rows.length;
+  const tbody = document.getElementById('csv-preview-tbody');
+  tbody.innerHTML = rows.slice(0, 20).map(function(r) {
+    return '<tr><td>' + escHtml(r.name) + '</td><td>' + escHtml(r.nummer || '–') + '</td></tr>';
+  }).join('') + (rows.length > 20 ? '<tr><td colspan="2" style="color:var(--text-muted)">… und ' + (rows.length - 20) + ' weitere</td></tr>' : '');
+  document.getElementById('csv-preview-wrap').classList.remove('hidden');
+  document.getElementById('csv-import-btn').disabled = rows.length === 0;
+}
+
+async function doImportSchueler() {
+  const klasseId = document.getElementById('csv-import-klasse').value;
+  if (!klasseId) { showToast('Bitte Zielklasse wählen.', 'error'); return; }
+  if (!csvParsedRows.length) { showToast('Keine Schüler erkannt.', 'error'); return; }
+  const btn = document.getElementById('csv-import-btn');
+  btn.disabled = true;
+  let imported = 0;
+  let skipped = 0;
+  try {
+    const existing = await sb.select('schueler', 'klasse_id=eq.' + klasseId);
+    const existingNames = new Set(existing.map(function(s) { return s.name.toLowerCase(); }));
+    for (const row of csvParsedRows) {
+      if (existingNames.has(row.name.toLowerCase())) { skipped++; continue; }
+      await sb.insert('schueler', { name: row.name, nummer: row.nummer || null, klasse_id: klasseId });
+      imported++;
+    }
+    closeModal('csv-import-modal');
+    showToast(imported + ' Schüler importiert' + (skipped ? ', ' + skipped + ' übersprungen (bereits vorhanden)' : '') + '.', 'success');
+    loadSchueler();
+    loadDashboard();
+  } catch(e) { showToast('Import-Fehler: ' + e.message, 'error'); }
+  finally { btn.disabled = false; }
+}
+
+// =============================================================
+// FEEDBACK-TEXTBAUSTEINE – Pro Feature
+// =============================================================
+async function loadTextbausteineSettings() {
+  try {
+    const rows = await sb.select('textbausteine');
+    const el = document.getElementById('textbausteine-settings-list');
+    if (!rows.length) { el.innerHTML = '<p style="color:var(--text-muted);font-size:.8rem">Noch keine Textbausteine definiert.</p>'; return; }
+    el.innerHTML = rows.map(function(t) {
+      return '<div class="textbaustein-list-item"><span class="textbaustein-list-item__text">' + escHtml(t.text) + '</span><button class="btn btn-sm btn-danger" onclick="deleteTextbaustein(\'' + t.id + '\')">&#128465;</button></div>';
+    }).join('');
+  } catch(e) { /* ignore */ }
+}
+
+async function addTextbaustein() {
+  if (!requirePro('Feedback-Textbausteine')) return;
+  const input = document.getElementById('new-textbaustein-input');
+  const text = input.value.trim();
+  if (!text) { showToast('Bitte Text eingeben.', 'error'); return; }
+  try {
+    await sb.insert('textbausteine', { text: text });
+    input.value = '';
+    await loadTextbausteineSettings();
+    showToast('Textbaustein gespeichert.', 'success');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteTextbaustein(id) {
+  try {
+    await sb.delete('textbausteine', id);
+    await loadTextbausteineSettings();
+    showToast('Textbaustein gelöscht.', 'success');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function renderTextbausteineChips() {
+  const el = document.getElementById('textbausteine-chips');
+  if (!el) return;
+  if (!isPro()) {
+    el.innerHTML = '<span style="font-size:.75rem;color:var(--text-muted)">&#128274; Textbausteine – nur im Pro-Plan verfügbar</span>';
+    return;
+  }
+  try {
+    const rows = await sb.select('textbausteine');
+    if (!rows.length) { el.innerHTML = '<span style="font-size:.75rem;color:var(--text-muted)">Keine Textbausteine. Erstellen Sie welche unter &#9881;&#65039; Einstellungen.</span>'; return; }
+    el.innerHTML = rows.map(function(t) {
+      return '<button class="textbaustein-chip" onclick="insertTextbaustein(' + JSON.stringify(t.text) + ')">' + escHtml(t.text) + '</button>';
+    }).join('');
+  } catch(e) { el.innerHTML = ''; }
+}
+
+function insertTextbaustein(text) {
+  const ta = document.getElementById('manual-note-kommentar');
+  if (!ta) return;
+  const sep = ta.value && !ta.value.endsWith(' ') && !ta.value.endsWith('\n') ? ' ' : '';
+  ta.value = ta.value + sep + text;
+  ta.focus();
+}
+
+// =============================================================
+// ANALYTIK – Trends & Fehlerkatalog (Pro Feature)
+// =============================================================
+async function loadAnalytik() {
+  const klasseId = document.getElementById('analytik-klasse-select').value;
+  const el = document.getElementById('analytik-content');
+  if (!klasseId) { el.innerHTML = '<div class="alert alert-info">Klasse wählen, um Trends und Fehlerkatalog anzuzeigen.</div>'; return; }
+  el.innerHTML = '<p style="color:var(--text-muted)">Wird geladen…</p>';
+  try {
+    const [pruefungen, pruefungKlassen, schueler, eintraege] = await Promise.all([
+      sb.select('pruefungen'), sb.select('pruefung_klassen'), sb.select('schueler', 'klasse_id=eq.' + klasseId), sb.select('eintraege')
+    ]);
+    const sIds = new Set(schueler.map(function(s) { return s.id; }));
+    // Find exams assigned to this class
+    const assignedPruefungIds = new Set(pruefungKlassen.filter(function(pk) { return pk.klasse_id === klasseId; }).map(function(pk) { return pk.pruefung_id; }));
+    const relevantPruefungen = pruefungen.filter(function(p) { return assignedPruefungIds.has(p.id) && p.datum; }).sort(function(a, b) { return a.datum.localeCompare(b.datum); });
+    // Trend: average grade per exam
+    const trendData = relevantPruefungen.map(function(p) {
+      const relevant = eintraege.filter(function(e) { return e.pruefung_id === p.id && sIds.has(e.schueler_id); });
+      const withNote = relevant.filter(function(e) { const n = e.note_manuell || e.note; return n !== null && n !== undefined; });
+      const avg = withNote.length ? (withNote.reduce(function(s, e) { return s + parseFloat(e.note_manuell || e.note); }, 0) / withNote.length) : null;
+      return { name: p.name, datum: p.datum, avg: avg, count: withNote.length, total: relevant.length };
+    });
+    // Error catalog: aggregate AI feedback keywords
+    const allFeedbacks = [];
+    eintraege.forEach(function(e) {
+      if (!sIds.has(e.schueler_id)) return;
+      if (!e.ergebnis || !e.ergebnis.aufgaben) return;
+      e.ergebnis.aufgaben.forEach(function(a) { if (a.feedback) allFeedbacks.push(a.feedback); });
+    });
+    const errorKeywords = extractErrorKeywords(allFeedbacks);
+    el.innerHTML = renderAnalytikContent(trendData, errorKeywords, schueler, eintraege);
+  } catch(e) { el.innerHTML = '<div class="alert alert-danger">Fehler: ' + escHtml(e.message) + '</div>'; }
+}
+
+function renderAnalytikContent(trendData, errorKeywords, schueler, eintraege) {
+  const sIds = new Set(schueler.map(function(s) { return s.id; }));
+  let html = '';
+  // Trend chart
+  html += '<div class="card" style="margin-bottom:1rem">';
+  html += '<div class="card__title">&#128200; Notenentwicklung (' + trendData.length + ' Prüfungen)</div>';
+  if (!trendData.length) {
+    html += '<p style="color:var(--text-muted);font-size:.875rem">Noch keine Prüfungsdaten vorhanden.</p>';
+  } else {
+    const maxAvg = 6;
+    html += '<div class="trend-chart-wrap">';
+    trendData.forEach(function(d) {
+      const h = d.avg !== null ? Math.round((d.avg / maxAvg) * 100) : 0;
+      const color = d.avg !== null ? (d.avg >= 4 ? 'var(--success-light)' : 'var(--danger-light)') : 'var(--border)';
+      const label = d.avg !== null ? d.avg.toFixed(2) : '–';
+      html += '<div class="trend-col">';
+      html += '<span class="trend-val ' + (d.avg !== null ? noteClass(d.avg) : '') + '">' + label + '</span>';
+      html += '<div class="trend-bar" style="height:' + h + 'px;background:' + color + '" title="' + escHtml(d.name) + ': Ø ' + label + ' (' + d.count + '/' + d.total + ' Noten)"></div>';
+      html += '<span class="trend-lbl">' + escHtml(d.name.length > 12 ? d.name.slice(0, 11) + '…' : d.name) + '</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+  // Summary stats
+  const allNotes = [];
+  eintraege.forEach(function(e) {
+    if (!sIds.has(e.schueler_id)) return;
+    const n = e.note_manuell || e.note;
+    if (n !== null && n !== undefined) allNotes.push(parseFloat(n));
+  });
+  const bestanden = allNotes.filter(function(n) { return n >= 4; }).length;
+  const avg = allNotes.length ? (allNotes.reduce(function(s, n) { return s + n; }, 0) / allNotes.length).toFixed(2) : '–';
+  html += '<div class="stats-grid" style="margin-bottom:1rem">';
+  html += '<div class="stat-card"><div class="stat-card__num">' + schueler.length + '</div><div class="stat-card__lbl">Schüler</div></div>';
+  html += '<div class="stat-card"><div class="stat-card__num">' + avg + '</div><div class="stat-card__lbl">Ø Note (gesamt)</div></div>';
+  html += '<div class="stat-card"><div class="stat-card__num">' + bestanden + '/' + allNotes.length + '</div><div class="stat-card__lbl">Bestanden</div></div>';
+  html += '</div>';
+  // Error catalog
+  html += '<div class="card">';
+  html += '<div class="card__title">&#128270; Fehlerkatalog – häufige KI-Rückmeldungen</div>';
+  if (!errorKeywords.length) {
+    html += '<p style="color:var(--text-muted);font-size:.875rem">Noch keine KI-Korrekturen vorhanden für diese Klasse.</p>';
+  } else {
+    html += '<div class="table-wrap"><table><thead><tr><th>Thema / Fehlertyp</th><th>Häufigkeit</th></tr></thead><tbody>';
+    errorKeywords.slice(0, 15).forEach(function(kw) {
+      html += '<tr><td>' + escHtml(kw.word) + '</td><td><span class="badge ' + (kw.count >= 5 ? 'badge-red' : kw.count >= 3 ? 'badge-yellow' : 'badge-gray') + '">' + kw.count + 'x</span></td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function extractErrorKeywords(feedbacks) {
+  // Simple keyword frequency analysis – filter stopwords
+  const stopwords = new Set(['und','die','der','das','des','den','dem','ist','ein','eine','einer','nicht','auch','für','mit','von','in','an','zu','als','bei','es','auf','oder','so','wie','am','im','aus','nach','dass','wird','sind','haben','hat','sie','er','ich','wir','aber','noch','kann','wenn','beim','zum','zur','vor','durch','eine','sich','kein','keine','mehr','sehr','gut','richtig','falsch','leider','bitte','sollte','muss','alle','sollten','viele']);
+  const wordFreq = {};
+  feedbacks.forEach(function(text) {
+    if (!text) return;
+    text.split(/[\s,.\-;:!?()]+/).forEach(function(w) {
+      const lower = w.toLowerCase();
+      if (lower.length < 4 || stopwords.has(lower) || /^\d+$/.test(lower)) return;
+      wordFreq[lower] = (wordFreq[lower] || 0) + 1;
+    });
+  });
+  return Object.entries(wordFreq)
+    .filter(function(e) { return e[1] >= 2; })
+    .sort(function(a, b) { return b[1] - a[1]; })
+    .map(function(e) { return { word: e[0], count: e[1] }; });
+}
+
 </script>
 
 </body>
