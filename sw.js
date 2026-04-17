@@ -1,4 +1,4 @@
-// LernortAI Service Worker – App-Shell caching
+// Pruefai Service Worker – App-Shell caching
 const CACHE_NAME = 'lernortai-v2';
 const APP_SHELL = [
   '/',

@@ -1,10 +1,9 @@
-# LernortAI – KI-gestützte Prüfungskorrektur für Berufsschulen
+# Pruefai – KI-gestützte Prüfungskorrektur für Berufsschulen
 
 [![MIT Lizenz](https://img.shields.io/badge/Lizenz-MIT-blue.svg)](LICENSE)
 [![Vanilla JS](https://img.shields.io/badge/JavaScript-Vanilla-yellow.svg)](index.html)
-[![Supabase](https://img.shields.io/badge/Backend-Supabase-green.svg)](https://supabase.com)
 
-**LernortAI** ist eine webbasierte Applikation für Schweizer Berufsschulen, die Lehrpersonen bei der Korrektur von Prüfungen mithilfe von KI (Claude) unterstützt. Jede Lehrperson hat einen eigenen, sicheren Login (Supabase Auth) und sieht ausschliesslich ihre eigenen Daten.
+**Pruefai** ist eine webbasierte Applikation für Schweizer Berufsschulen, die Lehrpersonen bei der Korrektur von Prüfungen mithilfe von KI (Claude) unterstützt. Alle Daten werden lokal im Browser (IndexedDB) gespeichert.
 
 ---
 

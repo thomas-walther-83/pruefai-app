@@ -18,8 +18,8 @@ export default async function handler(req, res) {
   const safeEmail = escHtml(email);
 
   const resendKey = process.env.RESEND_API_KEY;
-  const adminEmail = process.env.ADMIN_EMAIL || 'info@lernortai.ch';
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lernortai.ch';
+  const adminEmail = process.env.ADMIN_EMAIL || 'info@pruefai.ch';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://pruefai.ch';
 
   if (resendKey) {
     // Welcome email to the trial user
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
 <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
   <div style="background:linear-gradient(135deg,#1a56db,#0d3494);color:#fff;padding:2rem;text-align:center">
     <div style="font-size:2rem;margin-bottom:.5rem">🎓</div>
-    <h1 style="margin:0;font-size:1.5rem;font-weight:800">Willkommen bei LernortAI!</h1>
+    <h1 style="margin:0;font-size:1.5rem;font-weight:800">Willkommen bei Pruefai!</h1>
     <p style="margin:.5rem 0 0;opacity:.9">Ihre 3 Gratis-Korrekturen sind freigeschaltet.</p>
   </div>
   <div style="padding:2rem">
@@ -41,7 +41,7 @@ export default async function handler(req, res) {
     </ol>
     <a href="${appUrl}" style="display:inline-block;background:#1a56db;color:#fff;padding:.875rem 2rem;border-radius:10px;font-weight:700;font-size:1rem;text-decoration:none">App starten →</a>
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:2rem 0">
-    <p style="margin:0;font-size:.8rem;color:#9ca3af">Fragen? <a href="mailto:info@lernortai.ch" style="color:#1a56db">info@lernortai.ch</a></p>
+    <p style="margin:0;font-size:.8rem;color:#9ca3af">Fragen? <a href="mailto:info@pruefai.ch" style="color:#1a56db">info@pruefai.ch</a></p>
   </div>
 </div>
 </body></html>`;
@@ -50,9 +50,9 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'LernortAI <noreply@lernortai.ch>',
+        from: 'Pruefai <noreply@pruefai.ch>',
         to: [email],
-        subject: 'Willkommen bei LernortAI – Ihre 3 kostenlosen Korrekturen sind aktiv',
+        subject: 'Willkommen bei Pruefai – Ihre 3 kostenlosen Korrekturen sind aktiv',
         html: welcomeHtml,
       }),
     }).catch((err) => console.error('Welcome email failed:', err.message));
@@ -62,7 +62,7 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'LernortAI <noreply@lernortai.ch>',
+        from: 'Pruefai <noreply@pruefai.ch>',
         to: [adminEmail],
         subject: `Neuer Trial-Lead: ${safeName || safeEmail}`,
         html: `<p><strong>Name:</strong> ${safeName || '–'}</p><p><strong>E-Mail:</strong> ${safeEmail}</p>`,

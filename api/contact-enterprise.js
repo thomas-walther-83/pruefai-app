@@ -27,7 +27,7 @@ export default async function handler(req, res) {
   const safeEmail = escHtml(email);
 
   const resendKey = process.env.RESEND_API_KEY;
-  const adminEmail = process.env.ADMIN_EMAIL || 'info@lernortai.ch';
+  const adminEmail = process.env.ADMIN_EMAIL || 'info@pruefai.ch';
 
   if (resendKey) {
     // Notify admin
@@ -48,7 +48,7 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'LernortAI <noreply@lernortai.ch>',
+        from: 'Pruefai <noreply@pruefai.ch>',
         to: [adminEmail],
         replyTo: email,
         subject: `Enterprise-Anfrage: ${institution}`,
@@ -66,9 +66,9 @@ export default async function handler(req, res) {
   <div style="padding:2rem">
     <p style="margin:0 0 1rem">Guten Tag${safeName ? ' ' + safeName : ''},</p>
     <p style="margin:0 0 1rem">Wir haben Ihre Anfrage für <strong>${safeInstitution}</strong> erhalten und melden uns innerhalb von <strong>1–2 Werktagen</strong> bei Ihnen.</p>
-    <p style="margin:0;font-size:.9rem;color:#6b7280">Mit freundlichen Grüssen<br>Das LernortAI-Team</p>
+    <p style="margin:0;font-size:.9rem;color:#6b7280">Mit freundlichen Grüssen<br>Das Pruefai-Team</p>
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:2rem 0">
-    <p style="margin:0;font-size:.8rem;color:#9ca3af">Fragen? <a href="mailto:info@lernortai.ch" style="color:#1a56db">info@lernortai.ch</a></p>
+    <p style="margin:0;font-size:.8rem;color:#9ca3af">Fragen? <a href="mailto:info@pruefai.ch" style="color:#1a56db">info@pruefai.ch</a></p>
   </div>
 </div>
 </body></html>`;
@@ -77,9 +77,9 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'LernortAI <noreply@lernortai.ch>',
+        from: 'Pruefai <noreply@pruefai.ch>',
         to: [email],
-        subject: 'Ihre Anfrage bei LernortAI – wir melden uns bald',
+        subject: 'Ihre Anfrage bei Pruefai – wir melden uns bald',
         html: autoReplyHtml,
       }),
     }).catch((err) => console.error('Enterprise auto-reply failed:', err.message));

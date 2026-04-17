@@ -1,6 +1,6 @@
 {
-  "name": "LernortAI",
-  "short_name": "LernortAI",
+  "name": "Pruefai",
+  "short_name": "Pruefai",
   "description": "KI-gestützte Prüfungskorrektur für Schweizer Berufsschulen",
   "start_url": "/",
   "display": "standalone",
