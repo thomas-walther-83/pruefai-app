@@ -2189,7 +2189,8 @@ async function sendHelpChatMessage() {
   try {
     const licenseKey = localStorage.getItem('lernortai_license_key') || '';
     const schulCode = localStorage.getItem('lernortai_schul_code') || '';
-    if (!licenseKey && !schulCode) {
+    const isTrialUser = !licenseKey && !schulCode;
+    if (isTrialUser) {
       const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
       if (used >= FREE_TRIAL_LIMIT) {
         document.getElementById('upsell-modal').classList.remove('hidden');
@@ -2197,8 +2198,6 @@ async function sendHelpChatMessage() {
         renderHelpChat();
         return;
       }
-      localStorage.setItem(LS.FREE_USED, String(used + 1));
-      updateFreeTrialBadge();
     }
 
     const headers = { 'content-type': 'application/json' };
@@ -2235,6 +2234,11 @@ async function sendHelpChatMessage() {
     if (!response.ok) {
       const statusMap = { 400: 'Ungültige Anfrage.', 401: 'Nicht autorisiert.', 403: 'Zugriff verweigert.', 500: 'Serverfehler bei der KI-Anfrage.', 502: 'KI-Dienst aktuell nicht erreichbar.', 503: 'KI-Dienst vorübergehend nicht verfügbar.', 504: 'Zeitüberschreitung beim KI-Dienst.' };
       throw new Error(statusMap[response.status] || ('Claude API-Fehler (' + response.status + ').'));
+    }
+    if (isTrialUser) {
+      const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
+      localStorage.setItem(LS.FREE_USED, String(Math.min(FREE_TRIAL_LIMIT, used + 1)));
+      updateFreeTrialBadge();
     }
 
     const data = await response.json();
