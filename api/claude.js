@@ -112,12 +112,13 @@ export default async function handler(req, res) {
   // License enforcement is ON by default. Set SKIP_LICENSE=true only for local dev/staging.
   if (process.env.SKIP_LICENSE !== 'true') {
     const stripeKey = process.env.STRIPE_SECRET_KEY;
-    if (!stripeKey) return res.status(500).json({ error: 'STRIPE_SECRET_KEY not configured on server.' });
-
     const licenseKey = req.headers['x-license-key'] || bodyLicenseKey || '';
     const schulCode = req.headers['x-schul-code'] || '';
 
     if (licenseKey || schulCode) {
+      if (!stripeKey) {
+        return res.status(503).json({ error: 'Lizenzprüfung derzeit nicht verfügbar.' });
+      }
       // ── Licensed path ──
       let customer;
       try {
