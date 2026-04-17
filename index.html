@@ -1784,12 +1784,14 @@ async function loadKorrekturEintraege() {
       '<div class="table-wrap"><table><thead><tr><th>Schüler</th><th>Status</th><th>Note</th><th>Aktionen</th></tr></thead><tbody>' +
       schueler.map(function(s) {
         const e = eMap[s.id];
+        const safePruefungId = String(pruefungId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+        const safeSchuelerId = String(s.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
         const safeName = escHtml(s.name).replace(/'/g, "\\'");
         const status = e ? e.status : 'kein Eintrag';
         const note = e && (e.note_manuell || e.note) ? noteHtml(e.note_manuell || e.note) : '–';
         return '<tr><td><strong>' + escHtml(s.name) + '</strong>' + (s.nummer ? '<br><small>' + escHtml(s.nummer) + '</small>' : '') + '</td>' +
           '<td><span class="badge ' + statusBadge(status) + '">' + escHtml(status) + '</span></td><td>' + note + '</td><td>' +
-          '<button class="btn btn-sm btn-secondary" onclick="openUploadForSchueler(\'' + pruefungId + '\', \'' + s.id + '\', \'' + safeName + '\')">&#128248; Upload</button> ' +
+          '<button class="btn btn-sm btn-secondary" onclick="openUploadForSchueler(\'' + safePruefungId + '\', \'' + safeSchuelerId + '\', \'' + safeName + '\')">&#128248; Upload</button> ' +
           (e ? '<button class="btn btn-sm btn-primary" onclick="kiKorrigieren(\'' + e.id + '\')">&#129302; KI</button> ' +
                '<button class="btn btn-sm btn-secondary" onclick="noteManuelleingabe(\'' + e.id + '\')">&#9998; Note</button>'
             : '<span style="color:var(--text-muted);font-size:.8rem">Eintrag wird beim Upload erstellt</span>') + '</td></tr>';
@@ -1812,13 +1814,16 @@ function openUploadModal(eintragsId, name) {
 
 async function openUploadForSchueler(pruefungId, schuelerId, name) {
   try {
-    let existing = await sb.select('eintraege', 'schueler_id=eq.' + schuelerId + '&pruefung_id=eq.' + pruefungId);
+    const safePruefungId = String(pruefungId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+    const safeSchuelerId = String(schuelerId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+    if (!safePruefungId || !safeSchuelerId) { showToast('Ungültige Auswahl für Prüfung/Schüler.', 'error'); return; }
+    let existing = await sb.select('eintraege', 'schueler_id=eq.' + safeSchuelerId + '&pruefung_id=eq.' + safePruefungId);
     let eintrag = existing[0];
     if (!eintrag) {
-      const created = await sb.insert('eintraege', { schueler_id: schuelerId, pruefung_id: pruefungId, status: 'offen' });
+      const created = await sb.insert('eintraege', { schueler_id: safeSchuelerId, pruefung_id: safePruefungId, status: 'offen' });
       eintrag = created && created[0] ? created[0] : null;
       if (!eintrag) {
-        existing = await sb.select('eintraege', 'schueler_id=eq.' + schuelerId + '&pruefung_id=eq.' + pruefungId);
+        existing = await sb.select('eintraege', 'schueler_id=eq.' + safeSchuelerId + '&pruefung_id=eq.' + safePruefungId);
         eintrag = existing[0];
       }
     }
