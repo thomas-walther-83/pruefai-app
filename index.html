@@ -574,7 +574,7 @@
     </div>
     <div class="form-row">
       <div class="form-group" id="klasse-lehrjahr-group"><label class="form-label" id="klasse-lehrjahr-label">Lehrjahr *</label>
-        <select id="klasse-lehrjahr" class="form-control"><option value="1">1. Lehrjahr</option><option value="2">2. Lehrjahr</option><option value="3">3. Lehrjahr</option><option value="4">4. Lehrjahr</option></select>
+        <select id="klasse-lehrjahr" class="form-control"><option value="">– Lehrjahr wählen –</option><option value="1">1. Lehrjahr</option><option value="2">2. Lehrjahr</option><option value="3">3. Lehrjahr</option><option value="4">4. Lehrjahr</option></select>
       </div>
       <div class="form-group"><label class="form-label">Schuljahr *</label><input type="text" id="klasse-schuljahr" class="form-control" placeholder="z.B. 2024/2025" /></div>
     </div>
@@ -1456,7 +1456,7 @@ async function editKlasse(id) {
   document.getElementById('klasse-id').value = k.id;
   document.getElementById('klasse-name').value = k.name;
   document.getElementById('klasse-beruf').value = k.beruf || '';
-  document.getElementById('klasse-lehrjahr').value = String(k.lehrjahr || '1');
+  document.getElementById('klasse-lehrjahr').value = k.lehrjahr ? String(k.lehrjahr) : '';
   document.getElementById('klasse-schuljahr').value = k.schuljahr;
   document.getElementById('klasse-modal-title').textContent = 'Klasse bearbeiten';
   document.getElementById('klasse-modal').classList.remove('hidden');
@@ -1467,12 +1467,12 @@ async function saveKlasse() {
   const name = document.getElementById('klasse-name').value.trim();
   const isBerufsschule = isBerufsschuleType();
   const beruf = document.getElementById('klasse-beruf').value.trim();
-  const lehrjahr = parseInt(document.getElementById('klasse-lehrjahr').value, 10);
+  const lehrjahr = isBerufsschule ? parseInt(document.getElementById('klasse-lehrjahr').value, 10) : null;
   const schuljahr = document.getElementById('klasse-schuljahr').value.trim();
   if (!name || !schuljahr || (isBerufsschule && !beruf)) { showToast('Bitte alle Pflichtfelder ausfüllen.', 'error'); return; }
   if (isBerufsschule && !Number.isFinite(lehrjahr)) { showToast('Bitte ein Lehrjahr wählen.', 'error'); return; }
   try {
-    const payload = { name, beruf: isBerufsschule ? beruf : '', lehrjahr: isBerufsschule ? lehrjahr : null, schuljahr };
+    const payload = { name, beruf: isBerufsschule ? beruf : '', lehrjahr: lehrjahr, schuljahr };
     if (id) {
       await sb.update('klassen', id, payload);
     } else {
