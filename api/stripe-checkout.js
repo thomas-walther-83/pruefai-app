@@ -3,14 +3,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const requestUrl = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-  const rawPlan =
-    req.query.plan ||
-    req.query.model ||
-    requestUrl.searchParams.get('plan') ||
-    requestUrl.searchParams.get('model') ||
-    '';
-  const plan = String(Array.isArray(rawPlan) ? rawPlan[0] : rawPlan).trim().toLowerCase();
+  const normalizePlan = (value) =>
+    String(Array.isArray(value) ? value[0] || '' : value || '').trim().toLowerCase();
+
+  const rawPlan = req.query.plan || req.query.model || '';
+  const plan = normalizePlan(rawPlan);
   const planMap = {
     starter: process.env.STRIPE_PRICE_STARTER,
     pro: process.env.STRIPE_PRICE_PRO,
