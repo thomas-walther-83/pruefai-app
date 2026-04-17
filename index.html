@@ -1784,14 +1784,15 @@ async function loadKorrekturEintraege() {
       '<div class="table-wrap"><table><thead><tr><th>Schüler</th><th>Status</th><th>Note</th><th>Aktionen</th></tr></thead><tbody>' +
       schueler.map(function(s) {
         const e = eMap[s.id];
+        const safeName = escHtml(s.name).replace(/'/g, "\\'");
         const status = e ? e.status : 'kein Eintrag';
         const note = e && (e.note_manuell || e.note) ? noteHtml(e.note_manuell || e.note) : '–';
         return '<tr><td><strong>' + escHtml(s.name) + '</strong>' + (s.nummer ? '<br><small>' + escHtml(s.nummer) + '</small>' : '') + '</td>' +
           '<td><span class="badge ' + statusBadge(status) + '">' + escHtml(status) + '</span></td><td>' + note + '</td><td>' +
-          (e ? '<button class="btn btn-sm btn-secondary" onclick="openUploadModal(\'' + e.id + '\', \'' + escHtml(s.name).replace(/'/g, "\\'") + '\')">&#128248; Upload</button> ' +
-               '<button class="btn btn-sm btn-primary" onclick="kiKorrigieren(\'' + e.id + '\')">&#129302; KI</button> ' +
+          '<button class="btn btn-sm btn-secondary" onclick="openUploadForSchueler(\'' + pruefungId + '\', \'' + s.id + '\', \'' + safeName + '\')">&#128248; Upload</button> ' +
+          (e ? '<button class="btn btn-sm btn-primary" onclick="kiKorrigieren(\'' + e.id + '\')">&#129302; KI</button> ' +
                '<button class="btn btn-sm btn-secondary" onclick="noteManuelleingabe(\'' + e.id + '\')">&#9998; Note</button>'
-            : '<span style="color:var(--text-muted);font-size:.8rem">Kein Eintrag</span>') + '</td></tr>';
+            : '<span style="color:var(--text-muted);font-size:.8rem">Eintrag wird beim Upload erstellt</span>') + '</td></tr>';
       }).join('') + '</tbody></table></div></div>';
   } catch(e) { showToast(e.message, 'error'); }
 }
@@ -1807,6 +1808,24 @@ function openUploadModal(eintragsId, name) {
   document.getElementById('pages-preview').innerHTML = '';
   document.getElementById('upload-progress').classList.add('hidden');
   document.getElementById('upload-modal').classList.remove('hidden');
+}
+
+async function openUploadForSchueler(pruefungId, schuelerId, name) {
+  try {
+    let existing = await sb.select('eintraege', 'schueler_id=eq.' + schuelerId + '&pruefung_id=eq.' + pruefungId);
+    let eintrag = existing[0];
+    if (!eintrag) {
+      const created = await sb.insert('eintraege', { schueler_id: schuelerId, pruefung_id: pruefungId, status: 'offen' });
+      eintrag = created && created[0] ? created[0] : null;
+      if (!eintrag) {
+        existing = await sb.select('eintraege', 'schueler_id=eq.' + schuelerId + '&pruefung_id=eq.' + pruefungId);
+        eintrag = existing[0];
+      }
+    }
+    if (!eintrag) { showToast('Eintrag konnte nicht erstellt werden.', 'error'); return; }
+    openUploadModal(eintrag.id, name);
+    loadKorrekturEintraege();
+  } catch(e) { showToast(e.message, 'error'); }
 }
 
 function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
