@@ -2249,12 +2249,12 @@ async function sendHelpChatMessage() {
         503: 'KI-Dienst vorübergehend nicht verfügbar.',
         504: 'Zeitüberschreitung beim KI-Dienst.',
       };
-      const base = statusMap[response.status] || ('KI-Fehler (' + response.status + ').');
+      const base = statusMap[response.status] || ('KI-Dienst-Fehler (' + response.status + ').');
       throw new Error(base + (retryable ? ' Bitte versuchen Sie es in einem Moment erneut.' : ''));
     }
     if (isTrialUser) {
       const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
-      localStorage.setItem(LS.FREE_USED, String(Math.min(FREE_TRIAL_LIMIT, used + 1)));
+      localStorage.setItem(LS.FREE_USED, String(used + 1));
       updateFreeTrialBadge();
     }
 
