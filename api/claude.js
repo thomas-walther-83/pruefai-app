@@ -117,7 +117,7 @@ export default async function handler(req, res) {
 
     if (licenseKey || schulCode) {
       if (!stripeKey) {
-        return res.status(503).json({ error: 'Lizenzsystem nicht konfiguriert.' });
+        return res.status(503).json({ error: 'Stripe-Lizenzsystem ist nicht konfiguriert. Bitte kontaktieren Sie den Administrator.' });
       }
       // ── Licensed path ──
       let customer;
