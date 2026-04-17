@@ -1467,14 +1467,16 @@ async function saveKlasse() {
   const name = document.getElementById('klasse-name').value.trim();
   const isBerufsschule = isBerufsschuleType();
   const beruf = document.getElementById('klasse-beruf').value.trim();
-  const lehrjahr = isBerufsschule ? parseInt(document.getElementById('klasse-lehrjahr').value, 10) : null;
+  const lehrjahrRaw = document.getElementById('klasse-lehrjahr').value;
+  const lehrjahr = (isBerufsschule && lehrjahrRaw !== '') ? parseInt(lehrjahrRaw, 10) : null;
   const schuljahr = document.getElementById('klasse-schuljahr').value.trim();
   if (!name || !schuljahr || (isBerufsschule && !beruf)) { showToast('Bitte alle Pflichtfelder ausfüllen.', 'error'); return; }
+  if (isBerufsschule && lehrjahr === null) { showToast('Bitte ein Lehrjahr wählen.', 'error'); return; }
   if (isBerufsschule && !Number.isFinite(lehrjahr)) { showToast('Bitte ein Lehrjahr wählen.', 'error'); return; }
   try {
     const payload = isBerufsschule
       ? { name, beruf, lehrjahr, schuljahr }
-      : { name, beruf: '', lehrjahr: null, schuljahr };
+      : { name, beruf: null, lehrjahr: null, schuljahr };
     if (id) {
       await sb.update('klassen', id, payload);
     } else {
