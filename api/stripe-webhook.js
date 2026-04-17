@@ -29,7 +29,7 @@ async function sendLicenseEmail(resendKey, toEmail, licenseKey, plan, schulCode)
 <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
   <div style="background:linear-gradient(135deg,#1a56db,#0d3494);color:#fff;padding:2rem;text-align:center">
     <div style="font-size:2rem;margin-bottom:.5rem">🎓</div>
-    <h1 style="margin:0;font-size:1.5rem;font-weight:800">Willkommen bei LernortAI!</h1>
+    <h1 style="margin:0;font-size:1.5rem;font-weight:800">Willkommen bei Pruefai!</h1>
     <p style="margin:.5rem 0 0;opacity:.9">Ihr Abonnement ist aktiv.</p>
   </div>
   <div style="padding:2rem">
@@ -39,13 +39,13 @@ async function sendLicenseEmail(resendKey, toEmail, licenseKey, plan, schulCode)
     ${schulCodeSection}
     <p style="margin:0 0 1rem;font-size:.9rem">So aktivieren Sie Ihr Abo:</p>
     <ol style="margin:0 0 1.5rem;padding-left:1.25rem;font-size:.9rem;line-height:1.8">
-      <li>Öffnen Sie <a href="https://lernortai.ch" style="color:#1a56db">lernortai.ch</a></li>
+      <li>Öffnen Sie <a href="https://pruefai.ch" style="color:#1a56db">pruefai.ch</a></li>
       <li>Klicken Sie auf ⚙️ <strong>Einstellungen</strong></li>
       <li>Fügen Sie den Lizenzschlüssel ein und speichern Sie</li>
     </ol>
-    <a href="https://lernortai.ch" style="display:inline-block;background:#1a56db;color:#fff;padding:.875rem 2rem;border-radius:10px;font-weight:700;font-size:1rem;text-decoration:none">App starten →</a>
+    <a href="https://pruefai.ch" style="display:inline-block;background:#1a56db;color:#fff;padding:.875rem 2rem;border-radius:10px;font-weight:700;font-size:1rem;text-decoration:none">App starten →</a>
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:2rem 0">
-    <p style="margin:0;font-size:.8rem;color:#9ca3af">Fragen? <a href="mailto:info@lernortai.ch" style="color:#1a56db">info@lernortai.ch</a></p>
+    <p style="margin:0;font-size:.8rem;color:#9ca3af">Fragen? <a href="mailto:info@pruefai.ch" style="color:#1a56db">info@pruefai.ch</a></p>
   </div>
 </div>
 </body></html>`;
@@ -54,9 +54,9 @@ async function sendLicenseEmail(resendKey, toEmail, licenseKey, plan, schulCode)
       method: 'POST',
       headers: { Authorization: `Bearer ${resendKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: 'LernortAI <noreply@lernortai.ch>',
+        from: 'Pruefai <noreply@pruefai.ch>',
         to: [toEmail],
-        subject: 'Ihr LernortAI Lizenzschlüssel – Abonnement aktiv',
+        subject: 'Ihr Pruefai Lizenzschlüssel – Abonnement aktiv',
         html,
       }),
     });
