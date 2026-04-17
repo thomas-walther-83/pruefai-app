@@ -886,9 +886,10 @@ function applyConfig() {
 // LOKALE DATENBANK (IndexedDB)
 // =============================================================
 const IDB_NAME = 'lernortai';
-const IDB_VERSION = 1;
+const IDB_VERSION = 2;
 const IDB_STORES = ['lehrer','klassen','schueler','faecher','fach_klassen',
-  'pruefungen','pruefung_klassen','eintraege','seiten_uploads','lernmaterial','_files'];
+  'pruefungen','pruefung_klassen','eintraege','seiten_uploads','lernmaterial','_files',
+  'rubrics','textbausteine'];
 let _idb = null;
 
 function idbOpen() {
