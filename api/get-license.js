@@ -53,7 +53,8 @@ export default async function handler(req, res) {
   }
 
   const licenseKey = customer.metadata?.license_key || null;
-  const plan = customer.metadata?.plan || session.metadata?.plan || null;
+  const rawPlan = customer.metadata?.plan || session.metadata?.plan || null;
+  const plan = rawPlan === 'schule' ? 'max' : rawPlan;
 
   return res.status(200).json({ licenseKey, plan });
 }

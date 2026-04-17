@@ -370,7 +370,7 @@
           <li>Feedback pro Aufgabe</li>
           <li>Klassen- &amp; Prüfungsverwaltung</li>
           <li class="no">Prioritäts-Support</li>
-          <li class="no">Schulweite Nutzung</li>
+          <li class="no">Fast unbegrenzte Nutzung</li>
         </ul>
         <a href="/api/stripe-checkout?plan=starter" class="btn-plan btn-plan--outline">Starter wählen</a>
       </div>
@@ -387,41 +387,25 @@
           <li>Feedback pro Aufgabe</li>
           <li>Klassen- &amp; Prüfungsverwaltung</li>
           <li>Prioritäts-Support (E-Mail)</li>
-          <li class="no">Schulweite Nutzung</li>
+          <li class="no">Fast unbegrenzte Nutzung</li>
         </ul>
         <a href="/api/stripe-checkout?plan=pro" class="btn-plan btn-plan--primary">Pro wählen</a>
       </div>
 
-      <!-- Schule -->
+      <!-- Max -->
       <div class="pricing-card">
-        <div class="pricing-card__plan">Schule</div>
-        <div class="pricing-card__price"><sup>CHF</sup>149<span>/Monat</span></div>
-        <div class="pricing-card__desc">Für das gesamte Lehrpersonenteam</div>
+        <div class="pricing-card__plan">Max</div>
+        <div class="pricing-card__price"><sup>CHF</sup>49<span>/Monat</span></div>
+        <div class="pricing-card__desc">Für Lehrpersonen mit sehr hohem Volumen</div>
         <ul class="pricing-card__features">
-          <li>Unbegrenzte Korrekturen</li>
+          <li>5'000 KI-Korrekturen / Monat</li>
           <li>Schweizer Notenskala (1–6)</li>
           <li>Feedback pro Aufgabe</li>
           <li>Klassen- &amp; Prüfungsverwaltung</li>
           <li>Prioritäts-Support</li>
-          <li>AVV auf Anfrage inklusive</li>
+          <li>Fast unbegrenzte Nutzung</li>
         </ul>
-        <a href="/api/stripe-checkout?plan=schule" class="btn-plan btn-plan--outline">Schule wählen</a>
-      </div>
-
-      <!-- Enterprise -->
-      <div class="pricing-card">
-        <div class="pricing-card__plan">Enterprise</div>
-        <div class="pricing-card__price" style="font-size:1.5rem;padding-top:.4rem">Auf Anfrage</div>
-        <div class="pricing-card__desc">Für Kantone &amp; grössere Institutionen</div>
-        <ul class="pricing-card__features">
-          <li>Unbegrenzte Nutzung</li>
-          <li>On-Premise-Option</li>
-          <li>SLA-Garantie</li>
-          <li>Dedizierter Account Manager</li>
-          <li>Individuelle Schulung</li>
-          <li>Massgeschneiderte Integration</li>
-        </ul>
-        <a href="mailto:info@lernortai.ch" class="btn-plan btn-plan--outline" onclick="openEnterpriseForm(event)">Kontakt aufnehmen</a>
+        <a href="/api/stripe-checkout?plan=max" class="btn-plan btn-plan--outline">Max wählen</a>
       </div>
 
     </div>
@@ -440,8 +424,7 @@
             <th>Feature</th>
             <th>Starter</th>
             <th class="highlight-col">Pro</th>
-            <th>Schule</th>
-            <th>Enterprise</th>
+            <th>Max</th>
           </tr>
         </thead>
         <tbody>
@@ -449,14 +432,12 @@
             <td>KI-Korrekturen / Monat</td>
             <td>50</td>
             <td class="highlight-col">300</td>
-            <td>∞</td>
-            <td>∞</td>
+            <td>5'000</td>
           </tr>
           <tr>
             <td>Schweizer Notenskala (1–6)</td>
             <td><span class="check">✓</span></td>
             <td class="highlight-col"><span class="check">✓</span></td>
-            <td><span class="check">✓</span></td>
             <td><span class="check">✓</span></td>
           </tr>
           <tr>
@@ -464,13 +445,11 @@
             <td><span class="check">✓</span></td>
             <td class="highlight-col"><span class="check">✓</span></td>
             <td><span class="check">✓</span></td>
-            <td><span class="check">✓</span></td>
           </tr>
           <tr>
             <td>Klassen- &amp; Prüfungsverwaltung</td>
             <td><span class="check">✓</span></td>
             <td class="highlight-col"><span class="check">✓</span></td>
-            <td><span class="check">✓</span></td>
             <td><span class="check">✓</span></td>
           </tr>
           <tr>
@@ -478,41 +457,17 @@
             <td><span class="check">✓</span></td>
             <td class="highlight-col"><span class="check">✓</span></td>
             <td><span class="check">✓</span></td>
-            <td><span class="check">✓</span></td>
           </tr>
           <tr>
             <td>Prioritäts-Support</td>
             <td><span class="cross">—</span></td>
             <td class="highlight-col"><span class="check">✓</span></td>
             <td><span class="check">✓</span></td>
-            <td><span class="check">✓</span></td>
           </tr>
           <tr>
-            <td>Schulweite Nutzung</td>
+            <td>Fast unbegrenzte Nutzung</td>
             <td><span class="cross">—</span></td>
             <td class="highlight-col"><span class="cross">—</span></td>
-            <td><span class="check">✓</span></td>
-            <td><span class="check">✓</span></td>
-          </tr>
-          <tr>
-            <td>Auftragsverarbeitungsvertrag (AVV)</td>
-            <td><span class="cross">—</span></td>
-            <td class="highlight-col"><span class="cross">—</span></td>
-            <td><span class="check">✓</span></td>
-            <td><span class="check">✓</span></td>
-          </tr>
-          <tr>
-            <td>SLA-Garantie</td>
-            <td><span class="cross">—</span></td>
-            <td class="highlight-col"><span class="cross">—</span></td>
-            <td><span class="cross">—</span></td>
-            <td><span class="check">✓</span></td>
-          </tr>
-          <tr>
-            <td>On-Premise-Option</td>
-            <td><span class="cross">—</span></td>
-            <td class="highlight-col"><span class="cross">—</span></td>
-            <td><span class="cross">—</span></td>
             <td><span class="check">✓</span></td>
           </tr>
         </tbody>
@@ -574,7 +529,7 @@
           <svg class="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <div class="faq-a">
-          <p>Beim Erreichen des Monatslimits erhalten Sie in der App eine Benachrichtigung. Die Korrekturfunktion ist dann bis zum nächsten Monatsersten deaktiviert. Sie können jederzeit auf einen höheren Plan upgraden – das Limit wird sofort zurückgesetzt. Beim Schule-Plan gibt es kein Limit.</p>
+          <p>Beim Erreichen des Monatslimits erhalten Sie in der App eine Benachrichtigung. Die Korrekturfunktion ist dann bis zum nächsten Monatsersten deaktiviert. Sie können jederzeit auf einen höheren Plan upgraden – das Limit wird sofort zurückgesetzt. Der Max-Plan bietet 5'000 Korrekturen pro Monat und deckt damit fast unbegrenzte Nutzung ab.</p>
         </div>
       </div>
 
@@ -642,51 +597,6 @@
     });
   });
 
-  // ── ENTERPRISE FORM ──
-  function openEnterpriseForm(e) {
-    if (e) e.preventDefault();
-    document.getElementById('enterprise-modal').style.display = 'flex';
-  }
-  function closeEnterpriseForm() {
-    document.getElementById('enterprise-modal').style.display = 'none';
-  }
-  async function submitEnterpriseForm() {
-    const btn = document.getElementById('enterprise-submit-btn');
-    const errEl = document.getElementById('enterprise-error');
-    const successEl = document.getElementById('enterprise-success');
-    const email = document.getElementById('ent-email').value.trim();
-    const institution = document.getElementById('ent-institution').value.trim();
-    if (!institution) { errEl.textContent = 'Bitte Institution angeben.'; errEl.style.display = ''; return; }
-    if (!email || !email.includes('@')) { errEl.textContent = 'Bitte gültige E-Mail angeben.'; errEl.style.display = ''; return; }
-    errEl.style.display = 'none';
-    btn.disabled = true; btn.textContent = 'Wird gesendet…';
-    try {
-      const r = await fetch('/api/contact-enterprise', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          institution,
-          kanton: document.getElementById('ent-kanton').value.trim(),
-          anzahl: document.getElementById('ent-anzahl').value.trim(),
-          fachbereich: document.getElementById('ent-fachbereich').value.trim(),
-          starttermin: document.getElementById('ent-starttermin').value.trim(),
-          name: document.getElementById('ent-name').value.trim(),
-          email,
-        }),
-      });
-      if (r.ok) {
-        successEl.style.display = '';
-        btn.style.display = 'none';
-      } else {
-        throw new Error('Server error');
-      }
-    } catch(e) {
-      errEl.textContent = 'Senden fehlgeschlagen. Bitte per E-Mail: info@lernortai.ch';
-      errEl.style.display = '';
-      btn.disabled = false; btn.textContent = 'Anfrage senden';
-    }
-  }
-
   // ── COOKIE BANNER ──
   (function() {
     if (localStorage.getItem('cookie_consent')) return;
@@ -699,57 +609,6 @@
     if (banner) banner.classList.add('hidden');
   }
 </script>
-
-<!-- ── ENTERPRISE CONTACT MODAL ── -->
-<div id="enterprise-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:center;justify-content:center;padding:1rem">
-  <div style="background:#fff;border-radius:12px;box-shadow:0 4px 30px rgba(0,0,0,.15);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding:2rem;position:relative">
-    <button onclick="closeEnterpriseForm()" style="position:absolute;top:1rem;right:1rem;background:transparent;border:none;font-size:1.2rem;color:#6b7280;cursor:pointer;padding:.25rem .5rem;border-radius:4px">&#10005;</button>
-    <h2 style="font-size:1.2rem;font-weight:700;margin-bottom:.4rem">Enterprise-Anfrage</h2>
-    <p style="color:#6b7280;font-size:.875rem;margin-bottom:1.5rem">Für Kantone und grosse Institutionen. Wir melden uns innerhalb von 1–2 Werktagen.</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
-      <div>
-        <label style="display:block;font-size:.85rem;font-weight:500;margin-bottom:.3rem">Institution *</label>
-        <input id="ent-institution" type="text" placeholder="z.B. BBZ Olten" style="width:100%;padding:.5rem .75rem;border:1px solid #e5e7eb;border-radius:6px;font-size:.875rem" />
-      </div>
-      <div>
-        <label style="display:block;font-size:.85rem;font-weight:500;margin-bottom:.3rem">Kanton</label>
-        <input id="ent-kanton" type="text" placeholder="z.B. SO" style="width:100%;padding:.5rem .75rem;border:1px solid #e5e7eb;border-radius:6px;font-size:.875rem" />
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
-      <div>
-        <label style="display:block;font-size:.85rem;font-weight:500;margin-bottom:.3rem">Anzahl Lehrpersonen</label>
-        <input id="ent-anzahl" type="text" placeholder="z.B. 20" style="width:100%;padding:.5rem .75rem;border:1px solid #e5e7eb;border-radius:6px;font-size:.875rem" />
-      </div>
-      <div>
-        <label style="display:block;font-size:.85rem;font-weight:500;margin-bottom:.3rem">Fachbereich</label>
-        <input id="ent-fachbereich" type="text" placeholder="z.B. Technik / Handel" style="width:100%;padding:.5rem .75rem;border:1px solid #e5e7eb;border-radius:6px;font-size:.875rem" />
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:.75rem">
-      <div>
-        <label style="display:block;font-size:.85rem;font-weight:500;margin-bottom:.3rem">Gewünschter Start</label>
-        <input id="ent-starttermin" type="text" placeholder="z.B. August 2025" style="width:100%;padding:.5rem .75rem;border:1px solid #e5e7eb;border-radius:6px;font-size:.875rem" />
-      </div>
-      <div>
-        <label style="display:block;font-size:.85rem;font-weight:500;margin-bottom:.3rem">Ihr Name</label>
-        <input id="ent-name" type="text" placeholder="Vor- und Nachname" style="width:100%;padding:.5rem .75rem;border:1px solid #e5e7eb;border-radius:6px;font-size:.875rem" />
-      </div>
-    </div>
-    <div style="margin-bottom:1rem">
-      <label style="display:block;font-size:.85rem;font-weight:500;margin-bottom:.3rem">E-Mail *</label>
-      <input id="ent-email" type="email" placeholder="name@schule.ch" style="width:100%;padding:.5rem .75rem;border:1px solid #e5e7eb;border-radius:6px;font-size:.875rem" />
-    </div>
-    <div id="enterprise-error" style="display:none;color:#dc2626;font-size:.82rem;margin-bottom:.75rem"></div>
-    <div id="enterprise-success" style="display:none;background:#d1fae5;color:#059669;padding:.75rem 1rem;border-radius:8px;font-size:.875rem;margin-bottom:.75rem">
-      ✓ Vielen Dank! Wir melden uns innerhalb von 1–2 Werktagen bei Ihnen.
-    </div>
-    <div style="display:flex;gap:.75rem;justify-content:flex-end">
-      <button onclick="closeEnterpriseForm()" style="padding:.5rem 1.1rem;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;color:#374151;font-size:.875rem;cursor:pointer">Abbrechen</button>
-      <button id="enterprise-submit-btn" onclick="submitEnterpriseForm()" style="padding:.5rem 1.25rem;border-radius:8px;border:none;background:#1a56db;color:#fff;font-size:.875rem;font-weight:600;cursor:pointer">Anfrage senden</button>
-    </div>
-  </div>
-</div>
 
 <!-- ── COOKIE BANNER ── -->
 <div id="cookie-banner" class="hidden" style="position:fixed;bottom:0;left:0;right:0;background:#1f2937;color:#e5e7eb;padding:.875rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;z-index:9998;font-size:.85rem">
