@@ -117,7 +117,7 @@ export default async function handler(req, res) {
 
     if (licenseKey || schulCode) {
       if (!stripeKey) {
-        return res.status(503).json({ error: 'Lizenzprüfung derzeit nicht verfügbar.' });
+        return res.status(503).json({ error: 'Lizenzsystem nicht konfiguriert.' });
       }
       // ── Licensed path ──
       let customer;
