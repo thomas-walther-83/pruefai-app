@@ -2210,8 +2210,11 @@ async function sendHelpChatMessage() {
     }
 
     // System-Prompt wird separat als `system`-Parameter an die API übergeben.
-    const messages = helpChatHistory
-      .slice(-HELP_CHAT_HISTORY_LIMIT)
+    // Anthropic erfordert, dass die erste Nachricht die Rolle `user` hat – rein lokale
+    // Begrüssungsnachrichten (role: assistant) am Anfang werden daher herausgefiltert.
+    const apiMessages = helpChatHistory.slice(-HELP_CHAT_HISTORY_LIMIT);
+    const firstUserIdx = apiMessages.findIndex(function(m) { return m.role === 'user'; });
+    const messages = (firstUserIdx > 0 ? apiMessages.slice(firstUserIdx) : apiMessages)
       .map(function(m) { return { role: m.role === 'assistant' ? 'assistant' : 'user', content: [{ type: 'text', text: m.text }] }; });
 
     const response = await fetch('/api/claude', {
