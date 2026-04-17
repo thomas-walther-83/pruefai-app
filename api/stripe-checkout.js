@@ -7,6 +7,7 @@ export default async function handler(req, res) {
   const planMap = {
     starter: process.env.STRIPE_PRICE_STARTER,
     pro: process.env.STRIPE_PRICE_PRO,
+    max: process.env.STRIPE_PRICE_MAX || process.env.STRIPE_PRICE_SCHULE,
     schule: process.env.STRIPE_PRICE_SCHULE,
   };
 
@@ -31,10 +32,10 @@ export default async function handler(req, res) {
     'line_items[0][price]': priceId,
     'line_items[0][quantity]': '1',
     'metadata[plan]': plan,
-    // Allow card and SEPA Direct Debit (common for Swiss schools paying via Lastschrift)
+    // Allow card and SEPA Direct Debit
     'payment_method_types[0]': 'card',
     'payment_method_types[1]': 'sepa_debit',
-    // Enable automatic invoice creation so schools can request paper invoices
+    // Enable automatic invoice creation
     'invoice_creation[enabled]': 'true',
     success_url: `${appUrl}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${appUrl}/`,

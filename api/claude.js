@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
-const PLAN_LIMITS = { starter: 50, pro: 300, schule: 99999 };
+const PLAN_LIMITS = { starter: 50, pro: 300, max: 5000, schule: 99999 };
 const FREE_TRIAL_LIMIT = 3;
 const RATE_LIMIT_MAX = 20; // max unlicensed requests per IP per hour
 const RATE_LIMIT_WINDOW_MS = 3_600_000;

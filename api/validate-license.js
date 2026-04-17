@@ -1,5 +1,5 @@
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
-const PLAN_LIMITS = { starter: 50, pro: 300, schule: 99999 };
+const PLAN_LIMITS = { starter: 50, pro: 300, max: 5000, schule: 99999 };
 const LICENSE_KEY_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 const SCHUL_CODE_RE = /^SCHULE-[0-9A-F]{12}$/;
 
@@ -93,6 +93,7 @@ export default async function handler(req, res) {
 
   const meta = customer.metadata || {};
   const plan = meta.plan || 'none';
+  const displayPlan = plan === 'schule' ? 'max' : plan;
   const limit = PLAN_LIMITS[plan] ?? 0;
 
   if (plan === 'none' || limit === 0) {
@@ -128,7 +129,7 @@ export default async function handler(req, res) {
     if (correctionsThisMonth >= limit) {
       return res.status(429).json({
         valid: true,
-        plan,
+        plan: displayPlan,
         corrections_this_month: correctionsThisMonth,
         limit,
         corrections_remaining: 0,
@@ -148,7 +149,7 @@ export default async function handler(req, res) {
 
   return res.status(200).json({
     valid: true,
-    plan,
+    plan: displayPlan,
     corrections_this_month: correctionsThisMonth,
     limit,
     corrections_remaining: Math.max(0, limit - correctionsThisMonth),
