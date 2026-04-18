@@ -112,6 +112,7 @@ describe('stripe-checkout – Stripe-Integration (gemockt)', () => {
       const body = opts.body;
       assert.ok(body.includes('price_starter123'));
       assert.ok(body.includes('metadata%5Bplan%5D=starter'));
+      assert.ok(!body.includes('automatic_payment_methods'));
       return { ok: true, json: async () => ({ url: checkoutUrl }) };
     };
 
