@@ -226,8 +226,8 @@ vercel deploy --prod
 
 | Plan    | Korrekturen/Monat | Zielgruppe            |
 |---------|-------------------|-----------------------|
-| Starter | 100               | Einzellehrperson      |
-| Pro     | 500               | Lehrperson + Analytik |
+| Starter | 50                | Einzellehrperson      |
+| Pro     | 300               | Lehrperson + Analytik |
 | Max     | 5'000             | Schulen / Teams       |
 
 Für lokale Entwicklung und Tests: `SKIP_LICENSE=true` in `.env` setzen.

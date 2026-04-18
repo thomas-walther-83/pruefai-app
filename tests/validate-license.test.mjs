@@ -38,9 +38,9 @@ function mockReq(opts = {}) {
   };
 }
 
-// Gültige UUID v4 und Schulcode für Format-Tests (kein echter Stripe-Aufruf benötigt)
-const VALID_LICENSE_KEY = '123e4567-e89b-42d3-a456-426614174000';
-const VALID_SCHUL_CODE  = 'SCHULE-AABBCCDDEEFF';
+// Gültiges UUID v4 und Schulcode für Format-Tests (kein echter Stripe-Aufruf benötigt)
+const SAMPLE_LICENSE_KEY_FORMAT = '123e4567-e89b-42d3-a456-426614174000';
+const SAMPLE_SCHUL_CODE_FORMAT = 'SCHULE-AABBCCDDEEFF';
 
 // ── Fetch-Mock zurücksetzen ──────────────────────────────────────────────────
 const originalFetch = globalThis.fetch;
@@ -77,7 +77,7 @@ describe('validate-license – Eingabe-Validierung', () => {
   it('gibt 400 wenn license_key UND schul_code gleichzeitig übergeben werden', async () => {
     process.env.STRIPE_SECRET_KEY = 'sk_test_fake';
     const res = mockRes();
-    await handler(mockReq({ body: { license_key: VALID_LICENSE_KEY, schul_code: VALID_SCHUL_CODE } }), res);
+    await handler(mockReq({ body: { license_key: SAMPLE_LICENSE_KEY_FORMAT, schul_code: SAMPLE_SCHUL_CODE_FORMAT } }), res);
     assert.equal(res.statusCode, 400);
   });
 
@@ -100,7 +100,7 @@ describe('validate-license – Eingabe-Validierung', () => {
   it('gibt 500 wenn STRIPE_SECRET_KEY fehlt', async () => {
     // STRIPE_SECRET_KEY nicht gesetzt
     const res = mockRes();
-    await handler(mockReq({ body: { license_key: VALID_LICENSE_KEY } }), res);
+    await handler(mockReq({ body: { license_key: SAMPLE_LICENSE_KEY_FORMAT } }), res);
     assert.equal(res.statusCode, 500);
     assert.ok(res.body.error.includes('STRIPE_SECRET_KEY'));
   });
@@ -115,7 +115,7 @@ describe('validate-license – Stripe-Integration (gemockt)', () => {
     });
 
     const res = mockRes();
-    await handler(mockReq({ body: { license_key: VALID_LICENSE_KEY } }), res);
+    await handler(mockReq({ body: { license_key: SAMPLE_LICENSE_KEY_FORMAT } }), res);
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.valid, false);
   });
@@ -138,7 +138,7 @@ describe('validate-license – Stripe-Integration (gemockt)', () => {
     });
 
     const res = mockRes();
-    await handler(mockReq({ body: { license_key: VALID_LICENSE_KEY } }), res);
+    await handler(mockReq({ body: { license_key: SAMPLE_LICENSE_KEY_FORMAT } }), res);
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.valid, true);
     assert.equal(res.body.plan, 'pro');
@@ -165,7 +165,7 @@ describe('validate-license – Stripe-Integration (gemockt)', () => {
     });
 
     const res = mockRes();
-    await handler(mockReq({ body: { license_key: VALID_LICENSE_KEY } }), res);
+    await handler(mockReq({ body: { license_key: SAMPLE_LICENSE_KEY_FORMAT } }), res);
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.valid, true);
     assert.equal(res.body.plan, 'starter');
@@ -190,7 +190,7 @@ describe('validate-license – Stripe-Integration (gemockt)', () => {
     });
 
     const res = mockRes();
-    await handler(mockReq({ body: { license_key: VALID_LICENSE_KEY } }), res);
+    await handler(mockReq({ body: { license_key: SAMPLE_LICENSE_KEY_FORMAT } }), res);
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.valid, true);
     assert.equal(res.body.plan, 'max');
@@ -207,7 +207,7 @@ describe('validate-license – Stripe-Integration (gemockt)', () => {
     });
 
     const res = mockRes();
-    await handler(mockReq({ body: { license_key: VALID_LICENSE_KEY } }), res);
+    await handler(mockReq({ body: { license_key: SAMPLE_LICENSE_KEY_FORMAT } }), res);
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.valid, false);
   });
@@ -236,7 +236,7 @@ describe('validate-license – Stripe-Integration (gemockt)', () => {
     };
 
     const res = mockRes();
-    await handler(mockReq({ body: { license_key: VALID_LICENSE_KEY } }), res);
+    await handler(mockReq({ body: { license_key: SAMPLE_LICENSE_KEY_FORMAT } }), res);
     assert.equal(res.statusCode, 200);
     assert.equal(res.body.valid, true);
     // Nach Reset muss corrections_this_month = 0 sein
@@ -251,7 +251,7 @@ describe('validate-license – Stripe-Integration (gemockt)', () => {
     };
 
     const res = mockRes();
-    await handler(mockReq({ body: { license_key: VALID_LICENSE_KEY } }), res);
+    await handler(mockReq({ body: { license_key: SAMPLE_LICENSE_KEY_FORMAT } }), res);
     assert.equal(res.statusCode, 502);
     assert.ok(res.body.error.includes('Stripe'));
   });
