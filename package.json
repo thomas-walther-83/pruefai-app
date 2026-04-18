@@ -7,7 +7,8 @@
   "scripts": {
     "start": "python3 -m http.server 8000",
     "serve": "npx serve .",
-    "lint": "npx htmlhint@latest --config .htmlhintrc \"*.html\""
+    "lint": "npx htmlhint@latest --config .htmlhintrc \"*.html\"",
+    "test": "node --test tests/relay.test.mjs tests/validate-license.test.mjs tests/claude.test.mjs"
   },
   "keywords": [
     "berufsschule",

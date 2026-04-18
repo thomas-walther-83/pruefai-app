@@ -11,8 +11,13 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ### Hinzugefügt
 - CHANGELOG.md und CONTRIBUTING.md als Projektdokumentation
 - `.htmlhintrc` für HTML-Linting
-- CI-Workflow (`.github/workflows/ci.yml`) für automatische Qualitätsprüfungen
-- `lint`-Skript in `package.json`
+- CI-Workflow (`.github/workflows/ci.yml`) mit drei Jobs: HTML-Lint, JSON-Validierung, API-Unit-Tests
+- `lint`- und `test`-Skripte in `package.json`
+- `tests/relay.test.mjs` – 16 Unit-Tests für den Foto-Relay-Handler
+- `tests/validate-license.test.mjs` – 14 Unit-Tests für den Lizenzvalidierungs-Handler
+- `tests/claude.test.mjs` – 10 Unit-Tests für den KI-Proxy-Handler
+- `SECURITY.md` – Vulnerability-Disclosure-Policy und quartalsweise Betriebs-/Security-Review-Checkliste
+- Modularisierungshinweis in CONTRIBUTING.md (mittelfristiger Architekturplan)
 
 ### Geändert
 - README.md: Tech-Stack, Setup-Anleitung und Sicherheitshinweise auf den aktuellen Stand (IndexedDB, kein Supabase) aktualisiert

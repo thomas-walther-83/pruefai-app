@@ -65,11 +65,21 @@ vercel dev
 npm run lint
 ```
 
+### API-Tests ausführen
+
+```bash
+npm test
+```
+
+Die Tests verwenden den **built-in Node.js Test Runner** (`node:test`, ab Node 18+) – keine externen Abhängigkeiten nötig. Tests liegen unter `tests/*.test.mjs`.
+
+Beim Hinzufügen neuer API-Funktionen unter `api/` bitte entsprechende Tests in `tests/` anlegen.
+
 ### Pull Request erstellen
 
 1. Erstelle einen Feature-Branch: `git checkout -b feature/mein-feature`
 2. Mache deine Änderungen (nur minimale, gezielte Eingriffe)
-3. Führe `npm run lint` aus und behebe Warnungen
+3. Führe `npm run lint` und `npm test` aus und behebe Fehler
 4. Committe mit aussagekräftiger Nachricht
 5. Öffne einen Pull Request gegen `main`
 6. Verlinke das zugehörige Issue (`Closes #42`)
@@ -82,6 +92,20 @@ npm run lint
 - **Keine neuen npm-Abhängigkeiten** – Nur wenn zwingend nötig.
 - **Kommentare auf Deutsch** – Konsistent mit dem bestehenden Code.
 - **Keine personenbezogenen Daten im Code** – Schüler- und Lehrerdaten verbleiben im Browser.
+
+---
+
+## Architektur-Hinweis: Modularisierung
+
+Die gesamte Frontend-Logik liegt derzeit in `index.html` (Single-File-Ansatz). Das ist für ein kleines Team ohne Build-Prozess pragmatisch, hat aber Grenzen bei Wartbarkeit und Testbarkeit.
+
+**Mittelfristiges Ziel** (Tracking via GitHub Issues):
+- JS-Logik in separate Module unter `js/` auslagern (`<script type="module">`)
+- Kein Build-Schritt nötig (native ES-Module im Browser)
+- Priorität: IDB-Layer (`idbOpen`, `sb`), Auth/Lizenz, KI-API-Client
+- Änderungen schrittweise, mit Tests begleitet
+
+Bis dahin: Neue Logik möglichst in klar abgegrenzte Funktionen fassen und nicht unkontrolliert in bestehende Blöcke einstreuen.
 
 ---
 
