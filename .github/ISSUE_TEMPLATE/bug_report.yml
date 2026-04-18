@@ -1,0 +1,73 @@
+name: "🐛 Bug melden"
+description: Einen Fehler oder unerwartetes Verhalten melden
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für deine Fehlermeldung! Bitte fülle die folgenden Felder so vollständig wie möglich aus.
+
+  - type: textarea
+    id: beschreibung
+    attributes:
+      label: Problembeschreibung
+      description: Eine klare und präzise Beschreibung des Fehlers.
+      placeholder: Was ist passiert?
+    validations:
+      required: true
+
+  - type: textarea
+    id: schritte
+    attributes:
+      label: Schritte zur Reproduktion
+      description: Wie kann das Problem nachvollzogen werden?
+      placeholder: |
+        1. Gehe zu ...
+        2. Klicke auf ...
+        3. Fehler erscheint
+    validations:
+      required: true
+
+  - type: textarea
+    id: erwartet
+    attributes:
+      label: Erwartetes Verhalten
+      description: Was sollte stattdessen passieren?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: schwere
+    attributes:
+      label: Schweregrad
+      options:
+        - "Kritisch – Datenverlust oder Sicherheitslücke"
+        - "Hoch – Kernfunktion nicht nutzbar"
+        - "Mittel – Funktion eingeschränkt"
+        - "Niedrig – Kosmetisches Problem"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Browser
+      multiple: true
+      options:
+        - Chrome / Chromium
+        - Firefox
+        - Safari
+        - Edge
+        - Andere
+
+  - type: input
+    id: os
+    attributes:
+      label: Betriebssystem
+      placeholder: z.B. Windows 11, macOS 14, iOS 17
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / Fehlermeldungen
+      description: Füge Screenshots oder Konsolenausgaben ein, falls vorhanden.

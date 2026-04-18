@@ -1,0 +1,62 @@
+name: CI – Qualitätsprüfung
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: HTML-Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: HTML linten (htmlhint)
+        run: npx --yes htmlhint@latest --config .htmlhintrc "*.html"
+
+  validate-json:
+    name: JSON validieren
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: JSON-Dateien validieren
+        run: |
+          for f in package.json manifest.json vercel.json .htmlhintrc; do
+            echo "Prüfe $f ..."
+            node -e "JSON.parse(require('fs').readFileSync('$f', 'utf8')); console.log('  OK');"
+          done
+
+  test:
+    name: API-Unit-Tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: API-Tests ausführen
+        run: node --test tests/relay.test.mjs tests/validate-license.test.mjs tests/claude.test.mjs tests/stripe-webhook.test.mjs tests/stripe-checkout.test.mjs tests/stripe-portal.test.mjs tests/get-license.test.mjs tests/capture-lead.test.mjs tests/contact-enterprise.test.mjs
