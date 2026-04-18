@@ -36,9 +36,8 @@ export default async function handler(req, res) {
     'line_items[0][price]': priceId,
     'line_items[0][quantity]': '1',
     'metadata[plan]': plan,
-    // Let Stripe automatically offer all payment methods enabled in the Dashboard
-    // (e.g. card, SEPA Direct Debit, TWINT for Swiss customers, etc.)
-    'automatic_payment_methods[enabled]': 'true',
+    // Stripe Checkout automatically uses payment methods configured in Dashboard
+    // for eligible customers (e.g. TWINT in CH when enabled there).
     // Enable automatic invoice creation
     'invoice_creation[enabled]': 'true',
     success_url: `${appUrl}/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
