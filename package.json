@@ -6,7 +6,8 @@
   "main": "index.html",
   "scripts": {
     "start": "python3 -m http.server 8000",
-    "serve": "npx serve ."
+    "serve": "npx serve .",
+    "lint": "npx htmlhint@latest --config .htmlhintrc \"*.html\""
   },
   "keywords": [
     "berufsschule",
