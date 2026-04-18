@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#1a56db" />
-  <meta name="description" content="Pruefai – KI-gestützte Prüfungskorrektur für Schweizer Berufsschulen" />
+  <meta name="description" content="Pruefai – KI-gestützte Prüfungskorrektur für Lehrpersonen" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>Pruefai</title>
@@ -278,7 +278,7 @@
 <!-- Mobile Upload Page (shown when ?mode=mobile) -->
 <div id="mobile-app">
   <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem">
-    <div style="font-size:1.4rem;font-weight:700;color:var(--primary)">&#127891; Pruefai</div>
+    <div style="font-size:1.4rem;font-weight:700;color:var(--primary)">&#9999;&#65039; Pruefai</div>
     <div style="font-size:.8rem;color:var(--text-muted)">Foto-Upload</div>
   </div>
   <div class="card">
@@ -302,8 +302,8 @@
 <div id="app">
   <header class="header">
     <div>
-      <div class="header__logo">&#127891; Pruefai</div>
-      <div class="header__sub" id="header-school">Berufsschule</div>
+      <div class="header__logo">&#9999;&#65039; Pruefai</div>
+      <div class="header__sub" id="header-school">Meine Schule</div>
     </div>
     <div class="header__actions">
       <button class="btn btn-icon" onclick="openSettingsModal()" title="Einstellungen">&#9881;&#65039;</button>
@@ -366,10 +366,10 @@
           <h2 class="section-title">Klassen</h2>
           <p class="section-subtitle">Legen Sie Klassen als Grundlage für Schüler, Prüfungen und Noten an.</p>
         </div>
-        <button class="btn btn-primary" onclick="openModal('klasse-modal')" title="Neue Klasse mit Beruf und Schuljahr anlegen">+ Neue Klasse</button>
+        <button class="btn btn-primary" id="add-klasse-btn" onclick="openModal('klasse-modal')" title="Neue Klasse anlegen">+ Neue Klasse</button>
       </div>
       <div class="card"><div class="table-wrap"><table>
-        <thead><tr><th>Klasse</th><th>Beruf</th><th>Lehrjahr</th><th>Schuljahr</th><th>Schüler</th><th>Aktionen</th></tr></thead>
+        <thead><tr><th>Klasse</th><th id="klassen-th-beruf">Beruf</th><th id="klassen-th-lehrjahr">Lehrjahr</th><th>Schuljahr</th><th>Schüler</th><th>Aktionen</th></tr></thead>
         <tbody id="klassen-tbody"><tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Klassen erfasst.</td></tr></tbody>
       </table></div></div>
     </div>
@@ -408,6 +408,7 @@
         <thead><tr><th>Fach</th><th>Kürzel</th><th>KI-Profil</th><th>Aktionen</th></tr></thead>
         <tbody id="faecher-tbody"><tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Fächer erfasst.</td></tr></tbody>
       </table></div></div>
+    </div>
 
     <!-- Prüfungen -->
     <div id="view-pruefungen" class="view">
@@ -570,14 +571,15 @@
     <input type="hidden" id="klasse-id" />
     <div class="form-row">
       <div class="form-group"><label class="form-label">Klassenname *</label><input type="text" id="klasse-name" class="form-control" placeholder="z.B. 1BI-A" /></div>
-      <div class="form-group"><label class="form-label">Beruf *</label><input type="text" id="klasse-beruf" class="form-control" placeholder="z.B. Informatiker/in" /></div>
+      <div class="form-group" id="klasse-beruf-group"><label class="form-label" id="klasse-beruf-label">Beruf *</label><input type="text" id="klasse-beruf" class="form-control" placeholder="z.B. Informatiker/in" /></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label class="form-label">Lehrjahr *</label>
-        <select id="klasse-lehrjahr" class="form-control"><option value="1">1. Lehrjahr</option><option value="2">2. Lehrjahr</option><option value="3">3. Lehrjahr</option><option value="4">4. Lehrjahr</option></select>
+      <div class="form-group" id="klasse-lehrjahr-group"><label class="form-label" id="klasse-lehrjahr-label">Lehrjahr *</label>
+        <select id="klasse-lehrjahr" class="form-control"><option value="">– Lehrjahr wählen –</option><option value="1">1. Lehrjahr</option><option value="2">2. Lehrjahr</option><option value="3">3. Lehrjahr</option><option value="4">4. Lehrjahr</option></select>
       </div>
       <div class="form-group"><label class="form-label">Schuljahr *</label><input type="text" id="klasse-schuljahr" class="form-control" placeholder="z.B. 2024/2025" /></div>
     </div>
+    <p id="klasse-schooltype-hint" class="form-hint" style="margin-bottom:.9rem"></p>
     <div class="modal__footer">
       <button class="btn btn-secondary" onclick="closeModal('klasse-modal')">Abbrechen</button>
       <button class="btn btn-primary" onclick="saveKlasse()">Speichern</button>
@@ -742,6 +744,19 @@
     <div class="modal__title">&#9881;&#65039; Einstellungen</div>
     <button class="modal__close" onclick="closeModal('settings-modal')">&#10005;</button>
     <div class="form-group"><label class="form-label">Schulname</label><input type="text" id="settings-school-name" class="form-control" /></div>
+    <div class="form-group">
+      <label class="form-label">Schultyp</label>
+      <select id="settings-school-type" class="form-control">
+        <option value="">– Schultyp wählen –</option>
+        <option value="berufsschule">Berufsschule</option>
+        <option value="gymnasium">Gymnasium</option>
+        <option value="mittelschule">Mittelschule</option>
+        <option value="primarschule">Primarschule</option>
+        <option value="sekundarschule">Sekundarschule</option>
+        <option value="hochschule">Hochschule</option>
+      </select>
+      <p class="form-hint">Der Schultyp beeinflusst die KI-Korrektur (z.B. Rolle des Lehrers im Prompt).</p>
+    </div>
     <div class="form-group"><label class="form-label">Ihr Name (optional)</label><input type="text" id="settings-lehrer-name" class="form-control" placeholder="Vor- und Nachname" /></div>
     <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
       <div class="form-label" style="margin-bottom:.75rem">&#128260; Datensicherung (für Geräteübertragung)</div>
@@ -817,7 +832,7 @@
 <!-- E-Mail-Capture Modal -->
 <div id="email-capture-modal" class="modal-overlay hidden">
   <div class="modal" style="max-width:440px">
-    <div class="modal__title">🎓 Willkommen bei Pruefai!</div>
+    <div class="modal__title">✏️ Willkommen bei Pruefai!</div>
     <p style="color:var(--text-muted);margin-bottom:1.25rem;font-size:.9rem">
       Geben Sie Ihre E-Mail ein, um <strong>3 kostenlose KI-Korrekturen</strong> freizuschalten. Keine Kreditkarte nötig.
     </p>
@@ -1018,7 +1033,7 @@ const HELP_CHAT_MAX_MESSAGE_LENGTH = 2000; // max. Nutzerzeichen pro Chat-Nachri
 const HELP_CHAT_HISTORY_LIMIT = 10; // Anzahl letzter Nachrichten als Kontext
 const HELP_CHAT_MAX_TOKENS = 700; // Obergrenze für KI-Antwortlänge
 const HELP_CHAT_SYSTEM_PROMPT = 'Du bist der Hilfe-Chatbot für Pruefai. Antworte auf Deutsch, präzise, freundlich und praxisnah. Gib nur produktspezifische Hilfestellung zur Bedienung von Pruefai. Bei rechtlichen Fragen verweise auf AGB/Datenschutz/AVV. Gib keinen Rechtsrat und erfinde keine Funktionen.';
-let cfg = { schoolName: 'Pruefai' };
+let cfg = { schoolName: 'Pruefai', schoolType: '' };
 let lehrer_id      = null;
 let uploadPages    = [];
 let uploadSchuelerName = '';
@@ -1060,7 +1075,7 @@ function requirePro(featureName) {
 document.addEventListener('DOMContentLoaded', async function() {
   if (initMobileMode()) return; // mobile upload page – no further init needed
   const saved = localStorage.getItem(LS.CONFIG);
-  if (saved) { try { const local = JSON.parse(saved); if (local.schoolName) cfg.schoolName = local.schoolName; } catch(e) {} }
+  if (saved) { try { const local = JSON.parse(saved); if (local.schoolName) cfg.schoolName = local.schoolName; if (local.schoolType !== undefined) cfg.schoolType = local.schoolType; } catch(e) {} }
   try {
     const res = await fetch('/api/config');
     if (res.ok) { const data = await res.json(); if (data.schoolName) cfg.schoolName = data.schoolName; }
@@ -1080,6 +1095,29 @@ if ('serviceWorker' in navigator) {
 
 function applyConfig() {
   document.getElementById('header-school').textContent = cfg.schoolName || 'Pruefai';
+  updateKlassenSchoolTypeUI();
+  const klassenView = document.getElementById('view-klassen');
+  if (klassenView && klassenView.classList.contains('active')) loadKlassen();
+}
+
+function isBerufsschuleType() {
+  return (cfg.schoolType || '') === 'berufsschule';
+}
+
+function updateKlassenSchoolTypeUI() {
+  const isBerufsschule = isBerufsschuleType();
+  const berufGroup = document.getElementById('klasse-beruf-group');
+  const lehrjahrGroup = document.getElementById('klasse-lehrjahr-group');
+  const berufHeader = document.getElementById('klassen-th-beruf');
+  const lehrjahrHeader = document.getElementById('klassen-th-lehrjahr');
+  const hint = document.getElementById('klasse-schooltype-hint');
+  const addBtn = document.getElementById('add-klasse-btn');
+  if (berufGroup) berufGroup.style.display = isBerufsschule ? '' : 'none';
+  if (lehrjahrGroup) lehrjahrGroup.style.display = isBerufsschule ? '' : 'none';
+  if (berufHeader) berufHeader.style.display = isBerufsschule ? '' : 'none';
+  if (lehrjahrHeader) lehrjahrHeader.style.display = isBerufsschule ? '' : 'none';
+  if (hint) hint.textContent = isBerufsschule ? 'Beruf und Lehrjahr sind für Berufsschulen erforderlich.' : 'Für diesen Schultyp werden nur Klassenname und Schuljahr benötigt.';
+  if (addBtn) addBtn.title = isBerufsschule ? 'Neue Klasse mit Beruf und Schuljahr anlegen' : 'Neue Klasse anlegen';
 }
 
 // =============================================================
@@ -1245,7 +1283,7 @@ async function exportAllData() {
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'lernortai_backup_' + new Date().toISOString().split('T')[0] + '.json';
+    a.href = url; a.download = 'pruefai_backup_' + new Date().toISOString().split('T')[0] + '.json';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
     showToast('Daten exportiert!', 'success');
@@ -1353,12 +1391,20 @@ async function loadDashboard() {
 // =============================================================
 async function loadKlassen() {
   try {
+    updateKlassenSchoolTypeUI();
     const [rows, schueler] = await Promise.all([sb.select('klassen'), sb.select('schueler')]);
+    const isBerufsschule = isBerufsschuleType();
     const tbody = document.getElementById('klassen-tbody');
-    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Klassen erfasst.</td></tr>'; return; }
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="' + (isBerufsschule ? '6' : '4') + '" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Klassen erfasst.</td></tr>';
+      return;
+    }
     tbody.innerHTML = rows.map(function(k) {
       const cnt = schueler.filter(function(s) { return s.klasse_id === k.id; }).length;
-      return '<tr><td><strong>' + escHtml(k.name) + '</strong></td><td>' + escHtml(k.beruf) + '</td><td>' + k.lehrjahr + '. Lehrjahr</td><td>' + escHtml(k.schuljahr) + '</td><td>' + cnt + '</td><td>' +
+      const lehrjahrText = k.lehrjahr ? (k.lehrjahr + '. Lehrjahr') : '–';
+      return '<tr><td><strong>' + escHtml(k.name) + '</strong></td>' +
+        (isBerufsschule ? '<td>' + escHtml(k.beruf) + '</td><td>' + lehrjahrText + '</td>' : '') +
+        '<td>' + escHtml(k.schuljahr) + '</td><td>' + cnt + '</td><td>' +
         '<button class="btn btn-sm btn-secondary" onclick="editKlasse(\'' + k.id + '\')">&#9998;</button> ' +
         '<button class="btn btn-sm btn-danger" onclick="deleteKlasse(\'' + k.id + '\')">&#128465;</button></td></tr>';
     }).join('');
@@ -1367,6 +1413,7 @@ async function loadKlassen() {
 
 async function openModal(id) {
   if (id === 'klasse-modal') {
+    updateKlassenSchoolTypeUI();
     document.getElementById('klasse-id').value = '';
     document.getElementById('klasse-name').value = '';
     document.getElementById('klasse-beruf').value = '';
@@ -1406,10 +1453,11 @@ function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 async function editKlasse(id) {
   const rows = await sb.select('klassen', 'id=eq.' + id);
   const k = rows[0]; if (!k) return;
+  updateKlassenSchoolTypeUI();
   document.getElementById('klasse-id').value = k.id;
   document.getElementById('klasse-name').value = k.name;
-  document.getElementById('klasse-beruf').value = k.beruf;
-  document.getElementById('klasse-lehrjahr').value = k.lehrjahr;
+  document.getElementById('klasse-beruf').value = k.beruf || '';
+  document.getElementById('klasse-lehrjahr').value = k.lehrjahr ? String(k.lehrjahr) : '';
   document.getElementById('klasse-schuljahr').value = k.schuljahr;
   document.getElementById('klasse-modal-title').textContent = 'Klasse bearbeiten';
   document.getElementById('klasse-modal').classList.remove('hidden');
@@ -1418,15 +1466,22 @@ async function editKlasse(id) {
 async function saveKlasse() {
   const id = document.getElementById('klasse-id').value;
   const name = document.getElementById('klasse-name').value.trim();
+  const isBerufsschule = isBerufsschuleType();
   const beruf = document.getElementById('klasse-beruf').value.trim();
-  const lehrjahr = parseInt(document.getElementById('klasse-lehrjahr').value);
+  const lehrjahrRaw = document.getElementById('klasse-lehrjahr').value;
+  const lehrjahr = (isBerufsschule && lehrjahrRaw !== '') ? parseInt(lehrjahrRaw, 10) : null;
   const schuljahr = document.getElementById('klasse-schuljahr').value.trim();
-  if (!name || !beruf || !schuljahr) { showToast('Bitte alle Pflichtfelder ausfüllen.', 'error'); return; }
+  if (!name || !schuljahr || (isBerufsschule && !beruf)) { showToast('Bitte alle Pflichtfelder ausfüllen.', 'error'); return; }
+  if (isBerufsschule && lehrjahr === null) { showToast('Bitte ein Lehrjahr wählen.', 'error'); return; }
+  if (isBerufsschule && !Number.isFinite(lehrjahr)) { showToast('Bitte ein Lehrjahr wählen.', 'error'); return; }
   try {
+    const payload = isBerufsschule
+      ? { name, beruf, lehrjahr, schuljahr }
+      : { name, beruf: null, lehrjahr: null, schuljahr };
     if (id) {
-      await sb.update('klassen', id, { name, beruf, lehrjahr, schuljahr });
+      await sb.update('klassen', id, payload);
     } else {
-      await sb.insert('klassen', { name, beruf, lehrjahr, schuljahr, lehrer_id: lehrer_id });
+      await sb.insert('klassen', { ...payload, lehrer_id: lehrer_id });
     }
     closeModal('klasse-modal'); showToast('Klasse gespeichert.', 'success'); loadKlassen(); loadDashboard();
   } catch(e) { showToast(e.message, 'error'); }
@@ -1729,14 +1784,17 @@ async function loadKorrekturEintraege() {
       '<div class="table-wrap"><table><thead><tr><th>Schüler</th><th>Status</th><th>Note</th><th>Aktionen</th></tr></thead><tbody>' +
       schueler.map(function(s) {
         const e = eMap[s.id];
+        const safePruefungId = String(pruefungId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+        const safeSchuelerId = String(s.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
+        const safeName = escHtml(s.name).replace(/'/g, "\\'");
         const status = e ? e.status : 'kein Eintrag';
         const note = e && (e.note_manuell || e.note) ? noteHtml(e.note_manuell || e.note) : '–';
         return '<tr><td><strong>' + escHtml(s.name) + '</strong>' + (s.nummer ? '<br><small>' + escHtml(s.nummer) + '</small>' : '') + '</td>' +
           '<td><span class="badge ' + statusBadge(status) + '">' + escHtml(status) + '</span></td><td>' + note + '</td><td>' +
-          (e ? '<button class="btn btn-sm btn-secondary" onclick="openUploadModal(\'' + e.id + '\', \'' + escHtml(s.name).replace(/'/g, "\\'") + '\')">&#128248; Upload</button> ' +
-               '<button class="btn btn-sm btn-primary" onclick="kiKorrigieren(\'' + e.id + '\')">&#129302; KI</button> ' +
+          '<button class="btn btn-sm btn-secondary" onclick="openUploadForSchueler(\'' + safePruefungId + '\', \'' + safeSchuelerId + '\', \'' + safeName + '\')">&#128248; Upload</button> ' +
+          (e ? '<button class="btn btn-sm btn-primary" onclick="kiKorrigieren(\'' + e.id + '\')">&#129302; KI</button> ' +
                '<button class="btn btn-sm btn-secondary" onclick="noteManuelleingabe(\'' + e.id + '\')">&#9998; Note</button>'
-            : '<span style="color:var(--text-muted);font-size:.8rem">Kein Eintrag</span>') + '</td></tr>';
+            : '<span style="color:var(--text-muted);font-size:.8rem">Eintrag wird beim Upload erstellt</span>') + '</td></tr>';
       }).join('') + '</tbody></table></div></div>';
   } catch(e) { showToast(e.message, 'error'); }
 }
@@ -1752,6 +1810,27 @@ function openUploadModal(eintragsId, name) {
   document.getElementById('pages-preview').innerHTML = '';
   document.getElementById('upload-progress').classList.add('hidden');
   document.getElementById('upload-modal').classList.remove('hidden');
+}
+
+async function openUploadForSchueler(pruefungId, schuelerId, name) {
+  try {
+    const safePruefungId = String(pruefungId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+    const safeSchuelerId = String(schuelerId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+    if (!safePruefungId || !safeSchuelerId) { showToast('Ungültige Auswahl für Prüfung/Schüler.', 'error'); return; }
+    let existing = await sb.select('eintraege', 'schueler_id=eq.' + safeSchuelerId + '&pruefung_id=eq.' + safePruefungId);
+    let eintrag = existing[0];
+    if (!eintrag) {
+      const created = await sb.insert('eintraege', { schueler_id: safeSchuelerId, pruefung_id: safePruefungId, status: 'offen' });
+      eintrag = created && created[0] ? created[0] : null;
+      if (!eintrag) {
+        existing = await sb.select('eintraege', 'schueler_id=eq.' + safeSchuelerId + '&pruefung_id=eq.' + safePruefungId);
+        eintrag = existing[0];
+      }
+    }
+    if (!eintrag) { showToast('Eintrag konnte nicht erstellt werden.', 'error'); return; }
+    openUploadModal(eintrag.id, name);
+    loadKorrekturEintraege();
+  } catch(e) { showToast(e.message, 'error'); }
 }
 
 function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
@@ -2031,7 +2110,9 @@ async function kiKorrigieren(eintragsId) {
       const dataUrl = await blobToDataUrl(blob);
       return { type: 'image', source: { type: 'base64', media_type: blob.type || 'image/jpeg', data: dataUrl.split(',')[1] } };
     }))).filter(function(b) { return b !== null; });
-    const systemPrompt = 'Du bist ein erfahrener Berufsschullehrer in der Schweiz.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\n' + (kiProfilInstruction ? kiProfilInstruction + '\n' : '') + (rubricInstruction ? rubricInstruction + '\n' : '') + 'Antworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "...", "max": <Zahl>, "erreicht": <Zahl>, "feedback": "..."}]}';
+    const schoolTypeLabels = { 'berufsschule': 'Berufsschule', 'gymnasium': 'Gymnasium', 'mittelschule': 'Mittelschule', 'primarschule': 'Primarschule', 'sekundarschule': 'Sekundarschule', 'hochschule': 'Hochschule' };
+    const schoolTypeLabel = schoolTypeLabels[cfg.schoolType] || 'Schule';
+    const systemPrompt = 'Du bist ein erfahrener Lehrer an einer ' + schoolTypeLabel + '.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\n' + (kiProfilInstruction ? kiProfilInstruction + '\n' : '') + (rubricInstruction ? rubricInstruction + '\n' : '') + 'Antworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "...", "max": <Zahl>, "erreicht": <Zahl>, "feedback": "..."}]}';
     const userContent = imageBlocks.concat([{ type: 'text', text: 'Prüfung: ' + (pruefung && pruefung.name || '') + '\nSchüler: ' + (schueler && schueler.name || '') + '\nMax. Punkte: ' + (pruefung && pruefung.max_punkte || 100) + (pruefung && pruefung.anweisungen ? '\nAufgabenstellung:\n' + pruefung.anweisungen : '') + '\n\nBitte korrigiere diese Prüfung als JSON.' }]);
     const licenseKey = localStorage.getItem('lernortai_license_key') || '';
     const schulCode = localStorage.getItem('lernortai_schul_code') || '';
@@ -2189,7 +2270,8 @@ async function sendHelpChatMessage() {
   try {
     const licenseKey = localStorage.getItem('lernortai_license_key') || '';
     const schulCode = localStorage.getItem('lernortai_schul_code') || '';
-    if (!licenseKey && !schulCode) {
+    const isTrialUser = !licenseKey && !schulCode;
+    if (isTrialUser) {
       const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
       if (used >= FREE_TRIAL_LIMIT) {
         document.getElementById('upsell-modal').classList.remove('hidden');
@@ -2197,8 +2279,6 @@ async function sendHelpChatMessage() {
         renderHelpChat();
         return;
       }
-      localStorage.setItem(LS.FREE_USED, String(used + 1));
-      updateFreeTrialBadge();
     }
 
     const headers = { 'content-type': 'application/json' };
@@ -2217,11 +2297,18 @@ async function sendHelpChatMessage() {
     const messages = (firstUserIdx > 0 ? apiMessages.slice(firstUserIdx) : apiMessages)
       .map(function(m) { return { role: m.role === 'assistant' ? 'assistant' : 'user', content: [{ type: 'text', text: m.text }] }; });
 
-    const response = await fetch('/api/claude', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: HELP_CHAT_MAX_TOKENS, system: HELP_CHAT_SYSTEM_PROMPT, messages: messages }),
-    });
+    let response;
+    try {
+      response = await fetch('/api/claude', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: HELP_CHAT_MAX_TOKENS, system: HELP_CHAT_SYSTEM_PROMPT, messages: messages }),
+      });
+    } catch (networkErr) {
+      helpChatHistory.push({ role: 'assistant', text: '⚠️ Der Hilfe-Server ist aktuell nicht erreichbar. Bitte prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.' });
+      renderHelpChat();
+      return;
+    }
 
     const newTrialToken = response.headers.get('x-trial-token');
     if (newTrialToken) localStorage.setItem(LS.TRIAL_TOKEN, newTrialToken);
@@ -2233,8 +2320,23 @@ async function sendHelpChatMessage() {
       return;
     }
     if (!response.ok) {
-      const statusMap = { 400: 'Ungültige Anfrage.', 401: 'Nicht autorisiert.', 403: 'Zugriff verweigert.', 500: 'Serverfehler bei der KI-Anfrage.', 502: 'KI-Dienst aktuell nicht erreichbar.', 503: 'KI-Dienst vorübergehend nicht verfügbar.', 504: 'Zeitüberschreitung beim KI-Dienst.' };
-      throw new Error(statusMap[response.status] || ('Claude API-Fehler (' + response.status + ').'));
+      const retryable = response.status === 502 || response.status === 503 || response.status === 504;
+      const statusMap = {
+        400: 'Ungültige Anfrage.',
+        401: 'Nicht autorisiert.',
+        403: 'Zugriff verweigert.',
+        500: 'Serverfehler bei der KI-Anfrage.',
+        502: 'KI-Dienst aktuell nicht erreichbar.',
+        503: 'KI-Dienst vorübergehend nicht verfügbar.',
+        504: 'Zeitüberschreitung beim KI-Dienst.',
+      };
+      const base = statusMap[response.status] || ('KI-Dienst-Fehler (' + response.status + ').');
+      throw new Error(base + (retryable ? ' Bitte versuchen Sie es in einem Moment erneut.' : ''));
+    }
+    if (isTrialUser) {
+      const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
+      localStorage.setItem(LS.FREE_USED, String(used + 1));
+      updateFreeTrialBadge();
     }
 
     const data = await response.json();
@@ -2248,7 +2350,7 @@ async function sendHelpChatMessage() {
     helpChatHistory.push({ role: 'assistant', text: answer || 'Die KI-Antwort war leer. Bitte formulieren Sie Ihre Frage anders oder kontaktieren Sie den Support.' });
     renderHelpChat();
   } catch (e) {
-    helpChatHistory.push({ role: 'assistant', text: 'Es gab einen Fehler beim KI-Chat: ' + e.message });
+    helpChatHistory.push({ role: 'assistant', text: '⚠️ ' + e.message });
     renderHelpChat();
   } finally {
     btn.disabled = false;
@@ -2401,6 +2503,7 @@ async function exportNotenCSV() {
 // =============================================================
 async function openSettingsModal() {
   document.getElementById('settings-school-name').value = cfg.schoolName;
+  document.getElementById('settings-school-type').value = cfg.schoolType || '';
   try {
     const rows = await sb.select('lehrer', 'id=eq.' + lehrer_id);
     document.getElementById('settings-lehrer-name').value = (rows[0] && rows[0].name) || '';
@@ -2427,6 +2530,7 @@ async function openSettingsModal() {
 
 async function saveSettings() {
   cfg.schoolName = document.getElementById('settings-school-name').value.trim() || 'Pruefai';
+  cfg.schoolType = document.getElementById('settings-school-type').value;
   localStorage.setItem(LS.CONFIG, JSON.stringify(cfg));
   applyConfig();
   const name = document.getElementById('settings-lehrer-name').value.trim();
@@ -2986,11 +3090,11 @@ async function loadAnalytik() {
       e.ergebnis.aufgaben.forEach(function(a) { if (a.feedback) allFeedbacks.push(a.feedback); });
     });
     const errorKeywords = extractErrorKeywords(allFeedbacks);
-    el.innerHTML = renderAnalytikContent(trendData, errorKeywords, schueler, eintraege);
+    el.innerHTML = renderAnalytikContent(trendData, errorKeywords, schueler, eintraege, relevantPruefungen);
   } catch(e) { el.innerHTML = '<div class="alert alert-danger">Fehler: ' + escHtml(e.message) + '</div>'; }
 }
 
-function renderAnalytikContent(trendData, errorKeywords, schueler, eintraege) {
+function renderAnalytikContent(trendData, errorKeywords, schueler, eintraege, relevantPruefungen) {
   const sIds = new Set(schueler.map(function(s) { return s.id; }));
   let html = '';
   // Trend chart
@@ -3040,6 +3144,94 @@ function renderAnalytikContent(trendData, errorKeywords, schueler, eintraege) {
     });
     html += '</tbody></table></div>';
   }
+  html += '</div>';
+  // Jahresübersicht pro Schüler
+  if (relevantPruefungen && relevantPruefungen.length) {
+    html += renderJahresuebersicht(schueler, eintraege, relevantPruefungen);
+  }
+  return html;
+}
+
+function roundToHalf(n) { return Math.round(n * 2) / 2; }
+
+// Returns 1 for HJ1 (Aug–Jan) or 2 for HJ2 (Feb–Jul) based on exam date (YYYY-MM-DD)
+function getHalbjahr(datum) {
+  if (!datum) return null;
+  const month = parseInt(datum.slice(5, 7), 10);
+  return (month >= 8 && month <= 12) || month === 1 ? 1 : 2;
+}
+
+function renderJahresuebersicht(schueler, eintraege, relevantPruefungen) {
+  const pruefungMap = {};
+  relevantPruefungen.forEach(function(p) { pruefungMap[p.id] = p; });
+
+  // Categorise exams into HJ1 / HJ2
+  const hj1Exams = relevantPruefungen.filter(function(p) { return getHalbjahr(p.datum) === 1; });
+  const hj2Exams = relevantPruefungen.filter(function(p) { return getHalbjahr(p.datum) === 2; });
+  const hasHj1 = hj1Exams.length > 0;
+  const hasHj2 = hj2Exams.length > 0;
+
+  let html = '<div class="card" style="margin-top:1rem">';
+  html += '<div class="card__title">&#128203; Jahresübersicht pro Schüler/in <span class="pro-badge">Pro</span></div>';
+  html += '<p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.75rem">Noten über das gesamte Schuljahr, Halbjahresdurchschnitt und vorgeschlagene Zeugnisnote (gerundet auf 0.5)</p>';
+  html += '<div class="table-wrap"><table><thead><tr>';
+  html += '<th>Name</th>';
+  if (hasHj1) { html += '<th>HJ 1 – Noten</th><th>Ø HJ 1</th><th>Zeugnisnote HJ 1</th>'; }
+  if (hasHj2) { html += '<th>HJ 2 – Noten</th><th>Ø HJ 2</th><th>Zeugnisnote HJ 2</th>'; }
+  html += '<th>Jahresschnitt</th>';
+  html += '</tr></thead><tbody>';
+
+  const sortedSchueler = schueler.slice().sort(function(a, b) { return a.name.localeCompare(b.name); });
+
+  sortedSchueler.forEach(function(s) {
+    const sEintraege = eintraege.filter(function(e) { return e.schueler_id === s.id; });
+
+    function getNote(pruefungId) {
+      const e = sEintraege.find(function(e) { return e.pruefung_id === pruefungId; });
+      if (!e) return null;
+      const n = e.note_manuell || e.note;
+      return (n !== null && n !== undefined) ? parseFloat(n) : null;
+    }
+
+    function calcHj(exams) {
+      const notes = exams.map(function(p) { return getNote(p.id); }).filter(function(n) { return n !== null; });
+      const avg = notes.length ? notes.reduce(function(s, n) { return s + n; }, 0) / notes.length : null;
+      const zn = avg !== null ? roundToHalf(avg) : null;
+      return { notes: notes, avg: avg, zn: zn };
+    }
+
+    const hj1 = hasHj1 ? calcHj(hj1Exams) : null;
+    const hj2 = hasHj2 ? calcHj(hj2Exams) : null;
+    const allNotes = relevantPruefungen.map(function(p) { return getNote(p.id); }).filter(function(n) { return n !== null; });
+    const jahresAvg = allNotes.length ? allNotes.reduce(function(s, n) { return s + n; }, 0) / allNotes.length : null;
+
+    html += '<tr>';
+    html += '<td><strong>' + escHtml(s.name) + '</strong></td>';
+    if (hasHj1) {
+      if (hj1.notes.length) {
+        const noteSpans = hj1.notes.map(function(n) { return '<span class="badge ' + noteClass(n) + '" style="margin:1px">' + n.toFixed(1) + '</span>'; }).join('');
+        html += '<td>' + noteSpans + '</td>';
+        html += '<td>' + noteHtml(hj1.avg) + '</td>';
+        html += '<td>' + noteHtml(hj1.zn) + '</td>';
+      } else {
+        html += '<td colspan="3" style="color:var(--text-muted);font-size:.8rem">Keine Noten</td>';
+      }
+    }
+    if (hasHj2) {
+      if (hj2.notes.length) {
+        const noteSpans = hj2.notes.map(function(n) { return '<span class="badge ' + noteClass(n) + '" style="margin:1px">' + n.toFixed(1) + '</span>'; }).join('');
+        html += '<td>' + noteSpans + '</td>';
+        html += '<td>' + noteHtml(hj2.avg) + '</td>';
+        html += '<td>' + noteHtml(hj2.zn) + '</td>';
+      } else {
+        html += '<td colspan="3" style="color:var(--text-muted);font-size:.8rem">Keine Noten</td>';
+      }
+    }
+    html += '<td>' + (jahresAvg !== null ? noteHtml(jahresAvg) : '<span style="color:var(--text-muted)">–</span>') + '</td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
   html += '</div>';
   return html;
 }

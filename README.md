@@ -1,9 +1,9 @@
-# Pruefai – KI-gestützte Prüfungskorrektur für Berufsschulen
+# Pruefai – KI-gestützte Prüfungskorrektur
 
 [![MIT Lizenz](https://img.shields.io/badge/Lizenz-MIT-blue.svg)](LICENSE)
 [![Vanilla JS](https://img.shields.io/badge/JavaScript-Vanilla-yellow.svg)](index.html)
 
-**Pruefai** ist eine webbasierte Applikation für Schweizer Berufsschulen, die Lehrpersonen bei der Korrektur von Prüfungen mithilfe von KI (Claude) unterstützt. Alle Daten werden lokal im Browser (IndexedDB) gespeichert.
+**Pruefai** ist eine webbasierte Applikation für Lehrpersonen, die bei der Korrektur von Prüfungen mithilfe von KI (Claude) unterstützt. Alle Daten werden lokal im Browser (IndexedDB) gespeichert.
 
 ---
 
