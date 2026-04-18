@@ -3,7 +3,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
-  const plan = req.query.plan;
+  const normalizePlan = (value) =>
+    String(Array.isArray(value) ? value[0] || '' : value || '').trim().toLowerCase();
+
+  const rawPlan = req.query.plan || req.query.model || '';
+  const plan = normalizePlan(rawPlan);
   const planMap = {
     starter: process.env.STRIPE_PRICE_STARTER,
     pro: process.env.STRIPE_PRICE_PRO,
@@ -11,7 +15,7 @@ export default async function handler(req, res) {
     schule: process.env.STRIPE_PRICE_SCHULE,
   };
 
-  if (!plan || !planMap[plan]) {
+  if (!plan || !Object.prototype.hasOwnProperty.call(planMap, plan)) {
     return res.status(400).json({ error: 'Invalid or missing plan parameter.' });
   }
 

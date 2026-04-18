@@ -2136,7 +2136,7 @@ async function kiKorrigieren(eintragsId) {
     const response = await fetch('/api/claude', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: 1024, system: systemPrompt, messages: [{ role: 'user', content: userContent }] }),
+      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 1024, system: systemPrompt, messages: [{ role: 'user', content: userContent }] }),
     });
     // Store updated trial token if returned by server
     const newTrialToken = response.headers.get('x-trial-token');
@@ -2302,7 +2302,7 @@ async function sendHelpChatMessage() {
       response = await fetch('/api/claude', {
         method: 'POST',
         headers: headers,
-        body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: HELP_CHAT_MAX_TOKENS, system: HELP_CHAT_SYSTEM_PROMPT, messages: messages }),
+        body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: HELP_CHAT_MAX_TOKENS, system: HELP_CHAT_SYSTEM_PROMPT, messages: messages }),
       });
     } catch (networkErr) {
       helpChatHistory.push({ role: 'assistant', text: '⚠️ Der Hilfe-Server ist aktuell nicht erreichbar. Bitte prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.' });
@@ -2902,7 +2902,7 @@ async function runQualitaetsCheck() {
     if (schulCode) headers['x-schul-code'] = schulCode;
     const response = await fetch('/api/claude', {
       method: 'POST', headers,
-      body: JSON.stringify({ model: 'claude-opus-4-5', max_tokens: 512, system: systemPrompt, messages: [{ role: 'user', content: imageBlocks.concat([{ type: 'text', text: 'Bitte überprüfe diese Prüfungskorrektur.' }]) }] }),
+      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 512, system: systemPrompt, messages: [{ role: 'user', content: imageBlocks.concat([{ type: 'text', text: 'Bitte überprüfe diese Prüfungskorrektur.' }]) }] }),
     });
     if (!response.ok) throw new Error('HTTP ' + response.status);
     const data = await response.json();
