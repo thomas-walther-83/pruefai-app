@@ -1,0 +1,46 @@
+name: "✨ Feature-Request"
+description: Eine neue Funktion oder Verbesserung vorschlagen
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke für deinen Vorschlag! Bitte beschreibe die gewünschte Funktion so konkret wie möglich.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Welches Problem löst dieses Feature?
+      description: Beschreibe den Anwendungsfall oder die Einschränkung, die dieses Feature adressieren soll.
+      placeholder: Als Lehrperson möchte ich ..., damit ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: loesung
+    attributes:
+      label: Beschreibung der gewünschten Lösung
+      description: Was soll die neue Funktion konkret tun?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternativen
+    attributes:
+      label: Bereits betrachtete Alternativen
+      description: Hast du andere Ansätze in Betracht gezogen?
+
+  - type: dropdown
+    id: prioritaet
+    attributes:
+      label: Geschätzte Priorität
+      options:
+        - "Hoch – betrifft viele Nutzer"
+        - "Mittel – nützliche Verbesserung"
+        - "Niedrig – Nice-to-have"
+
+  - type: textarea
+    id: kontext
+    attributes:
+      label: Zusätzlicher Kontext
+      description: Screenshots, Mockups oder weitere Informationen können hier eingefügt werden.

@@ -59,4 +59,4 @@ jobs:
           node-version: '20'
 
       - name: API-Tests ausführen
-        run: node --test tests/relay.test.mjs tests/validate-license.test.mjs tests/claude.test.mjs
+        run: node --test tests/relay.test.mjs tests/validate-license.test.mjs tests/claude.test.mjs tests/stripe-webhook.test.mjs tests/stripe-checkout.test.mjs tests/stripe-portal.test.mjs tests/get-license.test.mjs tests/capture-lead.test.mjs tests/contact-enterprise.test.mjs

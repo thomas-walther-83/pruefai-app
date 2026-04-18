@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Sicherheitslücke melden
+    url: mailto:info@pruefai.ch
+    about: Sicherheitsprobleme bitte direkt per E-Mail melden (nicht als öffentliches Issue).

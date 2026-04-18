@@ -8,7 +8,7 @@
     "start": "python3 -m http.server 8000",
     "serve": "npx serve .",
     "lint": "npx htmlhint@latest --config .htmlhintrc \"*.html\"",
-    "test": "node --test tests/relay.test.mjs tests/validate-license.test.mjs tests/claude.test.mjs"
+    "test": "node --test tests/relay.test.mjs tests/validate-license.test.mjs tests/claude.test.mjs tests/stripe-webhook.test.mjs tests/stripe-checkout.test.mjs tests/stripe-portal.test.mjs tests/get-license.test.mjs tests/capture-lead.test.mjs tests/contact-enterprise.test.mjs"
   },
   "keywords": [
     "berufsschule",
