@@ -113,6 +113,7 @@ describe('stripe-checkout – Stripe-Integration (gemockt)', () => {
       assert.ok(body.includes('price_starter123'));
       assert.ok(body.includes('metadata%5Bplan%5D=starter'));
       assert.ok(!body.includes('automatic_payment_methods'));
+      assert.ok(!body.includes('invoice_creation%5Benabled%5D'));
       return { ok: true, json: async () => ({ url: checkoutUrl }) };
     };
 
