@@ -8,12 +8,12 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>Pruefai</title>
-  <link rel="manifest" href="/manifest.json" />
+  <link rel="manifest" href="./manifest.json" />
   <!-- jsPDF -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js" integrity="sha384-b8MpgG2ZzWN6OPAtiB1JiBmDr9MpTt3NKK6KQf61hC/L7X4wJrvoTeVmMFPgp3nL" crossorigin="anonymous"></script>
   <!-- QR-Code -->
-  <script defer src="/qrcode.min.js"></script>
+  <script defer src="./qrcode.min.js"></script>
   <style>
     :root {
       --primary: #1d4ed8; --primary-dark: #1e40af; --primary-light: #e0ebff;
@@ -307,7 +307,7 @@
     </div>
     <div class="header__actions">
       <button class="btn btn-icon" onclick="openSettingsModal()" title="Einstellungen">&#9881;&#65039;</button>
-      <a id="free-trial-badge" href="/landing" title="Plan wählen" style="display:none;font-size:.75rem;font-weight:600;background:var(--warning-light);color:var(--warning);border:1px solid #fcd34d;border-radius:20px;padding:.25rem .65rem;white-space:nowrap;text-decoration:none">🎓 <span id="free-trial-remaining"></span> gratis</a>
+      <a id="free-trial-badge" href="./landing.html" title="Plan wählen" style="display:none;font-size:.75rem;font-weight:600;background:var(--warning-light);color:var(--warning);border:1px solid #fcd34d;border-radius:20px;padding:.25rem .65rem;white-space:nowrap;text-decoration:none">🎓 <span id="free-trial-remaining"></span> gratis</a>
       <div class="usage-bar-wrap" id="usage-bar-wrap">
         <span id="usage-bar-label" style="white-space:nowrap"></span>
         <div class="usage-bar-track"><div class="usage-bar-fill" id="usage-bar-fill"></div></div>
@@ -534,13 +534,13 @@
           Hier finden Sie schnelle Hilfe, rechtliche Informationen und den KI-Support-Chat.
         </p>
         <div class="help-links" style="margin-bottom:.9rem">
-          <a href="/agb" target="_blank" rel="noopener" class="help-link-card" aria-label="Allgemeine Geschäftsbedingungen in neuem Tab öffnen"><strong>AGB</strong><br><small style="color:var(--text-muted)">Allgemeine Geschäftsbedingungen öffnen</small></a>
-          <a href="/datenschutz" target="_blank" rel="noopener" class="help-link-card" aria-label="Datenschutzerklärung in neuem Tab öffnen"><strong>Datenschutz</strong><br><small style="color:var(--text-muted)">Datenschutzerklärung anzeigen</small></a>
-          <a href="/avv" target="_blank" rel="noopener" class="help-link-card" aria-label="Auftragsverarbeitungsvertrag in neuem Tab öffnen"><strong>AVV</strong><br><small style="color:var(--text-muted)">Auftragsverarbeitungsvertrag</small></a>
+          <a href="./agb.html" target="_blank" rel="noopener" class="help-link-card" aria-label="Allgemeine Geschäftsbedingungen in neuem Tab öffnen"><strong>AGB</strong><br><small style="color:var(--text-muted)">Allgemeine Geschäftsbedingungen öffnen</small></a>
+          <a href="./datenschutz.html" target="_blank" rel="noopener" class="help-link-card" aria-label="Datenschutzerklärung in neuem Tab öffnen"><strong>Datenschutz</strong><br><small style="color:var(--text-muted)">Datenschutzerklärung anzeigen</small></a>
+          <a href="./avv.html" target="_blank" rel="noopener" class="help-link-card" aria-label="Auftragsverarbeitungsvertrag in neuem Tab öffnen"><strong>AVV</strong><br><small style="color:var(--text-muted)">Auftragsverarbeitungsvertrag</small></a>
           <a href="mailto:info@pruefai.ch" class="help-link-card" aria-label="Support per E-Mail kontaktieren"><strong>Support kontaktieren</strong><br><small style="color:var(--text-muted)">info@pruefai.ch</small></a>
         </div>
         <div class="alert alert-info" style="margin:0">
-          Tipp: Häufige Fragen finden Sie auch auf der <a href="/landing#faq" target="_blank" rel="noopener" style="font-weight:600">Info-Seite (FAQ)</a>.
+          Tipp: Häufige Fragen finden Sie auch auf der <a href="./landing.html#faq" target="_blank" rel="noopener" style="font-weight:600">Info-Seite (FAQ)</a>.
         </div>
       </div>
 
@@ -881,7 +881,7 @@
       </div>
     </div>
     <div style="text-align:center">
-      <a href="/landing" style="font-size:.85rem;color:var(--text-muted)">Alle Pläne vergleichen &#8594;</a>
+      <a href="./landing.html" style="font-size:.85rem;color:var(--text-muted)">Alle Pläne vergleichen &#8594;</a>
     </div>
   </div>
 </div>
@@ -1090,7 +1090,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 // Service Worker registrieren
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 }
 
 function applyConfig() {
@@ -2519,9 +2519,9 @@ async function openSettingsModal() {
     const left = Math.max(0, FREE_TRIAL_LIMIT - used);
     const el = document.getElementById('license-info');
     if (left > 0) {
-      el.innerHTML = '🎓 Testphase – noch <strong>' + left + '</strong> von ' + FREE_TRIAL_LIMIT + ' Gratis-Korrekturen verfügbar. <a href="/landing">Plan wählen &#8594;</a>';
+      el.innerHTML = '🎓 Testphase – noch <strong>' + left + '</strong> von ' + FREE_TRIAL_LIMIT + ' Gratis-Korrekturen verfügbar. <a href="./landing.html">Plan wählen &#8594;</a>';
     } else {
-      el.innerHTML = '&#9888;&#65039; Gratis-Kontingent aufgebraucht. <a href="/landing">Plan wählen &#8594;</a>';
+      el.innerHTML = '&#9888;&#65039; Gratis-Kontingent aufgebraucht. <a href="./landing.html">Plan wählen &#8594;</a>';
     }
   }
   await loadTextbausteineSettings();
@@ -2598,7 +2598,7 @@ async function checkLicenseInfo(key, schulCode) {
       el.innerHTML = '&#10003;&#65039; Aktiv – Plan: <strong>' + d.plan + '</strong> | Korrekturen: ' + d.corrections_this_month + ' / ' + (d.limit >= 99999 ? '&#8734;' : d.limit);
     } else {
       localStorage.removeItem('lernortai_plan');
-      el.innerHTML = '&#10060; Ungültig oder abgelaufen. <a href="/landing">Plan wählen &#8594;</a>';
+      el.innerHTML = '&#10060; Ungültig oder abgelaufen. <a href="./landing.html">Plan wählen &#8594;</a>';
     }
   } catch(e) { /* ignore */ }
 }
@@ -2610,7 +2610,7 @@ async function openStripePortal() {
       showToast('Abo-Verwaltung ist nur für den Account-Inhaber verfügbar. Bitte beim Administrator nachfragen.', 'info');
       return;
     }
-    window.open('/landing', '_blank');
+    window.open('./landing.html', '_blank');
     return;
   }
   try {

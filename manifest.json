@@ -2,7 +2,7 @@
   "name": "Pruefai",
   "short_name": "Pruefai",
   "description": "KI-gestützte Prüfungskorrektur für Lehrpersonen",
-  "start_url": "/",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f9fafb",
   "theme_color": "#1a56db",
