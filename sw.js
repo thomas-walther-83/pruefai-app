@@ -1,11 +1,11 @@
 // Pruefai Service Worker – App-Shell caching
 const CACHE_NAME = 'pruefai-v4';
 const APP_SHELL = [
-  '/',
-  '/index.html',
+  './',
+  './index.html',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js',
-  '/qrcode.min.js',
+  './qrcode.min.js',
 ];
 
 self.addEventListener('install', event => {
@@ -42,7 +42,7 @@ self.addEventListener('fetch', event => {
         return response;
       }).catch(() => {
         // Only return the app shell for page navigations, not for scripts or assets
-        if (event.request.mode === 'navigate') return caches.match('/index.html');
+        if (event.request.mode === 'navigate') return caches.match('./index.html');
         return new Response('', { status: 503 });
       });
     })
