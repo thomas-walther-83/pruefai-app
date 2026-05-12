@@ -1,0 +1,114 @@
+name: Vercel Diagnose
+
+# Einmalig manuell ausführen, um Vercel-Status zu prüfen.
+# Output: Account-ID (VERCEL_ORG_ID), Projekt-IDs, vorhandene Env-Vars (nur Namen).
+# Schreibt nichts – reine Lesezugriffe via Vercel-API.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [claude/review-pruefai-app-bVFmr]
+    paths: ['.github/workflows/vercel-diagnose.yml']
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Token prüfen
+        run: |
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+            echo "::error::VERCEL_TOKEN secret fehlt im Repo."
+            exit 1
+          fi
+          echo "✓ VERCEL_TOKEN ist gesetzt"
+
+      - name: User-Info
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "═══════════════════════════════════════"
+          echo " 1. VERCEL-ACCOUNT"
+          echo "═══════════════════════════════════════"
+          curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v2/user" \
+            | jq -r '.user | "Username : \(.username)\nE-Mail   : \(.email)\nName     : \(.name)\nUser-ID  : \(.id)\n"'
+
+      - name: Teams
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "═══════════════════════════════════════"
+          echo " 2. TEAMS (falls vorhanden)"
+          echo "═══════════════════════════════════════"
+          TEAMS=$(curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v2/teams")
+          COUNT=$(echo "$TEAMS" | jq '.teams | length')
+          if [ "$COUNT" = "0" ]; then
+            echo "Keine Teams – persönlicher Account."
+          else
+            echo "$TEAMS" | jq -r '.teams[] | "Name: \(.name)\n  Slug    : \(.slug)\n  Team-ID : \(.id)\n"'
+          fi
+
+      - name: Projekte
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "═══════════════════════════════════════"
+          echo " 3. PROJEKTE"
+          echo "═══════════════════════════════════════"
+          PROJECTS=$(curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects?limit=30")
+          COUNT=$(echo "$PROJECTS" | jq '.projects | length')
+          if [ "$COUNT" = "0" ]; then
+            echo "Keine Projekte gefunden."
+            exit 0
+          fi
+          echo "$PROJECTS" | jq -r '.projects[] | "Projekt: \(.name)\n  PROJECT_ID : \(.id)\n  Account-ID : \(.accountId)\n  Framework  : \(.framework // "—")\n  Live-URL   : \(.targets.production.alias[0] // "(kein Production-Deploy)")\n  Letzter Build: \(.latestDeployments[0].url // "—") (state: \(.latestDeployments[0].readyState // "—"))\n"'
+
+      - name: Env-Vars für pruefai-Projekte
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          echo "═══════════════════════════════════════"
+          echo " 4. ENV-VARS (nur Namen, keine Werte)"
+          echo "═══════════════════════════════════════"
+          PROJECTS=$(curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects?limit=30" \
+            | jq -r '.projects[] | select(.name | test("pruefai|pr-fai"; "i")) | "\(.name)|\(.id)"')
+
+          if [ -z "$PROJECTS" ]; then
+            echo "Kein Projekt mit 'pruefai' im Namen gefunden – ich prüfe alle:"
+            PROJECTS=$(curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v9/projects?limit=30" \
+              | jq -r '.projects[] | "\(.name)|\(.id)"')
+          fi
+
+          if [ -z "$PROJECTS" ]; then
+            echo "Keine Projekte vorhanden."
+            exit 0
+          fi
+
+          while IFS='|' read -r NAME PROJID; do
+            [ -z "$NAME" ] && continue
+            echo ""
+            echo "─── Projekt: $NAME ───"
+            echo "(PROJECT_ID = $PROJID)"
+            ENVS=$(curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" "https://api.vercel.com/v10/projects/${PROJID}/env")
+            ENVCOUNT=$(echo "$ENVS" | jq '.envs | length')
+            if [ "$ENVCOUNT" = "0" ]; then
+              echo "(keine Env-Vars konfiguriert)"
+            else
+              echo "$ENVS" | jq -r '.envs[] | "  \(.key)  →  \(.target | join(","))"' | sort
+            fi
+          done <<< "$PROJECTS"
+
+      - name: Zusammenfassung
+        if: always()
+        run: |
+          echo ""
+          echo "═══════════════════════════════════════════════════════════"
+          echo " WIE WEITER?"
+          echo "═══════════════════════════════════════════════════════════"
+          echo "Bitte kopiere mir aus Schritt 3 (PROJEKTE):"
+          echo "  • den Wert von PROJECT_ID  → wird zu GitHub-Secret VERCEL_PROJECT_ID"
+          echo "  • den Wert von Account-ID → wird zu GitHub-Secret VERCEL_ORG_ID"
+          echo ""
+          echo "Aus Schritt 4 (ENV-VARS) sehe ich, welche Variablen in Vercel"
+          echo "schon konfiguriert sind und welche noch fehlen."
+          echo "═══════════════════════════════════════════════════════════"
