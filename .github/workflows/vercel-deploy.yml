@@ -1,0 +1,92 @@
+name: Vercel – Deploy / Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Action
+        required: true
+        default: deploy-prod
+        type: choice
+        options:
+          - deploy-prod
+          - rollback
+      target_deployment:
+        description: For rollback only – Vercel deployment URL or ID to promote (leave empty for previous successful prod deploy)
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  deploy:
+    if: inputs.action == 'deploy-prod'
+    name: Production Deploy
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Pull project settings
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        id: deploy
+        run: |
+          URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Deployed: $URL"
+
+      - name: Summary
+        run: echo "::notice title=Production deploy::${{ steps.deploy.outputs.url }}"
+
+  rollback:
+    if: inputs.action == 'rollback'
+    name: Rollback Production
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
+      - name: Install Vercel CLI
+        run: npm install -g vercel@latest
+
+      - name: Determine target
+        id: target
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          REQUESTED: ${{ inputs.target_deployment }}
+        run: |
+          if [ -n "$REQUESTED" ]; then
+            echo "target=$REQUESTED" >> "$GITHUB_OUTPUT"
+          else
+            # Pick the second-most-recent READY production deployment.
+            TARGET=$(vercel ls --prod --token="$VERCEL_TOKEN" --scope="$VERCEL_ORG_ID" 2>/dev/null \
+              | awk '/Ready/ {print $2; n++} n==2 {exit}' | tail -1)
+            if [ -z "$TARGET" ]; then
+              echo "::error::Could not auto-detect previous production deployment. Pass target_deployment explicitly."
+              exit 1
+            fi
+            echo "target=$TARGET" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Promote
+        run: vercel promote "${{ steps.target.outputs.target }}" --token=${{ secrets.VERCEL_TOKEN }} --scope=${{ secrets.VERCEL_ORG_ID }}
+
+      - name: Summary
+        run: echo "::notice title=Rolled back to::${{ steps.target.outputs.target }}"

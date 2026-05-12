@@ -1,0 +1,63 @@
+name: Auftrag an Claude
+description: Strukturierter Auftrag, den Claude Code (Web) autonom in einem Branch + PR umsetzt.
+title: "[Auftrag] "
+labels: ["claude", "auftrag"]
+body:
+  - type: textarea
+    id: ziel
+    attributes:
+      label: Ziel
+      description: Was soll am Ende erreicht sein? Eine bis drei klare Sätze.
+      placeholder: |
+        Beispiel: Lehrer sollen TWINT-Zahlung im Checkout sehen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: akzeptanz
+    attributes:
+      label: Akzeptanzkriterien
+      description: Konkrete, testbare Bedingungen, die nach dem Merge erfüllt sein müssen.
+      placeholder: |
+        - [ ] Auf der Landing erscheint TWINT-Logo
+        - [ ] Beim Checkout ist TWINT eine wählbare Methode (in der Schweiz)
+        - [ ] Tests grün
+        - [ ] AGB nennt TWINT als verfügbare Methode
+    validations:
+      required: true
+
+  - type: textarea
+    id: kontext
+    attributes:
+      label: Kontext / Hintergrund
+      description: Hinweise, Vorgaben, Links, Screenshots. Was Claude wissen sollte, um die richtige Lösung zu wählen.
+      placeholder: |
+        Stripe hat TWINT bereits aktiviert. Live-Mode ist scharf.
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of Scope
+      description: Was Claude in diesem Auftrag NICHT anfassen soll.
+      placeholder: |
+        - Pricing
+        - Legal-Texte
+
+  - type: dropdown
+    id: dringlichkeit
+    attributes:
+      label: Dringlichkeit
+      options:
+        - normal
+        - dringend (heute live)
+        - kann warten
+      default: 0
+
+  - type: checkboxes
+    id: autoritaeten
+    attributes:
+      label: Freigaben (vorab erteilen, damit Claude nicht zwischendurch fragen muss)
+      options:
+        - label: Claude darf den PR nach grünem CI auf `main` mergen
+        - label: Claude darf bei Bedarf nachträglich denselben Auftrag erweitern (Follow-up-Commits in derselben PR)
+        - label: Claude darf neue NPM-Devdependencies hinzufügen

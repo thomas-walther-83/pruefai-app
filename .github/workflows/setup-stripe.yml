@@ -1,0 +1,38 @@
+name: Stripe Bootstrap
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Stripe mode
+        required: true
+        default: test
+        type: choice
+        options:
+          - test
+          - live
+      app_url:
+        description: APP_URL passed to setup-stripe.mjs (e.g. https://pruefai.ch)
+        required: false
+        default: https://pruefai.ch
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    name: Bootstrap Products / Prices / Webhook
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.mode == 'live' && 'production' || 'preview' }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
+      - name: Run setup-stripe.mjs
+        env:
+          STRIPE_SECRET_KEY: ${{ inputs.mode == 'live' && secrets.STRIPE_SECRET_KEY_LIVE || secrets.STRIPE_SECRET_KEY_TEST }}
+          APP_URL: ${{ inputs.app_url }}
+        run: node scripts/setup-stripe.mjs

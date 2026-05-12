@@ -236,6 +236,58 @@ Sieh [CONTRIBUTING.md](CONTRIBUTING.md) für Hinweise zu Bugreports, Feature-Req
 
 ---
 
+## Autonome Weiterentwicklung mit Claude Code
+
+Die App wird mit Claude Code (Web) weiterentwickelt. Du gibst Aufträge per GitHub-Issue (Template *„Auftrag an Claude"*) oder im Chat – Claude erledigt Code, Tests, PR, Merge, Deploy und Stripe-Setup autonom.
+
+### Einmalige Secrets (GitHub → Settings → Secrets and variables → Actions)
+
+| Secret                     | Zweck                                                 | Quelle                                              |
+|----------------------------|-------------------------------------------------------|-----------------------------------------------------|
+| `VERCEL_TOKEN`             | `vercel deploy` / `vercel promote` aus CI             | Vercel → Account Settings → Tokens                  |
+| `VERCEL_ORG_ID`            | Project-Scoping                                       | Vercel → Project Settings → General                 |
+| `VERCEL_PROJECT_ID`        | Project-Scoping                                       | Vercel → Project Settings → General                 |
+| `STRIPE_SECRET_KEY_TEST`   | Stripe-Bootstrap im Testmodus                         | Stripe Dashboard (Test) → Developers → API keys     |
+| `STRIPE_SECRET_KEY_LIVE`   | Stripe-Bootstrap im Livemodus                         | Stripe Dashboard (Live) → Developers → API keys     |
+
+### Workflows (`.github/workflows/`)
+
+| Workflow              | Trigger                | Zweck                                                                            |
+|-----------------------|------------------------|----------------------------------------------------------------------------------|
+| `ci.yml`              | Push / PR              | HTML-Lint, JSON-Validierung, 90 API-Unit-Tests                                   |
+| `vercel-deploy.yml`   | `workflow_dispatch`    | Manuelle Production-Deploys und Rollback auf vorherigen Stand                    |
+| `setup-stripe.yml`    | `workflow_dispatch`    | Idempotenter Bootstrap aller Produkte/Preise/Webhooks (Test- oder Live-Modus)    |
+| `deploy.yml`          | Push auf `main`        | Spiegelung auf GitHub Pages (ohne API)                                           |
+
+### Stripe-Bootstrap manuell ausführen
+
+```bash
+# Setup im Test-Modus
+STRIPE_SECRET_KEY=sk_test_... APP_URL=https://pruefai.ch \
+  node scripts/setup-stripe.mjs
+
+# oder per GitHub: Actions → "Stripe Bootstrap" → Run workflow → test/live
+```
+
+Das Skript ist **idempotent** (re-runs erzeugen keine Duplikate, sondern aktualisieren `pruefai_managed`-getaggte Ressourcen). Es gibt die `STRIPE_PRICE_*` und `STRIPE_WEBHOOK_SECRET` aus, die in Vercel als Environment-Variablen zu setzen sind.
+
+### Was Claude darf
+
+- Code lesen / ändern / committen / PR erstellen / mergen
+- Tests + Lint ausführen
+- Vercel-Deploys und Rollbacks via `vercel-deploy.yml` triggern
+- Stripe-Bootstrap via `setup-stripe.yml` triggern
+- Auf CI-Failures und Review-Kommentare reagieren (subscribe_pr_activity)
+
+### Was Claude nicht darf (manuelle Aktionen für Inhaber)
+
+- Stripe Live-Mode aktivieren (Identitäts- und Bankprüfung)
+- Domain-DNS-Änderungen
+- Pricing- und AGB-/AVV-Änderungen (rechtlicher Review)
+- GitHub-Secrets hinzufügen oder rotieren
+
+---
+
 ## Changelog
 
 Sieh [CHANGELOG.md](CHANGELOG.md) für die Versionshistorie.
