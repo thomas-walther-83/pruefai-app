@@ -8,7 +8,40 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
-### Hinzugefügt
+---
+
+## [1.1.0] – 2026-05-12
+
+### Geändert
+- **Max-Plan-Limit von 5'000 auf 1'500 Korrekturen/Monat reduziert** (Marge-Schutz). Betrifft `api/claude.js`, `api/validate-license.js`, `api/stripe-webhook.js` sowie alle kundenseitigen Texte (`landing.html`, `index.html`, `agb.html`, `README.md`, `SECURITY.md`).
+- `sw.js`: Cache-Bust auf `pruefai-v5`, toten Supabase-Filter entfernt.
+- README/Projektstruktur: Verweis auf `supabase/` entfernt.
+
+### Sicherheit
+- **Content-Security-Policy** und Security-Header (`X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`, `Permissions-Policy`, `HSTS`) in `vercel.json` hinzugefügt.
+- `api/capture-lead.js`, `api/contact-enterprise.js`: Origin-Allowlist (`ALLOWED_ORIGINS`), CORS-Preflight, IP-basiertes Rate-Limit (20 bzw. 10 Requests/Stunde).
+- `api/stripe-checkout.js`: Referer-Allowlist und IP-Rate-Limit (30 Requests/Stunde) gegen Stripe-Session-Spam von Drittseiten.
+- `api/claude.js`: License-Key- und Schul-Code-Format vor dem Stripe-Lookup validieren (spart Stripe-Calls und blockt Probing).
+
+### Entfernt
+- `supabase/`-Legacy-Ordner (Schema, RLS-Policies, Migration) – Projekt nutzt seit 1.0 ausschliesslich IndexedDB.
+
+---
+
+## [1.0.1] – 2026-04-19
+
+### Behoben
+- Stripe-Checkout: `invoice_creation`-Parameter wird im Subscription-Mode nicht mehr gesendet (war vom Stripe-API abgelehnt).
+- Statisches Hosting: Extensionless-Routen-Fallbacks und host-agnostische interne Links (PWA-Assets, Navigation).
+- Initiales Rendering: Externe Head-Skripte werden deferred geladen, damit kein leeres Erstpaint mehr auftritt.
+- `qrcode`-Library lokal gebundelt (kein externer CDN-Fetch mehr).
+- SRI-Hashes zu deferred cdnjs-Skripten ergänzt.
+
+---
+
+## [Vorgängerversionen]
+
+### Hinzugefügt (vor 1.1.0)
 - CHANGELOG.md und CONTRIBUTING.md als Projektdokumentation
 - `.htmlhintrc` für HTML-Linting
 - CI-Workflow (`.github/workflows/ci.yml`) mit drei Jobs: HTML-Lint, JSON-Validierung, API-Unit-Tests

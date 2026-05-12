@@ -5,8 +5,8 @@ import crypto from 'crypto';
 const PLAN_LABELS = {
   starter: 'Starter (50 Korrekturen/Monat)',
   pro: 'Pro (300 Korrekturen/Monat)',
-  max: 'Max (5’000 Korrekturen/Monat)',
-  schule: 'Max (5’000+ Korrekturen/Monat)',
+  max: 'Max (1’500 Korrekturen/Monat)',
+  schule: 'Schule (individuelles Kontingent)',
 };
 
 const MAX_PAYMENT_FAILURES = 3;

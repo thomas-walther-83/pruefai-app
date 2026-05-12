@@ -139,14 +139,10 @@ pruefai-app/
 │   ├── capture-lead.js     # Lead-Capture-Formular
 │   ├── get-license.js      # Lizenzschlüssel-Abfrage
 │   └── contact-enterprise.js # Enterprise-Kontaktformular
-├── docs/                   # Rechtliche Dokumente (Markdown)
-│   ├── AGB.md
-│   ├── AVV.md
-│   └── DATENSCHUTZ.md
-└── supabase/               # ⚠️ Legacy – nicht mehr verwendet
-    ├── schema.sql
-    ├── rls-policies.sql
-    └── migration.sql
+└── docs/                   # Rechtliche Dokumente (Markdown)
+    ├── AGB.md
+    ├── AVV.md
+    └── DATENSCHUTZ.md
 ```
 
 ---
@@ -228,7 +224,7 @@ vercel deploy --prod
 |---------|-------------------|-----------------------|
 | Starter | 50                | Einzellehrperson      |
 | Pro     | 300               | Lehrperson + Analytik |
-| Max     | 5'000             | Schulen / Teams       |
+| Max     | 1'500             | Lehrpersonen mit hohem Volumen |
 
 Für lokale Entwicklung und Tests: `SKIP_LICENSE=true` in `.env` setzen.
 
