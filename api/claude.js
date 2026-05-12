@@ -1,7 +1,9 @@
 import crypto from 'crypto';
 
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean);
-const PLAN_LIMITS = { starter: 50, pro: 300, max: 5000, schule: 99999 };
+const PLAN_LIMITS = { starter: 50, pro: 300, max: 1500, schule: 99999 };
+const LICENSE_KEY_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+const SCHUL_CODE_RE = /^SCHULE-[0-9A-F]{12}$/;
 const FREE_TRIAL_LIMIT = 3;
 const RATE_LIMIT_MAX = 20; // max unlicensed requests per IP per hour
 const RATE_LIMIT_WINDOW_MS = 3_600_000;
@@ -118,6 +120,12 @@ export default async function handler(req, res) {
     if (licenseKey || schulCode) {
       if (!stripeKey) {
         return res.status(503).json({ error: 'Lizenzprüfung nicht verfügbar: STRIPE_SECRET_KEY fehlt in der Server-Konfiguration. Bitte wenden Sie sich an den Administrator.' });
+      }
+      if (schulCode && !SCHUL_CODE_RE.test(schulCode)) {
+        return res.status(400).json({ error: 'Ungültiges Schul-Code-Format.' });
+      }
+      if (!schulCode && !LICENSE_KEY_RE.test(licenseKey)) {
+        return res.status(400).json({ error: 'Ungültiges Lizenzschlüssel-Format.' });
       }
       // ── Licensed path ──
       let customer;

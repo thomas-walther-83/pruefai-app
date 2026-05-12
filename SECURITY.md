@@ -50,7 +50,7 @@ Wir streben an, innerhalb von **5 Werktagen** zu antworten und innerhalb von **3
 
 - Unlizenzierte KI-Anfragen: max. **20 Requests/Stunde pro IP** (in-memory, server-seitig)
 - Kostenlose Trial-Tokens: max. **3 Korrekturen/Monat** (HMAC-SHA256-signiert, IP+Monat-gebunden)
-- Lizenzierte Anfragen: monatliches Limit je nach Plan (50 / 300 / 5'000)
+- Lizenzierte Anfragen: monatliches Limit je nach Plan (50 / 300 / 1'500)
 
 ### CORS
 

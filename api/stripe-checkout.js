@@ -1,6 +1,49 @@
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
+const RATE_LIMIT_MAX = 30;
+const RATE_LIMIT_WINDOW_MS = 3_600_000;
+const ipRateMap = new Map();
+
+function getClientIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) return String(forwarded).split(',')[0].trim();
+  return req.socket?.remoteAddress || 'unknown';
+}
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = ipRateMap.get(ip);
+  if (!entry || entry.resetAt < now) {
+    ipRateMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+  entry.count++;
+  return true;
+}
+
+function refererHostAllowed(req) {
+  if (ALLOWED_ORIGINS.length === 0) return true;
+  const ref = req.headers.referer || req.headers.referrer || '';
+  if (!ref) return true; // direct navigation / bookmark – allow
+  try {
+    const refOrigin = new URL(ref).origin;
+    return ALLOWED_ORIGINS.includes(refOrigin);
+  } catch {
+    return false;
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+
+  if (!refererHostAllowed(req)) {
+    return res.status(403).json({ error: 'Referer not allowed.' });
+  }
+
+  if (!checkRateLimit(getClientIp(req))) {
+    return res.status(429).json({ error: 'Zu viele Anfragen. Bitte später erneut versuchen.' });
   }
 
   const normalizePlan = (value) =>
