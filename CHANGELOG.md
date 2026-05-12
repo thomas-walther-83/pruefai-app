@@ -8,6 +8,14 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Sicherheit
+- **Server-seitiges Pro-Feature-Gating** (`api/claude.js`): Frontend sendet ein `feature`-Feld
+  (`correction`, `correction_pro`, `quality_check`, `help_chat`), Server prüft gegen
+  Plan-Mapping. Lokal manipulierter `localStorage` reicht damit nicht mehr aus, um
+  Pro-Features (Rubric / KI-Profil / Qualitätscheck) zu nutzen — der Server lehnt
+  Anfragen mit `feature_not_in_plan` (402) bzw. `feature_not_in_trial` (402) ab.
+- 5 neue Unit-Tests in `tests/claude.test.mjs` decken alle Gating-Pfade ab.
+
 ---
 
 ## [1.1.0] – 2026-05-12

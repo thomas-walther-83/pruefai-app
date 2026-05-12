@@ -8,6 +8,18 @@ const FREE_TRIAL_LIMIT = 3;
 const RATE_LIMIT_MAX = 20; // max unlicensed requests per IP per hour
 const RATE_LIMIT_WINDOW_MS = 3_600_000;
 
+// Server-authoritative plan → feature mapping. The frontend MUST send a
+// `feature` field; otherwise we treat the request as `correction` (basic).
+const VALID_FEATURES = new Set(['correction', 'correction_pro', 'quality_check', 'help_chat']);
+const PRO_PLAN_FEATURES = new Set(['correction', 'correction_pro', 'quality_check', 'help_chat']);
+const PLAN_FEATURES = {
+  starter: new Set(['correction', 'help_chat']),
+  pro: PRO_PLAN_FEATURES,
+  max: PRO_PLAN_FEATURES,
+  schule: PRO_PLAN_FEATURES,
+};
+const TRIAL_FEATURES = new Set(['correction', 'help_chat']);
+
 // In-memory rate limit store (resets on cold start – intentional, provides abuse protection)
 const ipRateMap = new Map();
 
@@ -108,8 +120,13 @@ export default async function handler(req, res) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server.' });
 
-  const { model, max_tokens, system, messages, licenseKey: bodyLicenseKey } = req.body;
+  const { model, max_tokens, system, messages, licenseKey: bodyLicenseKey, feature: rawFeature } = req.body;
   if (!messages) return res.status(400).json({ error: 'Missing required field: messages' });
+
+  const feature = typeof rawFeature === 'string' && rawFeature ? rawFeature : 'correction';
+  if (!VALID_FEATURES.has(feature)) {
+    return res.status(400).json({ error: 'Ungültiges feature.' });
+  }
 
   // License enforcement is ON by default. Set SKIP_LICENSE=true only for local dev/staging.
   if (process.env.SKIP_LICENSE !== 'true') {
@@ -155,6 +172,18 @@ export default async function handler(req, res) {
         return res.status(402).json({ error: 'Schulcode nur für den Schul-Plan gültig.', upgradeUrl: '/landing' });
       }
 
+      // Server-side feature gating: plan must include the requested feature
+      const allowedFeatures = PLAN_FEATURES[plan];
+      if (!allowedFeatures || !allowedFeatures.has(feature)) {
+        return res.status(402).json({
+          error: 'Diese Funktion ist in Ihrem Plan nicht enthalten.',
+          code: 'feature_not_in_plan',
+          plan,
+          feature,
+          upgradeUrl: '/landing',
+        });
+      }
+
       const today = new Date().toISOString().slice(0, 10);
       let correctionsThisMonth = parseInt(meta.corrections_this_month || '0', 10);
       let resetDate = meta.corrections_reset_date || today;
@@ -174,6 +203,15 @@ export default async function handler(req, res) {
       );
     } else {
       // ── Trial path ──
+      if (!TRIAL_FEATURES.has(feature)) {
+        return res.status(402).json({
+          error: 'Diese Funktion ist nur in einem bezahlten Plan verfügbar.',
+          code: 'feature_not_in_trial',
+          feature,
+          upgradeUrl: '/landing',
+        });
+      }
+
       const ip = getClientIp(req);
 
       // IP-based rate limiting: hard ceiling against abuse
