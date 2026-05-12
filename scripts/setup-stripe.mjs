@@ -92,10 +92,11 @@ function form(obj, prefix = '') {
 async function listAll(path) {
   const items = [];
   let starting_after;
+  const sep = path.includes('?') ? '&' : '?';
   for (;;) {
     const qs = new URLSearchParams({ limit: '100' });
     if (starting_after) qs.set('starting_after', starting_after);
-    const data = await stripe(`${path}?${qs.toString()}`);
+    const data = await stripe(`${path}${sep}${qs.toString()}`);
     items.push(...data.data);
     if (!data.has_more) return items;
     starting_after = data.data[data.data.length - 1].id;
