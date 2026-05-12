@@ -55,7 +55,7 @@ Alle Preise sind in Schweizer Franken (CHF) angegeben und verstehen sich inklusi
 |------|-------|------------------|
 | Starter | CHF 9/Monat | 50 |
 | Pro | CHF 19/Monat | 300 |
-| Max | CHF 49/Monat | 5'000 |
+| Max | CHF 49/Monat | 1'500 |
 
 ### 4.2 Zahlung
 

@@ -1,5 +1,5 @@
 // Pruefai Service Worker – App-Shell caching
-const CACHE_NAME = 'pruefai-v4';
+const CACHE_NAME = 'pruefai-v5';
 const APP_SHELL = [
   './',
   './index.html',
@@ -25,8 +25,8 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Never cache Supabase API or Claude proxy calls
-  if (url.hostname.includes('supabase.co') || url.pathname.startsWith('/api/')) {
+  // Never cache server API calls
+  if (url.pathname.startsWith('/api/')) {
     return;
   }
 

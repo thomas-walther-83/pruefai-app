@@ -1,12 +1,24 @@
+import { applyCors, checkRateLimit, getClientIp } from './_lib/security.js';
+
+const RATE_LIMIT = { max: 5, windowMs: 3_600_000 }; // 5 leads/hour/IP
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_NAME_LEN = 100;
+const MAX_EMAIL_LEN = 254;
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  if (!applyCors(req, res)) return;
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+  const ip = getClientIp(req);
+  if (!checkRateLimit('capture-lead', ip, RATE_LIMIT)) {
+    return res.status(429).json({ error: 'Zu viele Anfragen. Bitte später erneut versuchen.' });
   }
 
   const { name, email } = req.body || {};
-  if (!email || !email.includes('@')) {
+  if (typeof email !== 'string' || email.length > MAX_EMAIL_LEN || !EMAIL_RE.test(email)) {
     return res.status(400).json({ error: 'Ungültige E-Mail-Adresse.' });
   }
+  const safeNameRaw = typeof name === 'string' ? name.slice(0, MAX_NAME_LEN) : '';
 
   function escHtml(str) {
     return String(str || '')
@@ -14,7 +26,7 @@ export default async function handler(req, res) {
       .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   }
 
-  const safeName = escHtml(name);
+  const safeName = escHtml(safeNameRaw);
   const safeEmail = escHtml(email);
 
   const resendKey = process.env.RESEND_API_KEY;

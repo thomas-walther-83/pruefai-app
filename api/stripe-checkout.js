@@ -1,6 +1,30 @@
+import { ALLOWED_ORIGINS, checkRateLimit, getClientIp } from './_lib/security.js';
+
+const RATE_LIMIT = { max: 10, windowMs: 600_000 }; // 10 checkout sessions / 10 min / IP
+
+function refererAllowed(req) {
+  if (ALLOWED_ORIGINS.length === 0) return true; // dev mode: no allowlist configured
+  const referer = req.headers.referer || '';
+  if (!referer) return true; // some browsers strip referer; don't punish legit users
+  try {
+    const origin = new URL(referer).origin;
+    return ALLOWED_ORIGINS.includes(origin);
+  } catch {
+    return false;
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+  if (!refererAllowed(req)) {
+    return res.status(403).json({ error: 'Origin not allowed.' });
+  }
+
+  const ip = getClientIp(req);
+  if (!checkRateLimit('stripe-checkout', ip, RATE_LIMIT)) {
+    return res.status(429).json({ error: 'Zu viele Anfragen. Bitte später erneut versuchen.' });
   }
 
   const normalizePlan = (value) =>

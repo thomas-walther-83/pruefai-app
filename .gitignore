@@ -48,7 +48,3 @@ temp/
 
 # Test-Artefakte
 coverage/
-
-# Supabase CLI (lokale Entwicklung)
-supabase/.branches
-supabase/.temp

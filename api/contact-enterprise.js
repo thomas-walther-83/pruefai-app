@@ -1,14 +1,29 @@
+import { applyCors, checkRateLimit, getClientIp } from './_lib/security.js';
+
+const RATE_LIMIT = { max: 3, windowMs: 3_600_000 }; // 3 inquiries/hour/IP
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_FIELD = 500;
+const MAX_EMAIL_LEN = 254;
+
+function clip(v) {
+  return typeof v === 'string' ? v.slice(0, MAX_FIELD) : '';
+}
+
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+  if (!applyCors(req, res)) return;
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
+
+  const ip = getClientIp(req);
+  if (!checkRateLimit('contact-enterprise', ip, RATE_LIMIT)) {
+    return res.status(429).json({ error: 'Zu viele Anfragen. Bitte später erneut versuchen.' });
   }
 
   const { institution, kanton, anzahl, fachbereich, starttermin, email, name } = req.body || {};
 
-  if (!email || !email.includes('@')) {
+  if (typeof email !== 'string' || email.length > MAX_EMAIL_LEN || !EMAIL_RE.test(email)) {
     return res.status(400).json({ error: 'Ungültige E-Mail-Adresse.' });
   }
-  if (!institution) {
+  if (!institution || typeof institution !== 'string') {
     return res.status(400).json({ error: 'Institution fehlt.' });
   }
 
@@ -18,12 +33,12 @@ export default async function handler(req, res) {
       .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
   }
 
-  const safeInstitution = escHtml(institution);
-  const safeKanton = escHtml(kanton);
-  const safeAnzahl = escHtml(anzahl);
-  const safeFachbereich = escHtml(fachbereich);
-  const safeStarttermin = escHtml(starttermin);
-  const safeName = escHtml(name);
+  const safeInstitution = escHtml(clip(institution));
+  const safeKanton = escHtml(clip(kanton));
+  const safeAnzahl = escHtml(clip(anzahl));
+  const safeFachbereich = escHtml(clip(fachbereich));
+  const safeStarttermin = escHtml(clip(starttermin));
+  const safeName = escHtml(clip(name));
   const safeEmail = escHtml(email);
 
   const resendKey = process.env.RESEND_API_KEY;
@@ -51,7 +66,7 @@ export default async function handler(req, res) {
         from: 'Pruefai <noreply@pruefai.ch>',
         to: [adminEmail],
         replyTo: email,
-        subject: `Enterprise-Anfrage: ${institution}`,
+        subject: `Enterprise-Anfrage: ${clip(institution)}`,
         html: adminHtml,
       }),
     }).catch((err) => console.error('Enterprise admin email failed:', err.message));
@@ -85,6 +100,6 @@ export default async function handler(req, res) {
     }).catch((err) => console.error('Enterprise auto-reply failed:', err.message));
   }
 
-  console.log(`Enterprise inquiry: institution=${institution}, email=${email}`);
+  console.log(`Enterprise inquiry: institution=${clip(institution)}, email=${email}`);
   return res.status(200).json({ ok: true });
 }

@@ -5,10 +5,13 @@
  * Ausführen: node --test tests/capture-lead.test.mjs
  */
 
-import { describe, it, afterEach } from 'node:test';
+import { describe, it, afterEach, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 
 const { default: handler } = await import('../api/capture-lead.js');
+const { _resetRateLimitsForTests } = await import('../api/_lib/security.js');
+
+beforeEach(() => { _resetRateLimitsForTests(); });
 
 // ── Hilfsfunktionen ───────────────────────────────────────────────────────────
 
