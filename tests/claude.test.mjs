@@ -171,6 +171,111 @@ describe('claude – Anthropic-Proxy (gemockt)', () => {
   });
 });
 
+describe('claude – Feature-Gating', () => {
+  const VALID_LICENSE_KEY = '12345678-1234-4123-8123-123456789abc';
+
+  it('lehnt unbekanntes feature mit 400 ab', async () => {
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    const res = mockRes();
+    await handler(mockReq({ body: { messages: SAMPLE_MESSAGES, feature: 'unknown_feature' } }), res);
+    assert.equal(res.statusCode, 400);
+    assert.match(res.body.error, /feature/i);
+  });
+
+  it('Trial-Path: correction_pro wird mit 402 feature_not_in_trial abgelehnt', async () => {
+    const originalSkip = process.env.SKIP_LICENSE;
+    delete process.env.SKIP_LICENSE;
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    try {
+      const res = mockRes();
+      await handler(mockReq({ body: { messages: SAMPLE_MESSAGES, feature: 'correction_pro' } }), res);
+      assert.equal(res.statusCode, 402);
+      assert.equal(res.body.code, 'feature_not_in_trial');
+    } finally {
+      if (originalSkip !== undefined) process.env.SKIP_LICENSE = originalSkip;
+    }
+  });
+
+  it('Trial-Path: quality_check wird mit 402 feature_not_in_trial abgelehnt', async () => {
+    const originalSkip = process.env.SKIP_LICENSE;
+    delete process.env.SKIP_LICENSE;
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    try {
+      const res = mockRes();
+      await handler(mockReq({ body: { messages: SAMPLE_MESSAGES, feature: 'quality_check' } }), res);
+      assert.equal(res.statusCode, 402);
+      assert.equal(res.body.code, 'feature_not_in_trial');
+    } finally {
+      if (originalSkip !== undefined) process.env.SKIP_LICENSE = originalSkip;
+    }
+  });
+
+  it('Starter-Plan: correction_pro wird mit 402 feature_not_in_plan abgelehnt', async () => {
+    const originalSkip = process.env.SKIP_LICENSE;
+    delete process.env.SKIP_LICENSE;
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
+    const today = new Date().toISOString().slice(0, 10);
+    globalThis.fetch = async (url) => {
+      if (url.includes('customers/search')) {
+        return {
+          ok: true, status: 200,
+          json: async () => ({ data: [{ id: 'cus_test', metadata: { plan: 'starter', corrections_this_month: '0', corrections_reset_date: today } }] }),
+        };
+      }
+      throw new Error('Should not reach Anthropic for blocked feature');
+    };
+    try {
+      const res = mockRes();
+      await handler(mockReq({
+        headers: { 'x-license-key': VALID_LICENSE_KEY },
+        body: { messages: SAMPLE_MESSAGES, feature: 'correction_pro' },
+      }), res);
+      assert.equal(res.statusCode, 402);
+      assert.equal(res.body.code, 'feature_not_in_plan');
+      assert.equal(res.body.plan, 'starter');
+    } finally {
+      if (originalSkip !== undefined) process.env.SKIP_LICENSE = originalSkip;
+      delete process.env.STRIPE_SECRET_KEY;
+    }
+  });
+
+  it('Pro-Plan: correction_pro wird durchgelassen und Anthropic aufgerufen', async () => {
+    const originalSkip = process.env.SKIP_LICENSE;
+    delete process.env.SKIP_LICENSE;
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
+    const today = new Date().toISOString().slice(0, 10);
+    let anthropicCalled = false;
+    globalThis.fetch = async (url) => {
+      if (url.includes('customers/search')) {
+        return {
+          ok: true, status: 200,
+          json: async () => ({ data: [{ id: 'cus_test', metadata: { plan: 'pro', corrections_this_month: '0', corrections_reset_date: today } }] }),
+        };
+      }
+      if (url.includes('anthropic.com')) {
+        anthropicCalled = true;
+        return { ok: true, status: 200, json: async () => ({ content: [{ type: 'text', text: 'ok' }] }) };
+      }
+      // increment fire-and-forget on customer update
+      return { ok: true, status: 200, json: async () => ({}) };
+    };
+    try {
+      const res = mockRes();
+      await handler(mockReq({
+        headers: { 'x-license-key': VALID_LICENSE_KEY },
+        body: { messages: SAMPLE_MESSAGES, feature: 'correction_pro' },
+      }), res);
+      assert.equal(res.statusCode, 200);
+      assert.ok(anthropicCalled, 'Anthropic sollte aufgerufen werden');
+    } finally {
+      if (originalSkip !== undefined) process.env.SKIP_LICENSE = originalSkip;
+      delete process.env.STRIPE_SECRET_KEY;
+    }
+  });
+});
+
 describe('claude – CORS', () => {
   it('blockt Anfragen von nicht erlaubten Origins', async () => {
     // Neuen Handler-Import mit gesetzter ALLOWED_ORIGINS – da ALLOWED_ORIGINS beim Laden
