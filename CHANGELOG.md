@@ -8,6 +8,17 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Automation
+- **`Stripe Bootstrap`-Workflow synct die Price-IDs + Webhook-Secret jetzt
+  automatisch in die Vercel-Env-Vars** und triggert ein Vercel-Redeploy.
+  Reduziert den Stripe-Sync-Aufwand auf einen einzigen Klick in GitHub
+  Actions — kein manuelles Copy-Paste in der Vercel-UI mehr.
+- `scripts/sync-vercel-env.mjs`: upsert von Env-Vars via Vercel REST API
+  (`v9` PATCH / `v10` POST mit `upsert`), idempotent, leere Werte
+  oder `<unchanged>` werden übersprungen.
+- `setup-stripe.yml`: 2 neue Steps (Sync + Redeploy via `vercel-cli`) +
+  Job-Summary mit den extrahierten IDs.
+
 ### Domain & Mail
 - `docs/domain-setup.md`: vollständige Anleitung für CAA-Record, Resend-Domain-
   Verifikation (SPF + DKIM auf `send.pruefai.ch`), DMARC-Policy mit

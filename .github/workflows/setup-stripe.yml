@@ -15,6 +15,11 @@ on:
         description: APP_URL passed to setup-stripe.mjs (e.g. https://pruefai.ch)
         required: false
         default: https://pruefai.ch
+      sync_vercel:
+        description: Auto-sync STRIPE_PRICE_* + STRIPE_WEBHOOK_SECRET to Vercel and trigger a redeploy
+        required: true
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -23,7 +28,6 @@ jobs:
   bootstrap:
     name: Bootstrap Products / Prices / Webhook
     runs-on: ubuntu-latest
-    environment: ${{ inputs.mode == 'live' && 'production' || 'preview' }}
     steps:
       - uses: actions/checkout@v6
 
@@ -31,8 +35,69 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Run setup-stripe.mjs
+      - name: Run setup-stripe.mjs (captures output)
+        id: stripe
         env:
           STRIPE_SECRET_KEY: ${{ inputs.mode == 'live' && secrets.STRIPE_SECRET_KEY_LIVE || secrets.STRIPE_SECRET_KEY_TEST }}
           APP_URL: ${{ inputs.app_url }}
-        run: node scripts/setup-stripe.mjs
+        run: |
+          set -o pipefail
+          node scripts/setup-stripe.mjs | tee /tmp/stripe-output.txt
+          extract() {
+            grep -m1 -E "^[[:space:]]*$1=" /tmp/stripe-output.txt \
+              | sed -E "s/^[[:space:]]*$1=([^[:space:]]+).*/\1/" || true
+          }
+          STARTER=$(extract STRIPE_PRICE_STARTER)
+          PRO=$(extract STRIPE_PRICE_PRO)
+          MAX=$(extract STRIPE_PRICE_MAX)
+          WEBHOOK=$(extract STRIPE_WEBHOOK_SECRET)
+          echo "starter=$STARTER" >> "$GITHUB_OUTPUT"
+          echo "pro=$PRO"         >> "$GITHUB_OUTPUT"
+          echo "max=$MAX"         >> "$GITHUB_OUTPUT"
+          echo "webhook=$WEBHOOK" >> "$GITHUB_OUTPUT"
+
+      - name: Sync env vars to Vercel
+        if: ${{ inputs.sync_vercel }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TARGETS: production,preview,development
+          STRIPE_PRICE_STARTER: ${{ steps.stripe.outputs.starter }}
+          STRIPE_PRICE_PRO: ${{ steps.stripe.outputs.pro }}
+          STRIPE_PRICE_MAX: ${{ steps.stripe.outputs.max }}
+          STRIPE_WEBHOOK_SECRET: ${{ steps.stripe.outputs.webhook }}
+        run: node scripts/sync-vercel-env.mjs
+
+      - name: Trigger Vercel redeploy
+        if: ${{ inputs.sync_vercel }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          IS_PROD: ${{ inputs.mode == 'live' }}
+        run: |
+          npm install --global vercel@latest
+          ENV_TARGET=$([ "$IS_PROD" = "true" ] && echo "production" || echo "preview")
+          vercel pull --yes --environment="$ENV_TARGET" --token="$VERCEL_TOKEN"
+          BUILD_FLAGS=$([ "$IS_PROD" = "true" ] && echo "--prod" || echo "")
+          vercel build $BUILD_FLAGS --token="$VERCEL_TOKEN"
+          DEPLOY_URL=$(vercel deploy --prebuilt $BUILD_FLAGS --token="$VERCEL_TOKEN")
+          echo "::notice title=Redeploy::$DEPLOY_URL"
+          echo "Redeploy URL: $DEPLOY_URL" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Summary
+        if: always()
+        run: |
+          {
+            echo "## Stripe Bootstrap (${{ inputs.mode }})"
+            echo ""
+            echo "- App-URL: ${{ inputs.app_url }}"
+            echo "- Vercel-Sync: ${{ inputs.sync_vercel }}"
+            echo ""
+            echo "### Extracted IDs"
+            echo "- STRIPE_PRICE_STARTER: \`${{ steps.stripe.outputs.starter }}\`"
+            echo "- STRIPE_PRICE_PRO:     \`${{ steps.stripe.outputs.pro }}\`"
+            echo "- STRIPE_PRICE_MAX:     \`${{ steps.stripe.outputs.max }}\`"
+            echo "- STRIPE_WEBHOOK_SECRET: ${{ steps.stripe.outputs.webhook == '<unchanged>' && 'unchanged (existing webhook reused)' || 'rotated' }}"
+          } >> "$GITHUB_STEP_SUMMARY"
