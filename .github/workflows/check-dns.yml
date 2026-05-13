@@ -1,0 +1,32 @@
+name: DNS Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      domain:
+        description: Domain to check (Default = pruefai.ch)
+        required: false
+        default: pruefai.ch
+  schedule:
+    # Täglich um 06:00 UTC. Wenn ein Record fehlt, schlägt der Job fehl
+    # und das GitHub-Notification-Setup informiert den Repo-Owner.
+    - cron: '0 6 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: DNS-Records prüfen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
+      - name: Run check-dns.mjs
+        env:
+          APP_DOMAIN: ${{ inputs.domain || 'pruefai.ch' }}
+        run: node scripts/check-dns.mjs

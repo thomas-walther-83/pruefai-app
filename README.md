@@ -257,7 +257,24 @@ Die App wird mit Claude Code (Web) weiterentwickelt. Du gibst Aufträge per GitH
 | `ci.yml`              | Push / PR              | HTML-Lint, JSON-Validierung, 90 API-Unit-Tests                                   |
 | `vercel-deploy.yml`   | `workflow_dispatch`    | Manuelle Production-Deploys und Rollback auf vorherigen Stand                    |
 | `setup-stripe.yml`    | `workflow_dispatch`    | Idempotenter Bootstrap aller Produkte/Preise/Webhooks (Test- oder Live-Modus)    |
+| `check-dns.yml`       | `workflow_dispatch`, täglich 06:00 UTC | DNS-Verifikation: SPF / DKIM / DMARC / CAA. Schlägt fehl wenn Records fehlen.    |
 | `deploy.yml`          | Push auf `main`        | Spiegelung auf GitHub Pages (ohne API)                                           |
+
+### Domain-Setup (DNS, Mail-Auth, Reputation)
+
+Vollständige Anleitung in [`docs/domain-setup.md`](docs/domain-setup.md):
+CAA-Record, Resend-Domain-Verifikation (SPF + DKIM), DMARC-Policy,
+Submission-Links für SmartScreen / Safe Browsing.
+
+Status jederzeit prüfen:
+
+```bash
+node scripts/check-dns.mjs
+# oder GitHub Actions → "DNS Verification" → Run workflow
+```
+
+Der Workflow läuft täglich automatisch und schlägt fehl, wenn ein
+Pflicht-Record verschwindet (z.B. nach versehentlichem Cyon-Update).
 
 ### Stripe-Bootstrap manuell ausführen
 

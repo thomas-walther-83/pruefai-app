@@ -8,6 +8,18 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Domain & Mail
+- `docs/domain-setup.md`: vollständige Anleitung für CAA-Record, Resend-Domain-
+  Verifikation (SPF + DKIM auf `send.pruefai.ch`), DMARC-Policy mit
+  gestaffeltem Rollout (`none` → `quarantine` → `reject`) sowie
+  Submission-Links für SmartScreen / Safe Browsing / Talos / BrightCloud.
+- `scripts/check-dns.mjs`: idempotenter DNS-Verifizierer, prüft alle
+  Pflicht- und optionalen Records via `node:dns`, druckt Checkliste mit
+  konkretem Fix-Vorschlag bei Lücken.
+- `.github/workflows/check-dns.yml`: täglicher Cron + `workflow_dispatch`.
+  Schlägt fehl wenn ein Pflicht-Record verschwindet — frühe Warnung bei
+  versehentlichen Cyon-DNS-Änderungen.
+
 ### Sicherheit
 - **Server-seitiges Pro-Feature-Gating** (`api/claude.js`): Frontend sendet ein `feature`-Feld
   (`correction`, `correction_pro`, `quality_check`, `help_chat`), Server prüft gegen
