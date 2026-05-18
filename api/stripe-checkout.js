@@ -22,15 +22,26 @@ function checkRateLimit(ip) {
 }
 
 function refererHostAllowed(req) {
-  if (ALLOWED_ORIGINS.length === 0) return true;
   const ref = req.headers.referer || req.headers.referrer || '';
   if (!ref) return true; // direct navigation / bookmark – allow
+
+  let refOrigin;
   try {
-    const refOrigin = new URL(ref).origin;
-    return ALLOWED_ORIGINS.includes(refOrigin);
+    refOrigin = new URL(ref).origin;
   } catch {
     return false;
   }
+
+  // Same-origin is always allowed: a click on the landing page that lives on the
+  // same host as this API cannot be a cross-site abuse. This covers the apex
+  // domain, www-redirect, and any Vercel preview URL of the same deployment.
+  const host = req.headers.host || '';
+  const proto = req.headers['x-forwarded-proto'] || 'https';
+  if (host && refOrigin === `${proto}://${host}`) return true;
+
+  // Otherwise, the referer must be on the explicit allowlist.
+  if (ALLOWED_ORIGINS.length === 0) return true;
+  return ALLOWED_ORIGINS.includes(refOrigin);
 }
 
 export default async function handler(req, res) {
