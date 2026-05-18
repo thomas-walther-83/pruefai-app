@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pruefai – KI-gestützte Prüfungskorrektur</title>
-  <meta name="description" content="Prüfungen korrigieren in 10 Minuten statt 2 Stunden. KI-gestützte Korrektur mit Claude AI, DSGVO-konform, für Lehrpersonen aller Schultypen." />
+  <meta name="description" content="Prüfungen korrigieren in 10 Minuten statt 2 Stunden. KI-gestützte Korrektur mit Claude AI, konform mit Schweizer Datenschutzgesetz (nDSG) – Schülerdaten bleiben im Browser." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://pruefai.ch/landing" />
   <meta property="og:title" content="Pruefai – KI-gestützte Prüfungskorrektur" />
-  <meta property="og:description" content="Prüfungen korrigieren in 10 Minuten statt 2 Stunden. KI-gestützte Korrektur mit Claude AI, DSGVO-konform." />
+  <meta property="og:description" content="Prüfungen korrigieren in 10 Minuten statt 2 Stunden. KI-gestützte Korrektur mit Claude AI, nDSG-konform – Daten bleiben im Browser." />
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="Pruefai – KI-gestützte Prüfungskorrektur" />
-  <meta name="twitter:description" content="Prüfungen korrigieren in 10 Minuten statt 2 Stunden. DSGVO-konform, für Lehrpersonen aller Schultypen." />
+  <meta name="twitter:description" content="Prüfungen korrigieren in 10 Minuten statt 2 Stunden. nDSG-konform, für Lehrpersonen aller Schultypen." />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -326,7 +326,7 @@
       </div>
       <div class="value-card">
         <div class="value-card__icon">🔒</div>
-        <div class="value-card__title">DSGVO-konform &amp; in der EU gehostet</div>
+        <div class="value-card__title">nDSG-konform – Schülerdaten bleiben im Browser</div>
         <div class="value-card__text">Unsere Server stehen in Frankfurt am Main (EU). Prüfungsdaten werden nicht dauerhaft bei der KI gespeichert und nicht für das Training von Modellen verwendet.</div>
       </div>
     </div>
@@ -501,11 +501,11 @@
 
       <div class="faq-item">
         <button class="faq-q" onclick="toggleFaq(this)" aria-expanded="false">
-          Sind die Prüfungsdaten meiner Schülerinnen und Schüler DSGVO-konform geschützt?
+          Sind die Daten meiner Schülerinnen und Schüler nach Schweizer Datenschutzgesetz (nDSG) geschützt?
           <svg class="chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
         </button>
         <div class="faq-a">
-          <p>Ja. Pruefai hostet seine Server in Frankfurt am Main (EU). Prüfungsbilder und -texte werden ausschliesslich zur Korrektur an die Claude AI übermittelt und danach nicht dauerhaft bei Anthropic gespeichert. Anthropic verwendet API-Daten standardmässig <strong>nicht</strong> zum Training von KI-Modellen. Für Schulen, die personenbezogene Daten verarbeiten, steht ein Auftragsverarbeitungsvertrag (AVV) zur Verfügung.</p>
+          <p>Ja. <strong>Alle Schülerdaten (Namen, Noten, Korrekturen) bleiben lokal im Browser</strong> (IndexedDB) und werden nie auf einen Server übertragen — das ist das stärkste Datenschutz-Konzept, das technisch möglich ist. Nur die anonymisierten Prüfungsbilder gehen kurzzeitig an Claude AI zur Korrektur und werden danach nicht persistiert. Anthropic verwendet API-Daten standardmässig <strong>nicht</strong> zum Training von KI-Modellen. Konform mit Schweizer Datenschutzgesetz (nDSG); Auftragsverarbeitungsvertrag (AVV) verfügbar.</p>
         </div>
       </div>
 
