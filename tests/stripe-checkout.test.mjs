@@ -8,6 +8,9 @@
 import { describe, it, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 
+// Must be set BEFORE the module is imported – ALLOWED_ORIGINS is read at load time.
+process.env.ALLOWED_ORIGINS = 'https://pruefai.ch';
+
 const { default: handler } = await import('../api/stripe-checkout.js');
 
 // ── Hilfsfunktionen ───────────────────────────────────────────────────────────
@@ -145,6 +148,79 @@ describe('stripe-checkout – Stripe-Integration (gemockt)', () => {
 
     const res = mockRes();
     await handler(mockReq({ query: { model: 'max' } }), res);
+    assert.equal(res.statusCode, 302);
+  });
+});
+
+describe('stripe-checkout – Referer-Allowlist', () => {
+  const okFetch = async () => ({
+    ok: true,
+    json: async () => ({ url: 'https://checkout.stripe.com/pay/cs_test' }),
+  });
+
+  it('lässt Same-Origin-Referer auch ausserhalb der ALLOWED_ORIGINS durch', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_fake';
+    process.env.STRIPE_PRICE_STARTER = 'price_starter123';
+    globalThis.fetch = okFetch;
+
+    const previewHost = 'pruefai-bb1p11h9v-thomas-walther-83s-projects.vercel.app';
+    const res = mockRes();
+    await handler(mockReq({
+      query: { plan: 'starter' },
+      headers: {
+        host: previewHost,
+        'x-forwarded-proto': 'https',
+        referer: `https://${previewHost}/landing.html`,
+      },
+    }), res);
+    assert.equal(res.statusCode, 302);
+  });
+
+  it('blockt Cross-Origin-Referer der nicht in ALLOWED_ORIGINS ist', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_fake';
+    process.env.STRIPE_PRICE_STARTER = 'price_starter123';
+    globalThis.fetch = okFetch;
+
+    const res = mockRes();
+    await handler(mockReq({
+      query: { plan: 'starter' },
+      headers: {
+        host: 'pruefai.ch',
+        'x-forwarded-proto': 'https',
+        referer: 'https://evil-attacker.example.com/page',
+      },
+    }), res);
+    assert.equal(res.statusCode, 403);
+    assert.match(res.body.error, /Referer/);
+  });
+
+  it('lässt explizit erlaubte Cross-Origin-Referer durch (ALLOWED_ORIGINS)', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_fake';
+    process.env.STRIPE_PRICE_STARTER = 'price_starter123';
+    globalThis.fetch = okFetch;
+
+    const res = mockRes();
+    await handler(mockReq({
+      query: { plan: 'starter' },
+      headers: {
+        host: 'api.example.com',
+        'x-forwarded-proto': 'https',
+        referer: 'https://pruefai.ch/landing.html',
+      },
+    }), res);
+    assert.equal(res.statusCode, 302);
+  });
+
+  it('lässt Aufrufe ohne Referer durch (direkter Navigation)', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_fake';
+    process.env.STRIPE_PRICE_STARTER = 'price_starter123';
+    globalThis.fetch = okFetch;
+
+    const res = mockRes();
+    await handler(mockReq({
+      query: { plan: 'starter' },
+      headers: { host: 'pruefai.ch' },
+    }), res);
     assert.equal(res.statusCode, 302);
   });
 });
