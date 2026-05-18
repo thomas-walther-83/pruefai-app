@@ -289,3 +289,79 @@ describe('claude – CORS', () => {
     assert.equal(res.headers['Access-Control-Allow-Origin'], 'https://pruefai.ch');
   });
 });
+
+describe('claude – Revocation-Flag', () => {
+  const VALID_LICENSE_KEY = '12345678-1234-4123-8123-123456789abc';
+
+  it('Revoked-Customer: 402 license_revoked, kein Anthropic-Call', async () => {
+    const originalSkip = process.env.SKIP_LICENSE;
+    delete process.env.SKIP_LICENSE;
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
+    let anthropicCalled = false;
+    globalThis.fetch = async (url) => {
+      if (url.includes('customers/search')) {
+        return {
+          ok: true, status: 200,
+          json: async () => ({ data: [{ id: 'cus_test', metadata: {
+            plan: 'pro',
+            revoked: 'true',
+            revoked_reason: 'leaked-on-github',
+            corrections_this_month: '0',
+            corrections_reset_date: new Date().toISOString().slice(0, 10),
+          } }] }),
+        };
+      }
+      if (url.includes('anthropic.com')) { anthropicCalled = true; return { ok: true, status: 200, json: async () => ({}) }; }
+      return { ok: true, status: 200, json: async () => ({}) };
+    };
+    try {
+      const res = mockRes();
+      await handler(mockReq({
+        headers: { 'x-license-key': VALID_LICENSE_KEY },
+        body: { messages: SAMPLE_MESSAGES, feature: 'correction' },
+      }), res);
+      assert.equal(res.statusCode, 402);
+      assert.equal(res.body.code, 'license_revoked');
+      assert.equal(anthropicCalled, false, 'Anthropic darf bei revoked nicht angerufen werden');
+    } finally {
+      if (originalSkip !== undefined) process.env.SKIP_LICENSE = originalSkip;
+      delete process.env.STRIPE_SECRET_KEY;
+    }
+  });
+
+  it('Nicht-revoked Customer: läuft durch', async () => {
+    const originalSkip = process.env.SKIP_LICENSE;
+    delete process.env.SKIP_LICENSE;
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
+    globalThis.fetch = async (url) => {
+      if (url.includes('customers/search')) {
+        return {
+          ok: true, status: 200,
+          json: async () => ({ data: [{ id: 'cus_test', metadata: {
+            plan: 'pro',
+            corrections_this_month: '0',
+            corrections_reset_date: new Date().toISOString().slice(0, 10),
+            // revoked field absent
+          } }] }),
+        };
+      }
+      if (url.includes('anthropic.com')) {
+        return { ok: true, status: 200, json: async () => ({ content: [{ type: 'text', text: 'ok' }] }) };
+      }
+      return { ok: true, status: 200, json: async () => ({}) };
+    };
+    try {
+      const res = mockRes();
+      await handler(mockReq({
+        headers: { 'x-license-key': VALID_LICENSE_KEY },
+        body: { messages: SAMPLE_MESSAGES, feature: 'correction' },
+      }), res);
+      assert.equal(res.statusCode, 200);
+    } finally {
+      if (originalSkip !== undefined) process.env.SKIP_LICENSE = originalSkip;
+      delete process.env.STRIPE_SECRET_KEY;
+    }
+  });
+});

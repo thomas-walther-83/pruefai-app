@@ -322,3 +322,88 @@ describe('stripe-webhook – invoice.payment_failed', () => {
     assert.equal(metadataUpdated, false, 'Bei 2 Fehlversuchen darf kein Metadaten-Update erfolgen');
   });
 });
+
+describe("stripe-webhook – Idempotenz (Duplicate-Delivery)", () => {
+  it("überspringt Verarbeitung wenn last_checkout_session_id matched", async () => {
+    process.env.STRIPE_SECRET_KEY = STRIPE_KEY;
+    process.env.STRIPE_WEBHOOK_SECRET = WEBHOOK_SECRET;
+
+    const eventPayload = makeEvent("checkout.session.completed", {
+      id: "cs_test_duplicate_001",
+      customer: "cus_dup",
+      customer_details: { email: "dup@example.com" },
+      metadata: { plan: "pro" },
+    });
+    const sig = makeStripeSignature(WEBHOOK_SECRET, eventPayload);
+
+    let postCalled = false;
+    globalThis.fetch = async (url, opts) => {
+      if (url.includes("/v1/customers/cus_dup") && opts?.method !== "POST") {
+        // GET (idempotency lookup) → customer already has this session id
+        return {
+          ok: true,
+          json: async () => ({
+            id: "cus_dup",
+            metadata: { last_checkout_session_id: "cs_test_duplicate_001" },
+          }),
+        };
+      }
+      if (url.includes("/v1/customers/cus_dup") && opts?.method === "POST") {
+        postCalled = true;
+      }
+      return { ok: true, json: async () => ({}) };
+    };
+
+    const req = makeWebhookReq(eventPayload, sig);
+    const res = mockRes();
+    await handler(req, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.duplicate, true);
+    assert.equal(postCalled, false, "POST darf nicht stattfinden wenn duplicate");
+  });
+
+  it("verarbeitet wenn last_checkout_session_id NICHT matched (neuer Checkout)", async () => {
+    process.env.STRIPE_SECRET_KEY = STRIPE_KEY;
+    process.env.STRIPE_WEBHOOK_SECRET = WEBHOOK_SECRET;
+
+    const eventPayload = makeEvent("checkout.session.completed", {
+      id: "cs_test_new_002",
+      customer: "cus_resub",
+      customer_details: { email: "resub@example.com" },
+      metadata: { plan: "starter" },
+    });
+    const sig = makeStripeSignature(WEBHOOK_SECRET, eventPayload);
+
+    let postBody = null;
+    globalThis.fetch = async (url, opts) => {
+      if (url.includes("/v1/customers/cus_resub") && opts?.method !== "POST") {
+        // GET → customer existed with an OLD session id (re-subscribe scenario)
+        return {
+          ok: true,
+          json: async () => ({
+            id: "cus_resub",
+            metadata: { last_checkout_session_id: "cs_test_old_001" },
+          }),
+        };
+      }
+      if (url.includes("/v1/customers/cus_resub") && opts?.method === "POST") {
+        postBody = Object.fromEntries(new URLSearchParams(opts.body));
+      }
+      return { ok: true, json: async () => ({}) };
+    };
+
+    const req = makeWebhookReq(eventPayload, sig);
+    const res = mockRes();
+    await handler(req, res);
+
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.duplicate, undefined);
+    assert.ok(postBody, "POST muss stattfinden");
+    assert.match(
+      postBody["metadata[license_key]"],
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    );
+    assert.equal(postBody["metadata[last_checkout_session_id]"], "cs_test_new_002");
+  });
+});

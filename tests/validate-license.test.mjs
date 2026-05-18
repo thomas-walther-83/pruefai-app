@@ -256,3 +256,31 @@ describe('validate-license – Stripe-Integration (gemockt)', () => {
     assert.ok(res.body.error.includes('Stripe'));
   });
 });
+
+describe('validate-license – Revocation-Flag', () => {
+  it('gibt {valid:false, code:license_revoked} für gesperrten Customer', async () => {
+    process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
+    globalThis.fetch = async (url) => {
+      if (url.includes('customers/search')) {
+        return {
+          ok: true, status: 200,
+          json: async () => ({ data: [{ id: 'cus_test', metadata: {
+            plan: 'pro',
+            revoked: 'true',
+            revoked_reason: 'leaked',
+          } }] }),
+        };
+      }
+      return { ok: true, status: 200, json: async () => ({}) };
+    };
+
+    const res = mockRes();
+    await handler(mockReq({
+      method: 'POST',
+      body: { license_key: '12345678-1234-4123-8123-123456789abc' },
+    }), res);
+    assert.equal(res.statusCode, 200);
+    assert.equal(res.body.valid, false);
+    assert.equal(res.body.code, 'license_revoked');
+  });
+});
