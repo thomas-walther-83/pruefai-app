@@ -8,6 +8,19 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Sicherheit (Lizenz-Härtung Phase 1)
+- **Webhook-Idempotenz** für `checkout.session.completed`: Stripe-Doppelzustellungen erzeugen
+  keine zweite Lizenz mehr und schicken keine doppelte Willkommens-Mail. Implementiert
+  durch Speichern der `last_checkout_session_id` auf dem Customer-Metadata.
+- **Lizenz-Revocation-Flag** (`metadata.revoked='true'`) in `api/claude.js` +
+  `api/validate-license.js`: gesperrte Keys werden vor jeder KI-Korrektur abgelehnt
+  (Code `license_revoked`).
+- **Neuer Admin-Endpoint** `api/admin-revoke.js`: per `X-Admin-Token`-Header geschützt,
+  `POST /api/admin-revoke` mit `{license_key, reason}` setzt das Revocation-Flag.
+  `action: 'restore'` macht es rückgängig.
+- 13 neue Tests (Idempotency, Revocation auf claude.js / validate-license.js, Admin-Auth, Stripe-Integration).
+- `ADMIN_TOKEN`-Variable in `.env.example` dokumentiert.
+
 ### Automation
 - **`Stripe Bootstrap`-Workflow synct die Price-IDs + Webhook-Secret jetzt
   automatisch in die Vercel-Env-Vars** und triggert ein Vercel-Redeploy.

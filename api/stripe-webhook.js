@@ -134,6 +134,15 @@ async function updateCustomerMetadata(stripeKey, customerId, metadata) {
   return data;
 }
 
+async function getCustomerById(stripeKey, customerId) {
+  const res = await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
+    headers: { Authorization: `Bearer ${stripeKey}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || 'Stripe customer fetch error');
+  return data;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
@@ -176,6 +185,25 @@ export default async function handler(req, res) {
       const customerId = session.customer;
       const customerEmail = session.customer_details?.email || session.customer_email || '';
       const plan = session.metadata?.plan || 'starter';
+      const sessionId = session.id || '';
+
+      // Idempotency: Stripe may deliver the same event multiple times. Without
+      // this check, every delivery would generate a NEW license key (overwriting
+      // the previous one) and resend the welcome email. We store the session ID
+      // on the customer after first processing and skip if it matches.
+      if (sessionId) {
+        try {
+          const existing = await getCustomerById(stripeKey, customerId);
+          if (existing.metadata?.last_checkout_session_id === sessionId) {
+            console.log(`Duplicate checkout webhook delivery: session=${sessionId}, customer=${customerId}`);
+            return res.status(200).json({ received: true, duplicate: true });
+          }
+        } catch (err) {
+          // Idempotency check failure shouldn't block the actual processing — log and continue.
+          console.error('Idempotency check failed (proceeding anyway):', err.message);
+        }
+      }
+
       const licenseKey = crypto.randomUUID();
       const today = new Date().toISOString().slice(0, 10);
 
@@ -186,7 +214,9 @@ export default async function handler(req, res) {
         plan,
         corrections_this_month: '0',
         corrections_reset_date: today,
+        revoked: '',
       };
+      if (sessionId) metaUpdate.last_checkout_session_id = sessionId;
       if (schulCode) metaUpdate.schul_code = schulCode;
 
       await updateCustomerMetadata(stripeKey, customerId, metaUpdate);

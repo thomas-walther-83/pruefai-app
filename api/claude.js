@@ -160,6 +160,17 @@ export default async function handler(req, res) {
       }
 
       const meta = customer.metadata || {};
+
+      // Revocation check: support can mark a customer's metadata.revoked='true'
+      // when a key is reported leaked. Blocks before any plan/limit checks.
+      if (meta.revoked === 'true' || meta.revoked === '1') {
+        console.warn(`Revoked license blocked: customer=${customer.id}, reason=${meta.revoked_reason || '(none)'}`);
+        return res.status(402).json({
+          error: 'Diese Lizenz wurde gesperrt. Bitte info@pruefai.ch kontaktieren.',
+          code: 'license_revoked',
+        });
+      }
+
       const plan = meta.plan || 'none';
       const limit = PLAN_LIMITS[plan] ?? 0;
 

@@ -92,6 +92,13 @@ export default async function handler(req, res) {
   }
 
   const meta = customer.metadata || {};
+
+  // Revocation check: support can mark a customer's metadata.revoked='true'.
+  // Returned as valid: false with a code so the client can show a specific message.
+  if (meta.revoked === 'true' || meta.revoked === '1') {
+    return res.status(200).json({ valid: false, code: 'license_revoked' });
+  }
+
   const plan = meta.plan || 'none';
   const displayPlan = plan === 'schule' ? 'max' : plan;
   const limit = PLAN_LIMITS[plan] ?? 0;
