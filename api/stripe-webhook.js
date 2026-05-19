@@ -37,13 +37,9 @@ async function sendLicenseEmail(resendKey, toEmail, licenseKey, plan, schulCode)
     <p style="margin:0 0 .5rem;font-size:.85rem;color:#6b7280;font-weight:600;text-transform:uppercase;letter-spacing:.06em">Ihr Lizenzschlüssel</p>
     <div style="background:#f3f4f6;border:1px solid #e5e7eb;border-radius:8px;padding:1rem;font-family:'Courier New',monospace;font-size:.95rem;font-weight:700;color:#1a56db;word-break:break-all;margin-bottom:1.5rem">${licenseKey}</div>
     ${schulCodeSection}
-    <p style="margin:0 0 1rem;font-size:.9rem">So aktivieren Sie Ihr Abo:</p>
-    <ol style="margin:0 0 1.5rem;padding-left:1.25rem;font-size:.9rem;line-height:1.8">
-      <li>Öffnen Sie <a href="https://pruefai.ch" style="color:#1a56db">pruefai.ch</a></li>
-      <li>Klicken Sie auf ⚙️ <strong>Einstellungen</strong></li>
-      <li>Fügen Sie den Lizenzschlüssel ein und speichern Sie</li>
-    </ol>
-    <a href="https://pruefai.ch" style="display:inline-block;background:#1a56db;color:#fff;padding:.875rem 2rem;border-radius:10px;font-weight:700;font-size:1rem;text-decoration:none">App starten →</a>
+    <p style="margin:0 0 1rem;font-size:.95rem">Mit einem Klick aktivieren Sie Ihr Abo in der App — der Lizenzschlüssel wird automatisch übernommen.</p>
+    <a href="https://pruefai.ch/?activate=${encodeURIComponent(licenseKey)}" style="display:inline-block;background:#1a56db;color:#fff;padding:.875rem 2rem;border-radius:10px;font-weight:700;font-size:1rem;text-decoration:none">App jetzt aktivieren →</a>
+    <p style="margin:1.25rem 0 0;font-size:.8rem;color:#9ca3af">Falls der Link nicht funktioniert: <a href="https://pruefai.ch/app" style="color:#1a56db">pruefai.ch/app</a> öffnen → ⚙️ Einstellungen → Lizenzschlüssel einfügen.</p>
     <hr style="border:none;border-top:1px solid #e5e7eb;margin:2rem 0">
     <p style="margin:0;font-size:.8rem;color:#9ca3af">Fragen? <a href="mailto:info@pruefai.ch" style="color:#1a56db">info@pruefai.ch</a></p>
   </div>
