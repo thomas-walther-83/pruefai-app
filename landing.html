@@ -3,15 +3,102 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pruefai – KI-gestützte Prüfungskorrektur</title>
-  <meta name="description" content="Prüfungen korrigieren in 10 Minuten statt 2 Stunden. KI-gestützte Korrektur mit Claude AI, konform mit Schweizer Datenschutzgesetz (nDSG) – Schülerdaten bleiben im Browser." />
+  <title>Pruefai – KI-Korrektur für Schweizer Lehrpersonen | nDSG-konform</title>
+  <meta name="description" content="Pruefai korrigiert handschriftliche Prüfungen mit KI in 10 statt 120 Minuten. Schweizer Notenskala 1–6, nDSG-konform, Schülerdaten bleiben lokal. Ab CHF 9/Monat." />
+  <link rel="canonical" href="https://pruefai.ch/" />
+  <meta name="theme-color" content="#1a56db" />
+
+  <!-- Open Graph -->
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://pruefai.ch/landing" />
-  <meta property="og:title" content="Pruefai – KI-gestützte Prüfungskorrektur" />
-  <meta property="og:description" content="Prüfungen korrigieren in 10 Minuten statt 2 Stunden. KI-gestützte Korrektur mit Claude AI, nDSG-konform – Daten bleiben im Browser." />
+  <meta property="og:url" content="https://pruefai.ch/" />
+  <meta property="og:site_name" content="Pruefai" />
+  <meta property="og:locale" content="de_CH" />
+  <meta property="og:title" content="Pruefai – KI-Korrektur für Schweizer Lehrpersonen" />
+  <meta property="og:description" content="Prüfungen in 10 statt 120 Minuten korrigieren. nDSG-konform – Schülerdaten bleiben im Browser. Ab CHF 9/Monat." />
+  <!-- TODO: 1200×630 PNG bei /og-image.png hinterlegen (eigener PR), dann og:image+twitter:image wieder aktivieren. -->
+
+  <!-- Twitter -->
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="Pruefai – KI-gestützte Prüfungskorrektur" />
-  <meta name="twitter:description" content="Prüfungen korrigieren in 10 Minuten statt 2 Stunden. nDSG-konform, für Lehrpersonen aller Schultypen." />
+  <meta name="twitter:title" content="Pruefai – KI-Korrektur für Schweizer Lehrpersonen" />
+  <meta name="twitter:description" content="Prüfungen in 10 statt 120 Minuten korrigieren. nDSG-konform, Schweizer Notenskala 1–6. Ab CHF 9/Monat." />
+
+  <!-- Structured Data: SoftwareApplication -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Pruefai",
+    "alternateName": "Pruefai – KI-Prüfungskorrektur",
+    "url": "https://pruefai.ch/",
+    "applicationCategory": "EducationalApplication",
+    "operatingSystem": "Web (PWA), iOS, Android, Windows, macOS, Linux",
+    "inLanguage": "de-CH",
+    "audience": {
+      "@type": "EducationalAudience",
+      "educationalRole": "teacher"
+    },
+    "offers": [
+      { "@type": "Offer", "name": "Starter", "price": "9", "priceCurrency": "CHF", "category": "subscription" },
+      { "@type": "Offer", "name": "Pro",     "price": "19", "priceCurrency": "CHF", "category": "subscription" },
+      { "@type": "Offer", "name": "Max",     "price": "49", "priceCurrency": "CHF", "category": "subscription" }
+    ],
+    "description": "KI-gestützte Korrektur handschriftlicher Prüfungen für Schweizer Lehrpersonen. Schweizer Notenskala 1–6, nDSG-konform, Schülerdaten bleiben lokal im Browser.",
+    "creator": {
+      "@type": "Person",
+      "name": "Thomas Walther"
+    }
+  }
+  </script>
+
+  <!-- Structured Data: FAQPage -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Sind die Daten meiner Schülerinnen und Schüler nach Schweizer Datenschutzgesetz (nDSG) geschützt?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Ja. Alle Schülerdaten (Namen, Noten, Korrekturen) bleiben lokal im Browser (IndexedDB) und werden nie auf einen Server übertragen — das ist das stärkste Datenschutz-Konzept, das technisch möglich ist. Nur die anonymisierten Prüfungsbilder gehen kurzzeitig an Claude AI zur Korrektur und werden danach nicht persistiert. Anthropic verwendet API-Daten standardmässig nicht zum Training von KI-Modellen. Konform mit Schweizer Datenschutzgesetz (nDSG); Auftragsverarbeitungsvertrag (AVV) verfügbar."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Was ist Claude AI und warum nutzt Pruefai dieses Modell?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Claude ist ein Sprachmodell von Anthropic, einem KI-Sicherheitsunternehmen aus San Francisco. Es gilt als eines der genauesten und sichersten Modelle für komplexe Textverständnis- und Bewertungsaufgaben. Wir nutzen Claude, weil es sehr präzise strukturierte Bewertungen erstellen kann und Anthropics strikte Datenschutzrichtlinien mit unseren Anforderungen an Schülerdaten kompatibel sind."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Wie genau ist die KI-Korrektur nach dem Schweizer Notensystem?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Die KI wird explizit angewiesen, nach dem Schweizer Notensystem (1.0–6.0, Noten in 0.5er-Schritten, Bestehensgrenze 4.0) zu bewerten. Sie erhält die Aufgabenstellungen und Maximalpunktzahlen als Kontext. Die KI-Korrektur dient als Unterstützung der Lehrperson – die finale Beurteilung und Verantwortung liegt immer bei der Lehrperson."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Kann ich das Abonnement jederzeit kündigen?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Ja. Es gibt keine Mindestlaufzeit. Sie können Ihr Abonnement jederzeit über das Stripe Billing Portal kündigen (erreichbar über «Abo verwalten» in den App-Einstellungen). Das Abonnement läuft dann bis zum Ende des laufenden Abrechnungsmonats weiter, danach wird es nicht verlängert. Bereits gespeicherte Daten bleiben in Ihrem Browser erhalten."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Was passiert, wenn ich mein monatliches Limit erreiche?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Beim Erreichen des Monatslimits erhalten Sie in der App eine Benachrichtigung. Die Korrekturfunktion ist dann bis zum nächsten Monatsersten deaktiviert. Sie können jederzeit auf einen höheren Plan upgraden – das Limit wird sofort zurückgesetzt. Der Max-Plan bietet 1'500 Korrekturen pro Monat und deckt damit auch sehr aktive Lehrpersonen ab."
+        }
+      }
+    ]
+  }
+  </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 

@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /checkout-success
+Disallow: /app
+
+Sitemap: https://pruefai.ch/sitemap.xml
