@@ -5,7 +5,19 @@
     { "source": "/agb", "destination": "/agb.html" },
     { "source": "/avv", "destination": "/avv.html" },
     { "source": "/checkout-success", "destination": "/checkout-success.html" },
+    { "source": "/app", "destination": "/index.html" },
     { "source": "/api/:path*", "destination": "/api/:path*" },
+    {
+      "source": "/",
+      "has": [{ "type": "query", "key": "mode" }],
+      "destination": "/index.html"
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "query", "key": "activate" }],
+      "destination": "/index.html"
+    },
+    { "source": "/", "destination": "/landing.html" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "headers": [
