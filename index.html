@@ -1058,6 +1058,63 @@ function getOrCreateLehrerId() {
 }
 
 // =============================================================
+// LICENSE AUTO-ACTIVATION via ?activate=<UUID> URL param
+// (used by the welcome email link so the user doesn't paste the key manually)
+// =============================================================
+const LICENSE_KEY_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+
+async function maybeAutoActivateLicense() {
+  const params = new URLSearchParams(location.search);
+  const candidate = (params.get('activate') || '').trim();
+  if (!candidate) return;
+
+  // Always strip the ?activate= param from the URL so a refresh doesn't re-run this,
+  // and so the key never sticks around in browser history / referer headers.
+  const cleanUrl = new URL(location.href);
+  cleanUrl.searchParams.delete('activate');
+  history.replaceState(null, '', cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+
+  if (!LICENSE_KEY_REGEX.test(candidate)) {
+    showToast('Aktivierungs-Link ungültig. Bitte den Lizenzschlüssel manuell in den Einstellungen eintragen.', 'error');
+    return;
+  }
+
+  // If an existing key is identical we are done; if it's different we ask before overwriting.
+  const existing = localStorage.getItem('lernortai_license_key') || '';
+  if (existing === candidate) {
+    showToast('Diese Lizenz ist bereits aktiv. Willkommen zurück!', 'info');
+    return;
+  }
+  if (existing && existing !== candidate) {
+    if (!confirm('Es ist bereits eine andere Lizenz hinterlegt. Mit der neuen Lizenz überschreiben?')) {
+      return;
+    }
+  }
+
+  try {
+    const res = await fetch('/api/validate-license', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ license_key: candidate, action: 'check' }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.valid) {
+      localStorage.setItem('lernortai_license_key', candidate);
+      if (data.plan) localStorage.setItem('lernortai_plan', data.plan);
+      showToast('Lizenz aktiviert. Plan: ' + (data.plan || 'aktiv').toUpperCase(), 'success');
+    } else if (data.code === 'license_revoked') {
+      showToast('Diese Lizenz wurde gesperrt. Bitte info@pruefai.ch kontaktieren.', 'error');
+    } else {
+      showToast('Lizenz konnte nicht aktiviert werden (ungültig oder abgelaufen).', 'error');
+    }
+  } catch (err) {
+    // Server unreachable: store the key locally anyway so a later validation succeeds.
+    localStorage.setItem('lernortai_license_key', candidate);
+    showToast('Lizenz lokal gespeichert. Server konnte sie nicht sofort prüfen – versuche es gleich nochmal.', 'info');
+  }
+}
+
+// =============================================================
 // PRO PLAN GATING
 // =============================================================
 function isPro() {
@@ -1077,6 +1134,7 @@ function requirePro(featureName) {
 // =============================================================
 document.addEventListener('DOMContentLoaded', async function() {
   if (initMobileMode()) return; // mobile upload page – no further init needed
+  await maybeAutoActivateLicense();
   const saved = localStorage.getItem(LS.CONFIG);
   if (saved) { try { const local = JSON.parse(saved); if (local.schoolName) cfg.schoolName = local.schoolName; if (local.schoolType !== undefined) cfg.schoolType = local.schoolType; } catch(e) {} }
   try {
