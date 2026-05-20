@@ -47,7 +47,7 @@ abgeschickt.
    - 1× MX auf `send.pruefai.ch` (für Bounce-Handling, Ziel typischerweise `feedback-smtp.<region>.amazonses.com`)
    - 1× TXT auf `send.pruefai.ch` (SPF: `v=spf1 include:amazonses.com ~all`)
    - 1× TXT auf `resend._domainkey.pruefai.ch` (DKIM-Public-Key, langer Wert mit `p=...`)
-   - Optional: 1× TXT auf `_dmarc.pruefai.ch` (kann Resend für dich setzen — wir machen das aber gezielt, siehe Abschnitt 3)
+   - Optional: 1× TXT auf `_dmarc.pruefai.ch` (kann Resend für dich setzen — wir machen das aber gezielt, siehe Abschnitt 4)
 3. Kopiere jeden Wert (Resend hat „Copy"-Buttons).
 
 ### 2.2 Cyon-Seite
@@ -66,7 +66,47 @@ sind, ist die Domain einsatzbereit.
 
 ---
 
-## 3. DMARC-Record (Anti-Spoofing-Policy)
+## 3. Zoho Mail (Posteingang + Versand ab Apex)
+
+`info@pruefai.ch` läuft über **Zoho Mail** — sowohl eingehend (Posteingang)
+als auch ausgehend (manuelle Antworten). Damit Zoho-Mails authentifiziert
+sind und nicht im Spam landen, braucht der **Apex** (`pruefai.ch`) eigene
+MX-, SPF- und DKIM-Records. Resend (Abschnitt 2) bleibt davon unberührt,
+da Resend ausschliesslich über `send.pruefai.ch` versendet.
+
+> **Rechenzentrum:** Zoho hat regionale DCs (`.eu`, `.com`, `.in`). Die
+> Hostnamen unten zeigen die EU-Variante. In der Zoho-Konsole stehen die
+> exakten Werte — `check-dns.mjs` matcht DC-unabhängig auf `zoho`.
+
+### 3.1 MX (Posteingang)
+
+**Cyon → DNS-Editor → DNS-Record hinzufügen** (Name-Feld _leer_ = Apex):
+
+| Typ | Name | Priorität | Wert |
+|-----|------|-----------|------|
+| `MX` | _leer_ | `10` | `mx.zoho.eu` |
+| `MX` | _leer_ | `20` | `mx2.zoho.eu` |
+| `MX` | _leer_ | `50` | `mx3.zoho.eu` |
+
+### 3.2 SPF (Apex)
+
+Ein TXT-Record am Apex, der Zoho als zulässigen Versender deklariert.
+Siehe Abschnitt 5 — der Apex-SPF muss `include:zohomail.eu` enthalten.
+
+### 3.3 DKIM (Apex)
+
+Zoho-Konsole → **Domains → pruefai.ch → Email Configuration → DKIM**.
+Zoho zeigt einen **Selektor** (z.B. `zmail`) und den **Public Key**.
+
+| Typ | Name | Wert |
+|-----|------|------|
+| `TXT` | `<selektor>._domainkey` | `v=DKIM1; k=rsa; p=…` (exakt aus Zoho-Konsole) |
+
+Danach in der Zoho-Konsole **Verify** klicken.
+
+---
+
+## 4. DMARC-Record (Anti-Spoofing-Policy)
 
 DMARC bündelt SPF + DKIM und sagt empfangenden Mailservern, was passieren
 soll, wenn weder SPF noch DKIM passt: nichts (`none`), in Spam verschieben
@@ -105,35 +145,33 @@ v=DMARC1; p=reject; rua=mailto:dmarc-reports@pruefai.ch
 
 ---
 
-## 4. SPF am Apex (optional, falls Mail vom Apex versendet wird)
+## 5. SPF am Apex (Pflicht — Zoho versendet ab Apex)
 
-Resend versendet von `send.pruefai.ch` (Subdomain), deshalb braucht die
-Apex-Domain `pruefai.ch` **technisch kein SPF**. Aber: manche Filter
-werten Domains mit fehlendem Apex-SPF schlechter. Sicherheitsmässig
-sinnvoll: ein restriktives Apex-SPF, das alles ablehnt:
+Da `info@pruefai.ch` über Zoho (Abschnitt 3) auch **ausgehende** Mail
+verschickt, muss der Apex einen SPF-Record haben, der Zoho autorisiert.
+Ohne ihn scheitert die SPF-Prüfung beim Empfänger und DMARC schlägt fehl.
 
 | Feld | Wert |
 |------|------|
 | Typ | `TXT` |
 | Name | _leer_ (Apex) |
-| Wert | `v=spf1 -all` |
+| Wert | `v=spf1 include:zohomail.eu ~all` |
 
-Falls du später info@pruefai.ch via Cyon-Mail oder einen anderen Provider
-versendest: dann hier `include:<provider-spf>` einfügen.
-
----
-
-## 5. MTA-STS und TLS-RPT (optional, fortgeschritten)
-
-Für eingehende Mail (wenn info@pruefai.ch jemals eine Mailbox bekommt):
-erzwingt TLS-verschlüsselte SMTP-Verbindungen.
-
-Setup ist nicht trivial (eigene Subdomain `mta-sts.pruefai.ch` mit
-HTTPS-Policy-File). Aktuell nicht relevant, da kein eingehender Mail-Empfang.
+Resend versendet ausschliesslich über `send.pruefai.ch` und hat dort sein
+eigenes SPF (Abschnitt 2) — der Apex-SPF braucht **keinen** Resend-Include.
 
 ---
 
-## 6. Domain-Reputation an Filterhersteller melden
+## 6. MTA-STS und TLS-RPT (optional, fortgeschritten)
+
+Erzwingt TLS-verschlüsselte SMTP-Verbindungen für eingehende Mail an
+`info@pruefai.ch` (Zoho). Setup ist nicht trivial (eigene Subdomain
+`mta-sts.pruefai.ch` mit HTTPS-Policy-File). Sicherheitsgewinn ist real,
+aber niedrige Priorität — Zoho akzeptiert TLS bereits opportunistisch.
+
+---
+
+## 7. Domain-Reputation an Filterhersteller melden
 
 Wenn pruefai.ch von SmartScreen / Safe Browsing / Family-Filtern als
 „newly registered" oder „suspicious" markiert wird: aktiv eine Re-Klassi-
@@ -141,24 +179,24 @@ fizierung anstossen.
 
 Diese Schritte sind **manuell** (jeder Anbieter verlangt Captcha + Form):
 
-### 6.1 Microsoft SmartScreen
+### 7.1 Microsoft SmartScreen
 https://feedback.smartscreen.microsoft.com/feedback.aspx?t=2
 - *Web Address*: `https://pruefai.ch`
 - *Submission Type*: **„Mark as safe"**
 - Begründung: Beschreibung der App (KI-Korrekturhilfe für Lehrpersonen, kein User-Generated-Content, kein Phishing-Risiko)
 - E-Mail-Adresse zur Rückmeldung angeben
 
-### 6.2 Google Safe Browsing
+### 7.2 Google Safe Browsing
 https://safebrowsing.google.com/safebrowsing/report_error/
 - URL: `https://pruefai.ch`
 - Begründung dito
 
-### 6.3 Cisco Talos
+### 7.3 Cisco Talos
 https://talosintelligence.com/reputation_center/lookup?search=pruefai.ch
 - Falls dort eine Kategorie-Bewertung kommt, „Suggest reclassification" anklicken
 - Vorgeschlagene Kategorie: *Educational Institutions* oder *Web-based Productivity*
 
-### 6.4 Webroot / BrightCloud
+### 7.4 Webroot / BrightCloud
 https://www.brightcloud.com/tools/url-ip-lookup.php
 - Eingabe: `pruefai.ch`
 - Falls falsche Kategorie: rechts „Submit Dispute" klicken
@@ -167,7 +205,7 @@ Typische Bearbeitungszeit: 2–7 Tage.
 
 ---
 
-## 7. Verifikations-Workflow
+## 8. Verifikations-Workflow
 
 Nach jeder DNS-Änderung **5–30 Minuten warten** (Cyon-DNS hat 4h TTL,
 aber Resolver cachen meist kürzer), dann lokal:
@@ -186,12 +224,13 @@ gibt eine Checkliste aus mit konkretem Fix-Vorschlag bei Lücken.
 ## Reihenfolge zum Abarbeiten (TL;DR)
 
 1. **CAA** (Abschnitt 1) — 1 Record, sofort
-2. **Resend-Domain** (Abschnitt 2) — 3-4 Records, blockiert Mail-Versand
-3. **DMARC** (Abschnitt 3) — 1 Record, mit `p=none` starten
-4. **`node scripts/check-dns.mjs`** ausführen → grüne Häkchen prüfen
-5. **Apex-SPF** (Abschnitt 4) — 1 Record, optional
-6. **Reputation-Submissions** (Abschnitt 6) — 4 Formulare, dauert je 2 Min
-7. **DMARC nach 2 Wochen** auf `p=quarantine` hochziehen
-8. **DMARC nach weiteren 2 Wochen** auf `p=reject` hochziehen
+2. **Resend-Domain** (Abschnitt 2) — 3-4 Records, blockiert App-Mail-Versand
+3. **Zoho Mail** (Abschnitt 3) — MX + DKIM für `info@pruefai.ch`
+4. **Apex-SPF** (Abschnitt 5) — 1 Record, Pflicht für Zoho-Versand
+5. **DMARC** (Abschnitt 4) — 1 Record, mit `p=none` starten
+6. **`node scripts/check-dns.mjs`** ausführen → grüne Häkchen prüfen
+7. **Reputation-Submissions** (Abschnitt 7) — 4 Formulare, dauert je 2 Min
+8. **DMARC nach 2 Wochen** auf `p=quarantine` hochziehen
+9. **DMARC nach weiteren 2 Wochen** auf `p=reject` hochziehen
 
-Schritte 1-6 sind in ~30 Minuten erledigt, dann ist die Domain professionell aufgesetzt.
+Schritte 1-7 sind in ~30 Minuten erledigt, dann ist die Domain professionell aufgesetzt.
