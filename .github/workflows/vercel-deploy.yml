@@ -1,6 +1,12 @@
 name: Vercel – Deploy / Rollback
 
 on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
   workflow_dispatch:
     inputs:
       action:
@@ -18,13 +24,18 @@ on:
 permissions:
   contents: read
 
+# Ein Production-Deploy zur Zeit; laufende Deploys nicht abbrechen.
+concurrency:
+  group: vercel-production
+  cancel-in-progress: false
+
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 jobs:
   deploy:
-    if: inputs.action == 'deploy-prod'
+    if: github.event_name == 'push' || inputs.action == 'deploy-prod'
     name: Production Deploy
     runs-on: ubuntu-latest
     environment: production
@@ -54,7 +65,7 @@ jobs:
         run: echo "::notice title=Production deploy::${{ steps.deploy.outputs.url }}"
 
   rollback:
-    if: inputs.action == 'rollback'
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'rollback'
     name: Rollback Production
     runs-on: ubuntu-latest
     environment: production
