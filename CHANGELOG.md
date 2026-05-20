@@ -24,15 +24,26 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ### Geändert
 - **Landing-Page-Rewrite**: neuer Hero, Trust-Strip, Founder-Section und
   geschärfte Pricing-Darstellung.
-- **Vercel-Routing umgestellt**: `/` zeigt jetzt die Landing-Page,
-  `/app` die Anwendung.
+- **Datei-Struktur umgestellt**: die Landing-Page ist jetzt `index.html`
+  (Startseite `/`), die App `app.html` (`/app`). `/app`-Aufrufe werden per
+  Rewrite auf `app.html` geführt, `?activate=`/`?mode=`-Aufrufe auf `/`
+  per Redirect auf `/app`.
 - **`vercel-deploy.yml` deployt automatisch bei Push auf `main`** (vorher
   nur manueller `workflow_dispatch`). `paths-ignore` überspringt reine
   Doku-Änderungen, eine `concurrency`-Group verhindert überlappende
   Production-Deploys.
 - Sämtliches „DSGVO"-Wording durch das schweizerische **„nDSG"** ersetzt.
-- `sw.js`: Cache-Bust auf `pruefai-v6`, damit die SEO- und Onboarding-
-  Änderungen an `index.html` auch bereits installierte PWAs erreichen.
+- `sw.js`: Cache-Bust auf `pruefai-v6`, App-Shell auf `app.html` umgestellt.
+
+### Behoben
+- **`pruefai.ch` zeigt jetzt die Landing-Page statt der App.** Ursache war
+  Vercels Routing-Reihenfolge: existierende Dateien werden vor `rewrites`
+  ausgeliefert, daher griff die Regel `/ → landing.html` nie und `/` zeigte
+  immer die `index.html` (= App). Behoben durch Umbenennen (`landing.html`
+  → `index.html`, App → `app.html`) statt eines Rewrites.
+- **Cookie-Banner auf der Landing-Page liess sich nicht schliessen**: der
+  Banner steuerte die Sichtbarkeit über die CSS-Klasse `hidden`, die nie
+  definiert war. Steuerung jetzt direkt über `style.display`.
 
 ### Sicherheit (Lizenz-Härtung Phase 1)
 - **Webhook-Idempotenz** für `checkout.session.completed`: Stripe-Doppelzustellungen erzeugen

@@ -1,0 +1,3322 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1a56db" />
+  <meta name="description" content="Pruefai – KI-gestützte Prüfungskorrektur für Lehrpersonen" />
+  <!-- Die App selbst wird nicht indexiert; SEO läuft über die Landing-Page auf / -->
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="canonical" href="https://pruefai.ch/app" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <title>Pruefai</title>
+  <link rel="manifest" href="./manifest.json" />
+  <!-- jsPDF -->
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js" integrity="sha384-b8MpgG2ZzWN6OPAtiB1JiBmDr9MpTt3NKK6KQf61hC/L7X4wJrvoTeVmMFPgp3nL" crossorigin="anonymous"></script>
+  <!-- QR-Code -->
+  <script defer src="./qrcode.min.js"></script>
+  <style>
+    :root {
+      --primary: #1d4ed8; --primary-dark: #1e40af; --primary-light: #e0ebff;
+      --success: #0f766e; --success-light: #d9f3f0;
+      --warning: #b45309; --warning-light: #ffedd5;
+      --danger: #b91c1c; --danger-light: #fee2e2;
+      --text: #0f172a; --text-muted: #475569;
+      --border: #dbe3ef; --bg: #f3f6fb; --card: #ffffff;
+      --radius: 12px; --shadow: 0 3px 14px rgba(15,23,42,.07); --shadow-lg: 0 18px 44px rgba(15,23,42,.18);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; background: linear-gradient(180deg, #eef3ff 0, var(--bg) 200px) fixed; color: var(--text); min-height: 100vh; line-height: 1.45; }
+    button { cursor: pointer; font-family: inherit; }
+    input, select, textarea { font-family: inherit; }
+    a { color: var(--primary); text-decoration: none; }
+
+    /* Layout */
+    #app { display: flex; flex-direction: column; min-height: 100vh; }
+    .header { background: linear-gradient(135deg, #1e3a8a 0%, var(--primary) 100%); color: #fff; padding: .9rem 1.4rem; display: flex; align-items: center; gap: .75rem; box-shadow: 0 10px 26px rgba(30,58,138,.3); position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,.2); }
+    .header__logo { font-size: 1.45rem; font-weight: 700; letter-spacing: -.01em; }
+    .header__sub { font-size: .8rem; opacity: .9; }
+    .header__actions { margin-left: auto; display: flex; gap: .5rem; }
+    .nav-tabs { background: rgba(255,255,255,.96); backdrop-filter: blur(10px); border-bottom: 1px solid var(--border); display: flex; overflow-x: auto; scrollbar-width: none; box-shadow: 0 3px 12px rgba(15,23,42,.06); }
+    .nav-tabs::-webkit-scrollbar { display: none; }
+    .nav-tab { padding: .85rem 1.25rem; border: none; background: transparent; color: var(--text-muted); font-size: .9rem; font-weight: 600; white-space: nowrap; border-bottom: 3px solid transparent; transition: color .15s, border-color .15s, background .15s; }
+    .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); background: #f1f5ff; }
+    .nav-tab:hover:not(.active) { color: var(--text); background: #eef3ff; }
+    .main { flex: 1; padding: 1.5rem 1.25rem 2rem; max-width: 1120px; margin: 0 auto; width: 100%; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* Cards */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.2rem 1.25rem; box-shadow: var(--shadow); }
+    .card + .card { margin-top: 1rem; }
+    .card__title { font-size: 1.05rem; font-weight: 650; margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; letter-spacing: -.01em; }
+
+    .section-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap; }
+    .section-title-group { display: flex; flex-direction: column; gap: .15rem; }
+    .section-title { font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; }
+    .section-subtitle { font-size: .84rem; color: var(--text-muted); }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; gap: .4rem; padding: .55rem 1rem; border-radius: 8px; border: none; font-size: .875rem; font-weight: 600; transition: all .15s; box-shadow: 0 1px 2px rgba(15,23,42,.08); }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #f8fbff; border-color: #c6d5ee; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover { background: #047857; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-sm { padding: .38rem .72rem; font-size: .8rem; }
+    .btn-icon { padding: .4rem; border-radius: 8px; border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.16); color: #fff; }
+    .btn-icon:hover { background: rgba(255,255,255,.28); }
+
+    /* Forms */
+    .form-group { margin-bottom: 1rem; }
+    .form-label { display: block; font-size: .875rem; font-weight: 500; margin-bottom: .4rem; }
+    .form-control { width: 100%; padding: .55rem .75rem; border: 1px solid var(--border); border-radius: 8px; font-size: .875rem; background: #fff; transition: border-color .15s, box-shadow .15s; }
+    .form-control:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,86,219,.1); }
+    .form-hint { font-size: .75rem; color: var(--text-muted); margin-top: .3rem; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    /* Tables */
+    .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    thead th { background: #f8fbff; padding: .65rem 1rem; text-align: left; font-weight: 600; color: var(--text-muted); border-bottom: 1px solid var(--border); white-space: nowrap; }
+    tbody td { padding: .65rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #f8fbff; }
+
+    /* Badges */
+    .badge { display: inline-flex; align-items: center; padding: .2rem .6rem; border-radius: 999px; font-size: .75rem; font-weight: 600; }
+    .badge-blue { background: var(--primary-light); color: var(--primary); }
+    .badge-green { background: var(--success-light); color: var(--success); }
+    .badge-yellow { background: var(--warning-light); color: var(--warning); }
+    .badge-red { background: var(--danger-light); color: var(--danger); }
+    .badge-gray { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+
+    /* Note colors */
+    .note-6 { color: var(--success); font-weight: 700; }
+    .note-5 { color: #2563eb; font-weight: 700; }
+    .note-4 { color: var(--warning); font-weight: 700; }
+    .note-bad { color: var(--danger); font-weight: 700; }
+
+    /* Alerts */
+    .alert { padding: .75rem 1rem; border-radius: var(--radius); font-size: .875rem; margin-bottom: 1rem; display: flex; align-items: flex-start; gap: .5rem; }
+    .alert-info { background: var(--primary-light); color: var(--primary); }
+    .alert-success { background: var(--success-light); color: var(--success); }
+    .alert-warning { background: var(--warning-light); color: var(--warning); }
+    .alert-danger { background: var(--danger-light); color: var(--danger); }
+
+    /* Modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .modal { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow-lg); width: 100%; max-width: 550px; max-height: 90vh; overflow-y: auto; padding: 1.5rem; position: relative; }
+    .modal__title { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; padding-right: 2rem; }
+    .modal__close { position: absolute; top: 1rem; right: 1rem; background: transparent; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer; padding: .25rem .5rem; border-radius: 4px; }
+    .modal__close:hover { background: var(--bg); }
+    .modal__footer { margin-top: 1.25rem; display: flex; gap: .75rem; justify-content: flex-end; flex-wrap: wrap; }
+    .hidden { display: none !important; }
+
+    /* Upload */
+    .upload-zone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 2rem; text-align: center; cursor: pointer; transition: all .15s; color: var(--text-muted); }
+    .upload-zone:hover, .upload-zone.drag-over { border-color: var(--primary); background: var(--primary-light); color: var(--primary); }
+    .upload-zone__icon { font-size: 2rem; margin-bottom: .5rem; }
+    .pages-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: .75rem; margin-top: .75rem; }
+    .page-thumb { position: relative; aspect-ratio: 3/4; border-radius: 6px; overflow: hidden; border: 2px solid var(--border); background: var(--bg); }
+    .page-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .page-thumb__num { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,.55); color: #fff; font-size: .7rem; text-align: center; padding: .2rem; }
+    .page-thumb__del { position: absolute; top: .25rem; right: .25rem; background: rgba(220,38,38,.85); color: #fff; border: none; border-radius: 50%; width: 1.4rem; height: 1.4rem; font-size: .8rem; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+
+    /* Progress */
+    .progress { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; }
+    .progress-bar { height: 100%; background: var(--primary); transition: width .3s; }
+
+    /* Stats */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+    .stat-card { background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%); border: 1px solid #d6e2f4; border-radius: var(--radius); padding: 1rem; text-align: center; box-shadow: var(--shadow); }
+    .stat-card__num { font-size: 2rem; font-weight: 700; color: var(--primary); }
+    .stat-card__lbl { font-size: .8rem; color: var(--text-muted); margin-top: .25rem; }
+
+
+
+    /* Histogram */
+    .histogram { display: flex; align-items: flex-end; gap: 4px; height: 60px; }
+    .histogram-bar { flex: 1; border-radius: 3px 3px 0 0; min-height: 4px; position: relative; }
+
+    /* Toast */
+    #toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999; display: flex; flex-direction: column; gap: .5rem; max-width: 340px; }
+    .toast { padding: .75rem 1rem; border-radius: 8px; font-size: .875rem; font-weight: 500; box-shadow: var(--shadow-lg); animation: toast-in .25s ease; display: flex; align-items: center; gap: .5rem; color: #fff; }
+    .toast-success { background: var(--success); }
+    .toast-error { background: var(--danger); }
+    .toast-info { background: var(--primary); }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .help-hint {
+      position: relative; display: inline-flex; align-items: center; justify-content: center;
+      width: 1.05rem; height: 1.05rem; border-radius: 999px; font-size: .68rem; font-weight: 700;
+      color: var(--primary); background: var(--primary-light); border: 1px solid #bfd1ff; cursor: help;
+      user-select: none;
+    }
+    .help-hint::before { content: '?'; }
+    .help-hint::after {
+      content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + .45rem); transform: translateX(-50%) translateY(4px);
+      background: #0f172a; color: #fff; padding: .45rem .55rem; border-radius: 8px; font-size: .72rem; line-height: 1.3;
+      width: max-content; max-width: 230px; text-align: center; opacity: 0; pointer-events: none; transition: opacity .16s, transform .16s;
+      box-shadow: 0 8px 22px rgba(15,23,42,.35); z-index: 10;
+    }
+    .help-hint:hover::after, .help-hint:focus-visible::after { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .help-hint:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+    @media (max-width: 768px) { .main { padding: .9rem .75rem; } }
+    @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+    @media (max-width: 480px) { .stats-grid { grid-template-columns: 1fr 1fr; } }
+
+    /* Usage bar in header */
+    .usage-bar-wrap { display:none; align-items:center; gap:.4rem; font-size:.7rem; color:#fff; opacity:.9; }
+    .usage-bar-track { width:52px; height:5px; background:rgba(255,255,255,.3); border-radius:3px; overflow:hidden; }
+    .usage-bar-fill { height:100%; background:#fff; border-radius:3px; transition:width .4s; }
+    .usage-bar-warn { background:#fcd34d !important; }
+
+    /* Upsell modal plan cards */
+    .upsell-plans { display:grid; grid-template-columns:1fr 1fr 1fr; gap:.65rem; margin-bottom:1.25rem; }
+    .upsell-plan { border:1px solid var(--border); border-radius:var(--radius); padding:.9rem .75rem; text-align:center; }
+    .upsell-plan--popular { border-color:var(--primary); }
+    .upsell-plan__name { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--text-muted); margin-bottom:.35rem; }
+    .upsell-plan--popular .upsell-plan__name { color:var(--primary); }
+    .upsell-plan__price { font-size:1.35rem; font-weight:800; margin-bottom:.2rem; }
+    .upsell-plan__desc { font-size:.75rem; color:var(--text-muted); margin-bottom:.65rem; }
+    @media(max-width:420px) { .upsell-plans { grid-template-columns:1fr; } }
+
+    /* Onboarding steps */
+    .onboarding-step { display:flex; align-items:flex-start; gap:.75rem; margin-bottom:.85rem; }
+    .onboarding-num { background:var(--primary); color:#fff; min-width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:700; flex-shrink:0; margin-top:.1rem; }
+
+    /* Cookie banner */
+    #cookie-banner { position:fixed; bottom:0; left:0; right:0; background:#1f2937; color:#e5e7eb; padding:.875rem 1.5rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; z-index:9998; font-size:.85rem; }
+    #cookie-banner a { color:#93c5fd; }
+    #cookie-banner.hidden { display:none !important; }
+
+    .qr-canvas-wrap { display:flex; justify-content:center; margin:1rem 0; }
+    .qr-canvas-wrap canvas { border-radius:8px; border:2px solid var(--border); }
+    .qr-status-line { font-size:.875rem; color:var(--text-muted); margin:.5rem 0; }
+    .qr-count { font-size:1.4rem; font-weight:700; color:var(--success); margin:.25rem 0; }
+
+    /* Mobile Upload Page */
+    #mobile-app { display:none; flex-direction:column; min-height:100vh; background:var(--bg); padding:1rem; max-width:600px; margin:0 auto; }
+    #mobile-app.active { display:flex; }
+    .mobile-photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:.5rem; margin:1rem 0; }
+    .mobile-photo-thumb { position:relative; aspect-ratio:3/4; border-radius:6px; overflow:hidden; border:2px solid var(--border); background:var(--bg); }
+    .mobile-photo-thumb img { width:100%; height:100%; object-fit:cover; }
+    .mobile-photo-del { position:absolute; top:.2rem; right:.2rem; background:rgba(220,38,38,.85); color:#fff; border:none; border-radius:50%; width:1.4rem; height:1.4rem; font-size:.8rem; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+
+    /* Mobile bottom nav */
+    .mobile-nav { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid var(--border); z-index: 90; padding-bottom: env(safe-area-inset-bottom); box-shadow: 0 -2px 10px rgba(0,0,0,.08); }
+    .mobile-nav__items { display: flex; }
+    .mobile-nav__item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: .6rem .25rem; background: transparent; border: none; font-size: .65rem; color: var(--text-muted); cursor: pointer; transition: color .15s; }
+    .mobile-nav__item.active { color: var(--primary); }
+    .mobile-nav__icon { font-size: 1.35rem; }
+
+    /* FAB – Floating Action Button */
+    .fab { display: none; position: fixed; bottom: calc(4rem + env(safe-area-inset-bottom) + .75rem); right: 1rem; z-index: 89; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: var(--primary); color: #fff; border: none; font-size: 1.5rem; box-shadow: 0 4px 16px rgba(26,86,219,.4); align-items: center; justify-content: center; cursor: pointer; transition: transform .15s, box-shadow .15s; }
+    .fab:hover { transform: scale(1.07); box-shadow: 0 6px 20px rgba(26,86,219,.5); }
+
+    /* Lernstoff */
+    .lernmaterial-item { display: flex; align-items: center; gap: .75rem; padding: .75rem; border: 1px solid var(--border); border-radius: 6px; margin-bottom: .5rem; background: var(--bg); }
+    .lernmaterial-item__icon { font-size: 1.5rem; flex-shrink: 0; }
+    .lernmaterial-item__name { flex: 1; font-size: .875rem; font-weight: 500; }
+    .lernmaterial-item__meta { font-size: .75rem; color: var(--text-muted); }
+
+    /* Hilfe / KI-Chat */
+    .help-chat-box { border: 1px solid var(--border); border-radius: var(--radius); background: #fff; max-height: 340px; overflow-y: auto; padding: .75rem; display: flex; flex-direction: column; gap: .6rem; }
+    .help-chat-msg { max-width: 90%; padding: .55rem .7rem; border-radius: 10px; font-size: .875rem; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
+    .help-chat-msg--user { margin-left: auto; background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+    .help-chat-msg--bot { margin-right: auto; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+    .help-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .65rem; }
+    .help-link-card { display: block; padding: .75rem; border: 1px solid var(--border); border-radius: 8px; background: #fff; color: var(--text); }
+    .help-link-card:hover { border-color: var(--primary); box-shadow: var(--shadow); }
+
+    /* Mobile: hide desktop nav, show mobile nav + FAB */
+    @media (max-width: 768px) {
+      .nav-tabs { display: none; }
+      .mobile-nav { display: flex; flex-direction: column; }
+      .fab { display: flex; }
+      .main { padding-bottom: calc(5rem + env(safe-area-inset-bottom)); }
+    }
+
+    /* Pro badge & lock overlay */
+    .pro-badge { display:inline-flex;align-items:center;gap:.2rem;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;padding:.1rem .45rem;border-radius:999px;font-size:.6rem;font-weight:700;vertical-align:middle;margin-left:.3rem; }
+    .pro-lock-wrap { position:relative; }
+    .pro-lock-overlay { position:absolute;inset:0;background:rgba(249,250,251,.92);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;z-index:10;flex-direction:column;gap:.5rem;text-align:center;padding:1rem; }
+    .pro-lock-overlay .pro-badge { font-size:.8rem;padding:.3rem .8rem; }
+
+    /* Rubric criteria */
+    .rubric-kriterium { display:flex;align-items:center;gap:.75rem;padding:.65rem .75rem;border:1px solid var(--border);border-radius:6px;margin-bottom:.5rem;background:var(--bg); }
+    .rubric-kriterium__name { flex:1;font-size:.875rem;font-weight:500; }
+    .rubric-kriterium__pts { font-size:.8rem;color:var(--text-muted);white-space:nowrap; }
+
+    /* Analytik trend chart */
+    .trend-chart-wrap { display:flex;gap:1.5rem;flex-wrap:wrap;align-items:flex-end;margin-top:.75rem; }
+    .trend-col { display:flex;flex-direction:column;align-items:center;gap:.2rem;flex:1;min-width:60px; }
+    .trend-bar { width:100%;border-radius:3px 3px 0 0;min-height:4px;transition:opacity .15s; }
+    .trend-bar:hover { opacity:.75; }
+    .trend-lbl { font-size:.65rem;color:var(--text-muted);text-align:center;word-break:break-all; }
+    .trend-val { font-size:.75rem;font-weight:700; }
+
+    /* Textbausteine */
+    .textbaustein-chip { display:inline-flex;align-items:center;gap:.3rem;background:var(--primary-light);color:var(--primary);border:1px solid rgba(26,86,219,.25);border-radius:999px;padding:.25rem .65rem;font-size:.78rem;cursor:pointer;margin:.2rem;transition:background .1s; }
+    .textbaustein-chip:hover { background:#d4e3fe; }
+    .textbaustein-list-item { display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;border:1px solid var(--border);border-radius:6px;margin-bottom:.4rem;background:var(--bg); }
+    .textbaustein-list-item__text { flex:1;font-size:.875rem; }
+
+    /* CSV import preview */
+    .csv-preview-table { max-height:260px;overflow-y:auto; }
+
+    /* Quality check badge */
+    .badge-unsicher { background:#fef3c7;color:#92400e;border:1px solid #fcd34d; }
+  </style>
+</head>
+<body>
+
+<!-- Mobile Upload Page (shown when ?mode=mobile) -->
+<div id="mobile-app">
+  <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem">
+    <div style="font-size:1.4rem;font-weight:700;color:var(--primary)">&#9999;&#65039; Pruefai</div>
+    <div style="font-size:.8rem;color:var(--text-muted)">Foto-Upload</div>
+  </div>
+  <div class="card">
+    <div class="card__title">&#128248; Fotos aufnehmen</div>
+    <div id="mobile-schueler-info" style="font-size:.875rem;color:var(--text-muted);margin-bottom:.75rem"></div>
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem">
+      <button class="btn btn-primary" onclick="document.getElementById('mobile-camera-input').click()">&#128247; Kamera</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('mobile-file-input').click()">&#128444;&#65039; Galerie</button>
+    </div>
+    <input type="file" id="mobile-camera-input" accept="image/*" capture="environment" style="display:none" onchange="mobileAddPhoto(event)" />
+    <input type="file" id="mobile-file-input" accept="image/*" multiple style="display:none" onchange="mobileAddPhoto(event)" />
+    <div id="mobile-photo-grid" class="mobile-photo-grid"></div>
+    <div id="mobile-send-status" style="text-align:center;font-size:.875rem;margin:.75rem 0"></div>
+    <div style="display:flex;gap:.5rem;justify-content:flex-end">
+      <button class="btn btn-success" id="mobile-send-btn" onclick="mobileSendPhotos()" disabled>&#128228; Senden</button>
+    </div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="app">
+  <header class="header">
+    <div>
+      <div class="header__logo">&#9999;&#65039; Pruefai</div>
+      <div class="header__sub" id="header-school">Meine Schule</div>
+    </div>
+    <div class="header__actions">
+      <button class="btn btn-icon" onclick="openSettingsModal()" title="Einstellungen">&#9881;&#65039;</button>
+      <a id="free-trial-badge" href="/" title="Plan wählen" style="display:none;font-size:.75rem;font-weight:600;background:var(--warning-light);color:var(--warning);border:1px solid #fcd34d;border-radius:20px;padding:.25rem .65rem;white-space:nowrap;text-decoration:none">🎓 <span id="free-trial-remaining"></span> gratis</a>
+      <div class="usage-bar-wrap" id="usage-bar-wrap">
+        <span id="usage-bar-label" style="white-space:nowrap"></span>
+        <div class="usage-bar-track"><div class="usage-bar-fill" id="usage-bar-fill"></div></div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="showView('dashboard')" id="tab-dashboard" title="Übersicht mit Kennzahlen und nächsten Prüfungen">&#128202; Dashboard</button>
+    <button class="nav-tab" onclick="showView('klassen')" id="tab-klassen" title="Klassen verwalten und organisieren">&#127979; Klassen</button>
+    <button class="nav-tab" onclick="showView('schueler')" id="tab-schueler" title="Schüler erfassen und zuweisen">&#128101; Schüler</button>
+    <button class="nav-tab" onclick="showView('faecher')" id="tab-faecher" title="Fächer und Kürzel verwalten">&#128218; Fächer</button>
+    <button class="nav-tab" onclick="showView('pruefungen')" id="tab-pruefungen" title="Prüfungen erstellen und bearbeiten">&#128221; Prüfungen</button>
+    <button class="nav-tab" onclick="showView('lernstoff')" id="tab-lernstoff" title="Unterlagen für die KI-Korrektur hochladen">&#128196; Lernstoff</button>
+    <button class="nav-tab" onclick="showView('korrektur')" id="tab-korrektur" title="KI-Korrekturen starten und prüfen">&#129302; Korrektur</button>
+    <button class="nav-tab" onclick="showView('noten')" id="tab-noten" title="Notenübersicht und Exporte anzeigen">&#128200; Noten</button>
+    <button class="nav-tab" onclick="showView('rubrics')" id="tab-rubrics" title="Bewertungsraster definieren und wiederverwenden">&#128203; Rubrics <span class="pro-badge">Pro</span></button>
+    <button class="nav-tab" onclick="showView('analytik')" id="tab-analytik" title="Notentrends und Fehlerkatalog anzeigen">&#128201; Analytik <span class="pro-badge">Pro</span></button>
+    <button class="nav-tab" onclick="showView('hilfe')" id="tab-hilfe" title="Hilfe und Rechtliches">&#10067; Hilfe</button>
+  </nav>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-nav">
+    <div class="mobile-nav__items">
+      <button class="mobile-nav__item active" id="mnav-dashboard" onclick="showView('dashboard')"><span class="mobile-nav__icon">&#128202;</span>Dashboard</button>
+      <button class="mobile-nav__item" id="mnav-klassen" onclick="showView('klassen')"><span class="mobile-nav__icon">&#127979;</span>Klassen</button>
+      <button class="mobile-nav__item" id="mnav-korrektur" onclick="showView('korrektur')"><span class="mobile-nav__icon">&#129302;</span>Korrektur</button>
+      <button class="mobile-nav__item" id="mnav-noten" onclick="showView('noten')"><span class="mobile-nav__icon">&#128200;</span>Noten</button>
+      <button class="mobile-nav__item" id="mnav-mehr" onclick="showMobileMenu()"><span class="mobile-nav__icon">&#8942;</span>Mehr</button>
+    </div>
+  </nav>
+
+  <!-- FAB: Schnell Foto aufnehmen -->
+  <button class="fab" id="fab-foto" onclick="openFotoModal()" title="Prüfung fotografieren">&#128247;</button>
+
+  <main class="main">
+
+    <!-- Dashboard -->
+    <div id="view-dashboard" class="view active">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-card__num" id="stat-klassen">–</div><div class="stat-card__lbl">Klassen</div></div>
+        <div class="stat-card"><div class="stat-card__num" id="stat-schueler">–</div><div class="stat-card__lbl">Schüler</div></div>
+        <div class="stat-card"><div class="stat-card__num" id="stat-pruefungen">–</div><div class="stat-card__lbl">Prüfungen</div></div>
+        <div class="stat-card"><div class="stat-card__num" id="stat-korrigiert">–</div><div class="stat-card__lbl">Korrigiert</div></div>
+      </div>
+      <div class="card">
+        <div class="card__title">&#128197; Nächste Prüfungen <span class="help-hint" tabindex="0" data-tip="Hier sehen Sie die nächsten Termine über alle Klassen hinweg."></span></div>
+        <div id="dashboard-pruefungen-list"><p style="color:var(--text-muted);font-size:.875rem">Keine anstehenden Prüfungen.</p></div>
+      </div>
+    </div>
+
+    <!-- Klassen -->
+    <div id="view-klassen" class="view">
+      <div class="section-head">
+        <div class="section-title-group">
+          <h2 class="section-title">Klassen</h2>
+          <p class="section-subtitle">Legen Sie Klassen als Grundlage für Schüler, Prüfungen und Noten an.</p>
+        </div>
+        <button class="btn btn-primary" id="add-klasse-btn" onclick="openModal('klasse-modal')" title="Neue Klasse anlegen">+ Neue Klasse</button>
+      </div>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Klasse</th><th id="klassen-th-beruf">Beruf</th><th id="klassen-th-lehrjahr">Lehrjahr</th><th>Schuljahr</th><th>Schüler</th><th>Aktionen</th></tr></thead>
+        <tbody id="klassen-tbody"><tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Klassen erfasst.</td></tr></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- Schüler -->
+    <div id="view-schueler" class="view">
+      <div class="section-head">
+        <div class="section-title-group">
+          <h2 class="section-title">Schüler</h2>
+          <p class="section-subtitle">Verwalten Sie Lernende und ordnen Sie sie einer Klasse zu.</p>
+        </div>
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap">
+          <select class="form-control" id="schueler-filter-klasse" style="width:auto" onchange="loadSchueler()" title="Liste nach Klasse filtern">
+            <option value="">Alle Klassen</option>
+          </select>
+          <button class="btn btn-secondary" onclick="openCsvImportModal()">&#128229; CSV-Import</button>
+          <button class="btn btn-primary" onclick="openModal('schueler-modal')" title="Neuen Schüler erfassen">+ Neuer Schüler</button>
+        </div>
+      </div>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Name</th><th>Nummer</th><th>Klasse</th><th>Aktionen</th></tr></thead>
+        <tbody id="schueler-tbody"><tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Schüler erfasst.</td></tr></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- Fächer -->
+    <div id="view-faecher" class="view">
+      <div class="section-head">
+        <div class="section-title-group">
+          <h2 class="section-title">Fächer</h2>
+          <p class="section-subtitle">Definieren Sie Fachnamen und Kürzel für die Prüfungsverwaltung.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('fach-modal')" title="Neues Fach hinzufügen">+ Neues Fach</button>
+      </div>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Fach</th><th>Kürzel</th><th>KI-Profil</th><th>Aktionen</th></tr></thead>
+        <tbody id="faecher-tbody"><tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Fächer erfasst.</td></tr></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- Prüfungen -->
+    <div id="view-pruefungen" class="view">
+      <div class="section-head">
+        <div class="section-title-group">
+          <h2 class="section-title">Prüfungen</h2>
+          <p class="section-subtitle">Erstellen Sie Prüfungen und verknüpfen Sie sie mit Klassen und Fächern.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openModal('pruefung-modal')" title="Neue Prüfung mit Parametern erfassen">+ Neue Prüfung</button>
+      </div>
+      <div class="card"><div class="table-wrap"><table>
+        <thead><tr><th>Name</th><th>Datum</th><th>Fach</th><th>Max. Punkte</th><th>Klassen</th><th>Aktionen</th></tr></thead>
+        <tbody id="pruefungen-tbody"><tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Prüfungen erfasst.</td></tr></tbody>
+      </table></div></div>
+    </div>
+
+    <!-- Lernstoff -->
+    <div id="view-lernstoff" class="view">
+      <div class="section-head">
+        <div class="section-title-group">
+          <h2 class="section-title">Lernstoff &amp; Unterlagen</h2>
+          <p class="section-subtitle">Materialien ergänzen die KI-Korrektur mit fachlichem Kontext.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openLernstoffModal()" title="Lernmaterial oder Musterlösung hochladen">+ Material hochladen</button>
+      </div>
+      <div class="alert alert-info" style="margin-bottom:1rem">
+        Lade hier Musterlösungen, Aufgabenstellungen und andere Unterlagen hoch.
+        Dokumente können einer Prüfung zugeordnet werden und stehen als Kontext für die KI-Korrektur zur Verfügung.
+      </div>
+      <div style="margin-bottom:.75rem">
+        <label class="form-label">Filtern nach Prüfung</label>
+        <select class="form-control" id="lernstoff-filter-pruefung" style="max-width:320px" onchange="loadLernstoff()" title="Materialien nach Prüfung filtern">
+          <option value="">Alle Materialien</option>
+        </select>
+      </div>
+      <div id="lernstoff-list">
+        <p style="color:var(--text-muted);font-size:.875rem">Noch keine Materialien hochgeladen.</p>
+      </div>
+    </div>
+
+    <!-- Korrektur -->
+    <div id="view-korrektur" class="view">
+      <div class="section-head">
+        <div class="section-title-group">
+          <h2 class="section-title">Korrektur</h2>
+          <p class="section-subtitle">Wählen Sie Prüfung und Klasse, um KI-Korrekturen effizient zu steuern.</p>
+        </div>
+      </div>
+      <div style="margin-bottom:1rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end">
+        <div style="flex:1;min-width:200px">
+          <label class="form-label">Prüfung wählen</label>
+          <select class="form-control" id="korrektur-pruefung-select" onchange="loadKorrekturEintraege()"><option value="">– bitte wählen –</option></select>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <label class="form-label">Klasse</label>
+          <select class="form-control" id="korrektur-klasse-select" onchange="loadKorrekturEintraege()"><option value="">– bitte wählen –</option></select>
+        </div>
+        <button class="btn btn-success" onclick="kiAlleKorrigieren()" title="Startet die KI-Korrektur für alle offenen Einträge in der Auswahl">&#129302; Alle KI-korrigieren</button>
+      </div>
+      <div id="korrektur-eintraege-list"></div>
+    </div>
+
+    <!-- Noten -->
+    <div id="view-noten" class="view">
+      <div class="section-head">
+        <div class="section-title-group">
+          <h2 class="section-title">Noten</h2>
+          <p class="section-subtitle">Ergebnisse prüfen, auswerten und als PDF/CSV exportieren.</p>
+        </div>
+      </div>
+      <div style="margin-bottom:1rem;display:flex;gap:1rem;flex-wrap:wrap;align-items:flex-end">
+        <div style="flex:1;min-width:200px">
+          <label class="form-label">Prüfung</label>
+          <select class="form-control" id="noten-pruefung-select" onchange="loadNotenTabelle()"><option value="">– bitte wählen –</option></select>
+        </div>
+        <div style="flex:1;min-width:200px">
+          <label class="form-label">Klasse</label>
+          <select class="form-control" id="noten-klasse-select" onchange="loadNotenTabelle()"><option value="">– bitte wählen –</option></select>
+        </div>
+        <button class="btn btn-secondary" onclick="exportNotenPDF()" title="Notenübersicht als PDF herunterladen">&#128196; PDF-Export</button>
+        <button class="btn btn-secondary" onclick="exportNotenCSV()" title="Noten als CSV für Excel herunterladen">&#128202; CSV-Export</button>
+      </div>
+      <div id="noten-tabelle-wrap"></div>
+      <div id="noten-histogram-wrap" class="card hidden" style="margin-top:1rem">
+        <div class="card__title">&#128202; Notenverteilung <span class="help-hint" tabindex="0" data-tip="Balken zeigen, wie oft jede Note in der gewählten Prüfung vorkommt."></span></div>
+        <div id="noten-histogram"></div>
+      </div>
+    </div>
+
+    <!-- Rubrics (Pro) -->
+    <div id="view-rubrics" class="view">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <h2 style="font-size:1.25rem;font-weight:700">&#128203; Bewertungsraster <span class="pro-badge">Pro</span></h2>
+        <button class="btn btn-primary" id="btn-new-rubric" onclick="openRubricModal()">+ Neues Raster</button>
+      </div>
+      <div class="alert alert-info" style="margin-bottom:1rem">
+        Definiere Bewertungsraster einmal und weise sie Prüfungen zu. Die KI nutzt das Raster als Korrekturgrundlage.
+      </div>
+      <div id="rubrics-list">
+        <p style="color:var(--text-muted);font-size:.875rem">Noch keine Bewertungsraster erstellt.</p>
+      </div>
+    </div>
+
+    <!-- Analytik (Pro) -->
+    <div id="view-analytik" class="view">
+      <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:1rem">&#128201; Analytik <span class="pro-badge">Pro</span></h2>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;align-items:flex-end">
+        <div style="flex:1;min-width:160px">
+          <label class="form-label">Klasse</label>
+          <select class="form-control" id="analytik-klasse-select" onchange="loadAnalytik()"><option value="">– wählen –</option></select>
+        </div>
+      </div>
+      <div id="analytik-content">
+        <div class="alert alert-info">Klasse wählen, um Trends und Fehlerkatalog anzuzeigen.</div>
+      </div>
+    </div>
+
+    <!-- Hilfe -->
+    <div id="view-hilfe" class="view">
+      <div class="card">
+        <div class="card__title">&#10067; Hilfe &amp; Unterstützung</div>
+        <p style="font-size:.875rem;color:var(--text-muted);margin-bottom:.85rem">
+          Hier finden Sie schnelle Hilfe, rechtliche Informationen und den KI-Support-Chat.
+        </p>
+        <div class="help-links" style="margin-bottom:.9rem">
+          <a href="./agb.html" target="_blank" rel="noopener" class="help-link-card" aria-label="Allgemeine Geschäftsbedingungen in neuem Tab öffnen"><strong>AGB</strong><br><small style="color:var(--text-muted)">Allgemeine Geschäftsbedingungen öffnen</small></a>
+          <a href="./datenschutz.html" target="_blank" rel="noopener" class="help-link-card" aria-label="Datenschutzerklärung in neuem Tab öffnen"><strong>Datenschutz</strong><br><small style="color:var(--text-muted)">Datenschutzerklärung anzeigen</small></a>
+          <a href="./avv.html" target="_blank" rel="noopener" class="help-link-card" aria-label="Auftragsverarbeitungsvertrag in neuem Tab öffnen"><strong>AVV</strong><br><small style="color:var(--text-muted)">Auftragsverarbeitungsvertrag</small></a>
+          <a href="mailto:info@pruefai.ch" class="help-link-card" aria-label="Support per E-Mail kontaktieren"><strong>Support kontaktieren</strong><br><small style="color:var(--text-muted)">info@pruefai.ch</small></a>
+        </div>
+        <div class="alert alert-info" style="margin:0">
+          Tipp: Häufige Fragen finden Sie auch auf der <a href="/#faq" target="_blank" rel="noopener" style="font-weight:600">Info-Seite (FAQ)</a>.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__title">&#129302; KI-Chatbot</div>
+        <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.75rem">
+          Stellen Sie Fragen zur Nutzung von Pruefai. Der Chatbot gibt allgemeine Hilfestellung (kein Rechtsrat). KI-Chat-Anfragen zählen als KI-Nutzung.
+        </p>
+        <div id="help-chat-log" class="help-chat-box"></div>
+        <div style="display:flex;gap:.6rem;align-items:flex-end;margin-top:.75rem;flex-wrap:wrap">
+          <textarea id="help-chat-input" class="form-control" rows="3" placeholder="z.B. Wie importiere ich Daten auf ein neues Gerät?" aria-label="Nachricht für den KI-Chatbot" maxlength="2000" style="flex:1;min-width:220px;resize:vertical"></textarea>
+          <button class="btn btn-primary" id="help-chat-send-btn" onclick="sendHelpChatMessage()">Senden</button>
+          <button class="btn btn-secondary" onclick="resetHelpChat()">Zurücksetzen</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<!-- Klasse Modal -->
+<div id="klasse-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal__title" id="klasse-modal-title">Neue Klasse</div>
+    <button class="modal__close" onclick="closeModal('klasse-modal')">&#10005;</button>
+    <input type="hidden" id="klasse-id" />
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Klassenname *</label><input type="text" id="klasse-name" class="form-control" placeholder="z.B. 1BI-A" /></div>
+      <div class="form-group" id="klasse-beruf-group"><label class="form-label" id="klasse-beruf-label">Beruf *</label><input type="text" id="klasse-beruf" class="form-control" placeholder="z.B. Informatiker/in" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" id="klasse-lehrjahr-group"><label class="form-label" id="klasse-lehrjahr-label">Lehrjahr *</label>
+        <select id="klasse-lehrjahr" class="form-control"><option value="">– Lehrjahr wählen –</option><option value="1">1. Lehrjahr</option><option value="2">2. Lehrjahr</option><option value="3">3. Lehrjahr</option><option value="4">4. Lehrjahr</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Schuljahr *</label><input type="text" id="klasse-schuljahr" class="form-control" placeholder="z.B. 2024/2025" /></div>
+    </div>
+    <p id="klasse-schooltype-hint" class="form-hint" style="margin-bottom:.9rem"></p>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('klasse-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveKlasse()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Schüler Modal -->
+<div id="schueler-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal__title" id="schueler-modal-title">Neuer Schüler</div>
+    <button class="modal__close" onclick="closeModal('schueler-modal')">&#10005;</button>
+    <input type="hidden" id="schueler-id" />
+    <div class="form-group"><label class="form-label">Name *</label><input type="text" id="schueler-name" class="form-control" placeholder="Vor- und Nachname" /></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Schülernummer</label><input type="text" id="schueler-nummer" class="form-control" placeholder="optional" /></div>
+      <div class="form-group"><label class="form-label">Klasse *</label><select id="schueler-klasse-id" class="form-control"><option value="">– wählen –</option></select></div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('schueler-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveSchueler()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Fach Modal -->
+<div id="fach-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal__title" id="fach-modal-title">Neues Fach</div>
+    <button class="modal__close" onclick="closeModal('fach-modal')">&#10005;</button>
+    <input type="hidden" id="fach-id" />
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Fachname *</label><input type="text" id="fach-name" class="form-control" placeholder="z.B. Mathematik" /></div>
+      <div class="form-group"><label class="form-label">Kürzel *</label><input type="text" id="fach-kuerzel" class="form-control" placeholder="z.B. M" maxlength="8" /></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">KI-Korrekturprofil <span class="pro-badge">Pro</span></label>
+      <select id="fach-ki-profil" class="form-control">
+        <option value="">Standard</option>
+        <option value="mathematik">Mathematik – Rechenweg &amp; Genauigkeit</option>
+        <option value="sprache">Sprache &amp; Ausdruck – Grammatik, Stil, Kohärenz</option>
+        <option value="naturwissenschaften">Naturwissenschaften – Methodik &amp; Fachterminologie</option>
+        <option value="ict">ICT/Informatik – Korrektheit &amp; Best Practices</option>
+        <option value="wirtschaft">Wirtschaft/BWL – Fachkonzepte &amp; Praxisbezug</option>
+      </select>
+      <p class="form-hint">Beeinflusst, worauf die KI bei der Korrektur besonders achtet (Pro-Feature).</p>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('fach-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveFach()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Prüfung Modal -->
+<div id="pruefung-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:640px">
+    <div class="modal__title" id="pruefung-modal-title">Neue Prüfung</div>
+    <button class="modal__close" onclick="closeModal('pruefung-modal')">&#10005;</button>
+    <input type="hidden" id="pruefung-id" />
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Prüfungsname *</label><input type="text" id="pruefung-name" class="form-control" placeholder="z.B. Semesterprüfung Q1" /></div>
+      <div class="form-group"><label class="form-label">Datum</label><input type="date" id="pruefung-datum" class="form-control" /></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Fach</label><select id="pruefung-fach-id" class="form-control"><option value="">– optional –</option></select></div>
+      <div class="form-group"><label class="form-label">Max. Punkte *</label><input type="number" id="pruefung-max-punkte" class="form-control" value="100" min="1" /></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Klassen</label>
+      <div id="pruefung-klassen-checkboxes" style="display:flex;flex-wrap:wrap;gap:.5rem;padding:.5rem;border:1px solid var(--border);border-radius:6px;max-height:120px;overflow-y:auto">
+        <span style="color:var(--text-muted);font-size:.8rem">Klassen werden geladen…</span>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Bewertungsraster <span class="pro-badge">Pro</span></label>
+      <select id="pruefung-rubric-id" class="form-control"><option value="">– kein Raster –</option></select>
+      <p class="form-hint">Wird als Korrekturgrundlage an die KI übergeben.</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">KI-Anweisungen (Aufgabenstellung für die Korrektur)</label>
+      <textarea id="pruefung-anweisungen" class="form-control" rows="4" placeholder="Beschreibe Aufgaben und Bewertungskriterien…"></textarea>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('pruefung-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="savePruefung()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Upload Modal -->
+<div id="upload-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:600px">
+    <div class="modal__title" id="upload-modal-title">Prüfung hochladen</div>
+    <button class="modal__close" onclick="closeModal('upload-modal')">&#10005;</button>
+    <input type="hidden" id="upload-eintrag-id" />
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+      <div class="upload-zone__icon">&#128248;</div>
+      <div>Fotos / Scans hier ablegen oder klicken</div>
+      <div style="font-size:.75rem;margin-top:.25rem;opacity:.8">JPG, PNG, WebP – mehrseitige Prüfungen möglich</div>
+    </div>
+    <!-- Standard file input (Desktop + Galerie) -->
+    <input type="file" id="file-input" accept="image/*" multiple style="display:none" onchange="handleFileSelect(event)" />
+    <!-- Camera capture (Mobile) -->
+    <div style="margin-top:.75rem;display:flex;gap:.5rem;flex-wrap:wrap">
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('camera-input').click()" title="Direkt mit der Gerätekamera fotografieren">&#128247; Kamera</button>
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('file-input').click()" title="Bilder oder Scans aus Galerie/Dateien auswählen">&#128444;&#65039; Galerie / Datei</button>
+      <button class="btn btn-secondary btn-sm" onclick="openQrModal()" title="Upload vom Smartphone via QR-Code starten">&#128241; Mit Handy</button>
+    </div>
+    <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none" onchange="handleFileSelect(event)" />
+    <div id="pages-preview" class="pages-grid"></div>
+    <div id="upload-progress" class="hidden" style="margin-top:.75rem">
+      <div class="progress"><div class="progress-bar" id="upload-progress-bar" style="width:0%"></div></div>
+      <p style="font-size:.8rem;color:var(--text-muted);margin-top:.3rem" id="upload-progress-text">Uploading…</p>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('upload-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="uploadSeiten()" id="upload-btn">&#128228; Hochladen</button>
+    </div>
+  </div>
+</div>
+
+<!-- KI-Ergebnis Modal -->
+<div id="ki-ergebnis-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:600px">
+    <div class="modal__title">&#129302; KI-Korrektur Ergebnis</div>
+    <button class="modal__close" onclick="closeModal('ki-ergebnis-modal')">&#10005;</button>
+    <div id="ki-ergebnis-content"></div>
+    <div id="ki-qualitaets-wrap" class="hidden" style="margin-top:.75rem">
+      <div class="alert alert-warning">
+        &#9888;&#65039; <strong>Grenzfall</strong> – Note liegt im Bereich 3.5–4.5. Qualitätsprüfung empfohlen.
+        <button class="btn btn-sm btn-secondary" style="margin-left:auto;display:block;margin-top:.5rem" onclick="runQualitaetsCheck()">&#128270; Qualitätscheck starten <span class="pro-badge">Pro</span></button>
+      </div>
+      <div id="ki-qualitaets-result" class="hidden"></div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('ki-ergebnis-modal')">Schliessen</button>
+      <button class="btn btn-success" onclick="saveKiErgebnis()">&#10003; Note übernehmen</button>
+    </div>
+  </div>
+</div>
+
+<!-- QR-Code Relay Modal -->
+<div id="qr-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:380px">
+    <div class="modal__title">&#128241; Mit Handy fotografieren</div>
+    <button class="modal__close" onclick="closeQrModal()">&#10005;</button>
+    <p id="qr-schueler-label" style="font-size:.875rem;color:var(--text-muted);margin-bottom:.5rem"></p>
+    <div class="qr-canvas-wrap"><canvas id="qr-canvas"></canvas></div>
+    <p style="font-size:.75rem;color:var(--text-muted);text-align:center;margin-bottom:.5rem">QR-Code mit dem Handy scannen</p>
+    <div class="qr-status-line" id="qr-status" style="text-align:center">&#9679; Warten auf Fotos…</div>
+    <div class="qr-count hidden" id="qr-count" style="text-align:center"></div>
+    <div class="modal__footer" style="justify-content:center">
+      <button class="btn btn-secondary" onclick="closeQrModal()">Schliessen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Einstellungen Modal -->
+<div id="settings-modal" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal__title">&#9881;&#65039; Einstellungen</div>
+    <button class="modal__close" onclick="closeModal('settings-modal')">&#10005;</button>
+    <div class="form-group"><label class="form-label">Schulname</label><input type="text" id="settings-school-name" class="form-control" /></div>
+    <div class="form-group">
+      <label class="form-label">Schultyp</label>
+      <select id="settings-school-type" class="form-control">
+        <option value="">– Schultyp wählen –</option>
+        <option value="berufsschule">Berufsschule</option>
+        <option value="gymnasium">Gymnasium</option>
+        <option value="mittelschule">Mittelschule</option>
+        <option value="primarschule">Primarschule</option>
+        <option value="sekundarschule">Sekundarschule</option>
+        <option value="hochschule">Hochschule</option>
+      </select>
+      <p class="form-hint">Der Schultyp beeinflusst die KI-Korrektur (z.B. Rolle des Lehrers im Prompt).</p>
+    </div>
+    <div class="form-group"><label class="form-label">Ihr Name (optional)</label><input type="text" id="settings-lehrer-name" class="form-control" placeholder="Vor- und Nachname" /></div>
+    <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
+      <div class="form-label" style="margin-bottom:.75rem">&#128260; Datensicherung (für Geräteübertragung)</div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <button class="btn btn-secondary" onclick="exportAllData()" title="Alle lokalen Daten in eine Datei exportieren">&#8659; Exportieren</button>
+        <label class="btn btn-secondary" style="cursor:pointer" title="Zuvor exportierte Daten wieder einlesen">&#8657; Importieren<input type="file" accept=".json" style="display:none" onchange="importAllData(this.files[0]);this.value=''" /></label>
+      </div>
+      <p class="form-hint" style="margin-top:.5rem">Exportierte Datei per AirDrop, iCloud Drive o.ä. auf das andere Gerät übertragen und dort importieren.</p>
+    </div>
+    <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
+      <div class="form-label" style="margin-bottom:.75rem">&#128273; Lizenzschlüssel</div>
+      <input type="text" id="settings-license-key" class="form-control" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="font-family:monospace;font-size:.8rem" />
+      <div id="license-info" style="margin-top:.75rem;font-size:.8rem;color:var(--text-muted)">Lizenz wird geprüft...</div>
+      <a href="#" onclick="openStripePortal();return false;" style="font-size:.8rem;margin-top:.5rem;display:inline-block">Abo verwalten &#8594;</a>
+    </div>
+    <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
+      <div class="form-label" style="margin-bottom:.5rem">&#127979; Schulcode (nur für bestehende Schul-Lizenzen)</div>
+      <input type="text" id="settings-schul-code" class="form-control" placeholder="SCHULE-XXXXXX" style="font-family:monospace;font-size:.8rem;text-transform:uppercase" />
+      <p class="form-hint" style="margin-top:.4rem">Nur für bestehende Teams mit Schulcode. Neue Abos sind auf Einzelpersonen ausgerichtet.</p>
+    </div>
+    <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
+      <div class="form-label" style="margin-bottom:.5rem">&#128172; Feedback-Textbausteine <span class="pro-badge">Pro</span></div>
+      <p class="form-hint" style="margin-bottom:.65rem">Häufige Rückmeldungen als 1-Klick-Bausteine speichern.</p>
+      <div id="textbausteine-settings-list"></div>
+      <div style="display:flex;gap:.5rem;margin-top:.65rem">
+        <input type="text" id="new-textbaustein-input" class="form-control" placeholder="z.B. Rechenweg fehlt" style="flex:1" />
+        <button class="btn btn-secondary btn-sm" onclick="addTextbaustein()">+ Hinzufügen</button>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('settings-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- Lernstoff Modal -->
+<div id="lernstoff-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:560px">
+    <div class="modal__title">&#128196; Material hochladen</div>
+    <button class="modal__close" onclick="closeModal('lernstoff-modal')">&#10005;</button>
+    <div class="form-group">
+      <label class="form-label">Bezeichnung *</label>
+      <input type="text" id="lernstoff-bezeichnung" class="form-control" placeholder="z.B. Musterlösung Semesterprüfung Q1" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Prüfung zuordnen (optional)</label>
+      <select id="lernstoff-pruefung-id" class="form-control"><option value="">– keine Zuordnung –</option></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Datei *</label>
+      <div class="upload-zone" onclick="document.getElementById('lernstoff-file-input').click()">
+        <div class="upload-zone__icon">&#128196;</div>
+        <div id="lernstoff-file-name">PDF, Bild oder Dokument auswählen…</div>
+        <div style="font-size:.75rem;margin-top:.25rem;opacity:.8">PDF, JPG, PNG, DOCX – max. 20 MB</div>
+      </div>
+      <input type="file" id="lernstoff-file-input" accept="image/*,application/pdf,.doc,.docx,.txt" style="display:none" onchange="handleLernstoffFile(event)" />
+    </div>
+    <div id="lernstoff-upload-progress" class="hidden" style="margin-top:.5rem">
+      <div class="progress"><div class="progress-bar" id="lernstoff-progress-bar" style="width:0%"></div></div>
+      <p style="font-size:.8rem;color:var(--text-muted);margin-top:.3rem">Wird hochgeladen…</p>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('lernstoff-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="uploadLernstoff()" id="lernstoff-upload-btn">&#128228; Hochladen</button>
+    </div>
+  </div>
+</div>
+
+<!-- Schulcode-Feld in Settings -->
+<!-- (inserted inline via JS into the existing settings modal) -->
+
+<!-- E-Mail-Capture Modal -->
+<div id="email-capture-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:440px">
+    <div class="modal__title">✏️ Willkommen bei Pruefai!</div>
+    <p style="color:var(--text-muted);margin-bottom:1.25rem;font-size:.9rem">
+      Geben Sie Ihre E-Mail ein, um <strong>3 kostenlose KI-Korrekturen</strong> freizuschalten. Keine Kreditkarte nötig.
+    </p>
+    <div class="form-group">
+      <label class="form-label">Ihr Name (optional)</label>
+      <input type="text" id="capture-name" class="form-control" placeholder="z.B. Maria Müller" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">E-Mail *</label>
+      <input type="email" id="capture-email" class="form-control" placeholder="name@schule.ch" />
+      <div id="capture-error" style="color:var(--danger);font-size:.8rem;margin-top:.4rem;display:none"></div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="skipEmailCapture()">Später</button>
+      <button class="btn btn-primary" onclick="submitEmailCapture()">Freischalten &#8594;</button>
+    </div>
+  </div>
+</div>
+
+<!-- Upsell Modal (shown when trial limit is reached) -->
+<div id="upsell-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:560px">
+    <div class="modal__title">&#11088; Gratis-Kontingent aufgebraucht</div>
+    <button class="modal__close" onclick="closeModal('upsell-modal')">&#10005;</button>
+    <p style="color:var(--text-muted);margin-bottom:1.25rem;font-size:.9rem">
+      Wählen Sie einen Plan, um weiterhin KI-Korrekturen zu nutzen. Monatlich kündbar.
+    </p>
+    <div class="upsell-plans">
+      <div class="upsell-plan">
+        <div class="upsell-plan__name">Starter</div>
+        <div class="upsell-plan__price"><sup style="font-size:.75rem;font-weight:600">CHF</sup>9<span style="font-size:.8rem;font-weight:400;color:var(--text-muted)">/Mt</span></div>
+        <div class="upsell-plan__desc">50 Korrekturen</div>
+        <a href="/api/stripe-checkout?plan=starter" class="btn btn-secondary btn-sm" style="display:block;text-align:center">Wählen</a>
+      </div>
+      <div class="upsell-plan upsell-plan--popular">
+        <div class="upsell-plan__name">&#11088; Pro</div>
+        <div class="upsell-plan__price"><sup style="font-size:.75rem;font-weight:600">CHF</sup>19<span style="font-size:.8rem;font-weight:400;color:var(--text-muted)">/Mt</span></div>
+        <div class="upsell-plan__desc">300 Korrekturen</div>
+        <a href="/api/stripe-checkout?plan=pro" class="btn btn-primary btn-sm" style="display:block;text-align:center">Wählen</a>
+      </div>
+      <div class="upsell-plan">
+        <div class="upsell-plan__name">Max</div>
+        <div class="upsell-plan__price"><sup style="font-size:.75rem;font-weight:600">CHF</sup>49<span style="font-size:.8rem;font-weight:400;color:var(--text-muted)">/Mt</span></div>
+        <div class="upsell-plan__desc">1'500 Korrekturen</div>
+        <a href="/api/stripe-checkout?plan=max" class="btn btn-secondary btn-sm" style="display:block;text-align:center">Wählen</a>
+      </div>
+    </div>
+    <div style="text-align:center">
+      <a href="/" style="font-size:.85rem;color:var(--text-muted)">Alle Pläne vergleichen &#8594;</a>
+    </div>
+  </div>
+</div>
+
+<!-- Onboarding Wizard (shown after first license key activation) -->
+<div id="onboarding-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:460px">
+    <div class="modal__title">&#127881; Lizenz aktiviert – Los geht's!</div>
+    <button class="modal__close" onclick="closeModal('onboarding-modal')">&#10005;</button>
+    <p style="color:var(--text-muted);margin-bottom:1.25rem;font-size:.9rem">
+      Ihr Plan ist aktiv. So starten Sie in 4 einfachen Schritten:
+    </p>
+    <div class="onboarding-step">
+      <div class="onboarding-num">1</div>
+      <div><strong>Schulname setzen</strong> – in &#9881;&#65039; Einstellungen oben rechts</div>
+    </div>
+    <div class="onboarding-step">
+      <div class="onboarding-num">2</div>
+      <div><strong>Erste Klasse anlegen</strong> – Tab «&#127979; Klassen» &#8594; «+ Neue Klasse»</div>
+    </div>
+    <div class="onboarding-step">
+      <div class="onboarding-num">3</div>
+      <div><strong>Prüfung erstellen</strong> – Tab «&#128221; Prüfungen» &#8594; «+ Neue Prüfung»</div>
+    </div>
+    <div class="onboarding-step">
+      <div class="onboarding-num">4</div>
+      <div><strong>KI-Korrektur starten</strong> – Tab «&#129302; Korrektur» &#8594; Fotos hochladen &#8594; KI-korrigieren</div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-primary" onclick="closeModal('onboarding-modal')">Los geht's! &#8594;</button>
+    </div>
+  </div>
+</div>
+
+
+<div id="mobile-menu-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:360px">
+    <div class="modal__title">&#8942; Weitere Funktionen</div>
+    <button class="modal__close" onclick="closeModal('mobile-menu-modal')">&#10005;</button>
+    <div style="display:flex;flex-direction:column;gap:.5rem">
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('schueler')">&#128101; Schüler</button>
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('faecher')">&#128218; Fächer</button>
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('pruefungen')">&#128221; Prüfungen</button>
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('lernstoff')">&#128196; Lernstoff</button>
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('rubrics')">&#128203; Rubrics <span class="pro-badge">Pro</span></button>
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('analytik')">&#128201; Analytik <span class="pro-badge">Pro</span></button>
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('hilfe')">&#10067; Hilfe</button>
+    </div>
+  </div>
+</div>
+
+<!-- Rubric Modal -->
+<div id="rubric-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:620px">
+    <div class="modal__title" id="rubric-modal-title">Neues Bewertungsraster</div>
+    <button class="modal__close" onclick="closeModal('rubric-modal')">&#10005;</button>
+    <input type="hidden" id="rubric-id" />
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Rastername *</label><input type="text" id="rubric-name" class="form-control" placeholder="z.B. Semesterprüfung Mathe" /></div>
+      <div class="form-group"><label class="form-label">Fach (optional)</label><select id="rubric-fach-id" class="form-control"><option value="">– beliebig –</option></select></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kriterien</label>
+      <div id="rubric-kriterien-list"></div>
+      <button class="btn btn-secondary btn-sm" style="margin-top:.5rem" onclick="addRubricKriterium()">+ Kriterium hinzufügen</button>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('rubric-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveRubric()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- CSV-Import Modal -->
+<div id="csv-import-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:620px">
+    <div class="modal__title">&#128229; Schüler per CSV importieren</div>
+    <button class="modal__close" onclick="closeModal('csv-import-modal')">&#10005;</button>
+    <div class="alert alert-info" style="margin-bottom:1rem">
+      CSV-Format: <strong>Name;Schülernummer;Klassenname</strong> (1 Schüler pro Zeile, erste Zeile wird als Kopfzeile ignoriert, wenn sie kein Semikolon enthält).
+    </div>
+    <div class="form-group">
+      <label class="form-label">Zielklasse *</label>
+      <select id="csv-import-klasse" class="form-control"><option value="">– wählen –</option></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">CSV-Datei *</label>
+      <div class="upload-zone" onclick="document.getElementById('csv-file-input').click()">
+        <div class="upload-zone__icon">&#128229;</div>
+        <div id="csv-file-name">CSV-Datei auswählen…</div>
+        <div style="font-size:.75rem;margin-top:.25rem;opacity:.8">.csv oder .txt – Trennzeichen: Semikolon (;)</div>
+      </div>
+      <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none" onchange="handleCsvFile(event)" />
+    </div>
+    <div id="csv-preview-wrap" class="hidden">
+      <label class="form-label">Vorschau (<span id="csv-preview-count">0</span> Schüler erkannt)</label>
+      <div class="csv-preview-table card" style="padding:.5rem">
+        <div class="table-wrap">
+          <table><thead><tr><th>Name</th><th>Nummer</th></tr></thead>
+          <tbody id="csv-preview-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('csv-import-modal')">Abbrechen</button>
+      <button class="btn btn-primary" id="csv-import-btn" onclick="doImportSchueler()" disabled>&#128229; Importieren</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manuelle Note Modal (mit Textbausteinen) -->
+<div id="manual-note-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:500px">
+    <div class="modal__title">&#9998; Note &amp; Feedback erfassen</div>
+    <button class="modal__close" onclick="closeModal('manual-note-modal')">&#10005;</button>
+    <input type="hidden" id="manual-note-eintrag-id" />
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Note * (1.0–6.0)</label>
+        <input type="number" id="manual-note-value" class="form-control" min="1" max="6" step="0.5" placeholder="z.B. 4.5" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Punkte (optional)</label>
+        <input type="number" id="manual-note-punkte" class="form-control" min="0" placeholder="z.B. 78" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Kommentar / Feedback</label>
+      <textarea id="manual-note-kommentar" class="form-control" rows="3" placeholder="Rückmeldung für Schüler/in…"></textarea>
+      <div id="textbausteine-chips" style="margin-top:.5rem"></div>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeModal('manual-note-modal')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="saveManualNote()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// =============================================================
+// KONFIGURATION & ZUSTAND
+// =============================================================
+const LS = { CONFIG: 'lernortai_config', LEHRER_ID: 'lernortai_lehrer_id', FREE_USED: 'lernortai_free_used', LEAD: 'lernortai_lead_captured', TRIAL_TOKEN: 'lernortai_trial_token', ONBOARDED: 'lernortai_onboarded' };
+const FREE_TRIAL_LIMIT = 3;
+const HELP_CHAT_MAX_MESSAGE_LENGTH = 2000; // max. Nutzerzeichen pro Chat-Nachricht
+const HELP_CHAT_HISTORY_LIMIT = 10; // Anzahl letzter Nachrichten als Kontext
+const HELP_CHAT_MAX_TOKENS = 700; // Obergrenze für KI-Antwortlänge
+const HELP_CHAT_SYSTEM_PROMPT = 'Du bist der Hilfe-Chatbot für Pruefai. Antworte auf Deutsch, präzise, freundlich und praxisnah. Gib nur produktspezifische Hilfestellung zur Bedienung von Pruefai. Bei rechtlichen Fragen verweise auf AGB/Datenschutz/AVV. Gib keinen Rechtsrat und erfinde keine Funktionen.';
+let cfg = { schoolName: 'Pruefai', schoolType: '' };
+let lehrer_id      = null;
+let uploadPages    = [];
+let uploadSchuelerName = '';
+let relayToken     = null;
+let relayPollInterval = null;
+let mobilePhotos   = [];
+let kiPendingData  = null;
+let lernstoffFileObj = null;
+let csvParsedRows   = [];
+let helpChatHistory = [];
+
+function getOrCreateLehrerId() {
+  let id = localStorage.getItem(LS.LEHRER_ID);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(LS.LEHRER_ID, id);
+  }
+  return id;
+}
+
+// =============================================================
+// LICENSE AUTO-ACTIVATION via ?activate=<UUID> URL param
+// (used by the welcome email link so the user doesn't paste the key manually)
+// =============================================================
+const LICENSE_KEY_REGEX = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+
+async function maybeAutoActivateLicense() {
+  const params = new URLSearchParams(location.search);
+  const candidate = (params.get('activate') || '').trim();
+  if (!candidate) return;
+
+  // Always strip the ?activate= param from the URL so a refresh doesn't re-run this,
+  // and so the key never sticks around in browser history / referer headers.
+  const cleanUrl = new URL(location.href);
+  cleanUrl.searchParams.delete('activate');
+  history.replaceState(null, '', cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+
+  if (!LICENSE_KEY_REGEX.test(candidate)) {
+    showToast('Aktivierungs-Link ungültig. Bitte den Lizenzschlüssel manuell in den Einstellungen eintragen.', 'error');
+    return;
+  }
+
+  // If an existing key is identical we are done; if it's different we ask before overwriting.
+  const existing = localStorage.getItem('lernortai_license_key') || '';
+  if (existing === candidate) {
+    showToast('Diese Lizenz ist bereits aktiv. Willkommen zurück!', 'info');
+    return;
+  }
+  if (existing && existing !== candidate) {
+    if (!confirm('Es ist bereits eine andere Lizenz hinterlegt. Mit der neuen Lizenz überschreiben?')) {
+      return;
+    }
+  }
+
+  try {
+    const res = await fetch('/api/validate-license', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ license_key: candidate, action: 'check' }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok && data.valid) {
+      localStorage.setItem('lernortai_license_key', candidate);
+      if (data.plan) localStorage.setItem('lernortai_plan', data.plan);
+      showToast('Lizenz aktiviert. Plan: ' + (data.plan || 'aktiv').toUpperCase(), 'success');
+    } else if (data.code === 'license_revoked') {
+      showToast('Diese Lizenz wurde gesperrt. Bitte info@pruefai.ch kontaktieren.', 'error');
+    } else {
+      showToast('Lizenz konnte nicht aktiviert werden (ungültig oder abgelaufen).', 'error');
+    }
+  } catch (err) {
+    // Server unreachable: store the key locally anyway so a later validation succeeds.
+    localStorage.setItem('lernortai_license_key', candidate);
+    showToast('Lizenz lokal gespeichert. Server konnte sie nicht sofort prüfen – versuche es gleich nochmal.', 'info');
+  }
+}
+
+// =============================================================
+// PRO PLAN GATING
+// =============================================================
+function isPro() {
+  const plan = localStorage.getItem('lernortai_plan') || '';
+  return plan === 'pro' || plan === 'max' || plan === 'schule';
+}
+
+function requirePro(featureName) {
+  if (isPro()) return true;
+  showToast('&#128274; ' + featureName + ' ist nur im Pro- oder Max-Plan verfügbar.', 'info');
+  document.getElementById('upsell-modal').classList.remove('hidden');
+  return false;
+}
+
+// =============================================================
+// INIT
+// =============================================================
+document.addEventListener('DOMContentLoaded', async function() {
+  if (initMobileMode()) return; // mobile upload page – no further init needed
+  await maybeAutoActivateLicense();
+  const saved = localStorage.getItem(LS.CONFIG);
+  if (saved) { try { const local = JSON.parse(saved); if (local.schoolName) cfg.schoolName = local.schoolName; if (local.schoolType !== undefined) cfg.schoolType = local.schoolType; } catch(e) {} }
+  try {
+    const res = await fetch('/api/config');
+    if (res.ok) { const data = await res.json(); if (data.schoolName) cfg.schoolName = data.schoolName; }
+  } catch(e) {}
+  lehrer_id = getOrCreateLehrerId();
+  applyConfig();
+  updateFreeTrialBadge();
+  await loadDashboard();
+  maybeShowEmailCapture();
+  loadUsageBar();
+});
+
+// Service Worker registrieren
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
+
+function applyConfig() {
+  document.getElementById('header-school').textContent = cfg.schoolName || 'Pruefai';
+  updateKlassenSchoolTypeUI();
+  const klassenView = document.getElementById('view-klassen');
+  if (klassenView && klassenView.classList.contains('active')) loadKlassen();
+}
+
+function isBerufsschuleType() {
+  return (cfg.schoolType || '') === 'berufsschule';
+}
+
+function updateKlassenSchoolTypeUI() {
+  const isBerufsschule = isBerufsschuleType();
+  const berufGroup = document.getElementById('klasse-beruf-group');
+  const lehrjahrGroup = document.getElementById('klasse-lehrjahr-group');
+  const berufHeader = document.getElementById('klassen-th-beruf');
+  const lehrjahrHeader = document.getElementById('klassen-th-lehrjahr');
+  const hint = document.getElementById('klasse-schooltype-hint');
+  const addBtn = document.getElementById('add-klasse-btn');
+  if (berufGroup) berufGroup.style.display = isBerufsschule ? '' : 'none';
+  if (lehrjahrGroup) lehrjahrGroup.style.display = isBerufsschule ? '' : 'none';
+  if (berufHeader) berufHeader.style.display = isBerufsschule ? '' : 'none';
+  if (lehrjahrHeader) lehrjahrHeader.style.display = isBerufsschule ? '' : 'none';
+  if (hint) hint.textContent = isBerufsschule ? 'Beruf und Lehrjahr sind für Berufsschulen erforderlich.' : 'Für diesen Schultyp werden nur Klassenname und Schuljahr benötigt.';
+  if (addBtn) addBtn.title = isBerufsschule ? 'Neue Klasse mit Beruf und Schuljahr anlegen' : 'Neue Klasse anlegen';
+}
+
+// =============================================================
+// LOKALE DATENBANK (IndexedDB)
+// =============================================================
+const IDB_NAME = 'lernortai';
+const IDB_VERSION = 2;
+const IDB_STORES = ['lehrer','klassen','schueler','faecher','fach_klassen',
+  'pruefungen','pruefung_klassen','eintraege','seiten_uploads','lernmaterial','_files',
+  'rubrics','textbausteine'];
+let _idb = null;
+
+function idbOpen() {
+  if (_idb) return Promise.resolve(_idb);
+  return new Promise(function(resolve, reject) {
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onerror = function() { reject(req.error); };
+    req.onsuccess = function() { _idb = req.result; resolve(_idb); };
+    req.onupgradeneeded = function(e) {
+      const db = e.target.result;
+      IDB_STORES.forEach(function(name) {
+        if (!db.objectStoreNames.contains(name)) {
+          db.createObjectStore(name, { keyPath: 'id' });
+        }
+      });
+    };
+  });
+}
+
+function idbAll(storeName) {
+  return idbOpen().then(function(db) {
+    return new Promise(function(resolve, reject) {
+      const req = db.transaction(storeName, 'readonly').objectStore(storeName).getAll();
+      req.onsuccess = function() { resolve(req.result); };
+      req.onerror = function() { reject(req.error); };
+    });
+  });
+}
+
+function idbParseQuery(q) {
+  const filters = {};
+  let orderField = 'created_at', orderDir = 'asc';
+  if (!q) return { filters: filters, orderField: orderField, orderDir: orderDir };
+  q.split('&').forEach(function(part) {
+    if (part.startsWith('order=')) {
+      const after = part.slice(6);
+      const dot = after.lastIndexOf('.');
+      if (dot !== -1) { orderField = after.slice(0, dot); orderDir = after.slice(dot + 1); }
+    } else if (part.indexOf('=eq.') !== -1) {
+      const idx = part.indexOf('=eq.');
+      filters[part.slice(0, idx)] = part.slice(idx + 4);
+    }
+  });
+  return { filters: filters, orderField: orderField, orderDir: orderDir };
+}
+
+const sb = {
+  select: function(table, q) {
+    const parsed = idbParseQuery(q || '');
+    return idbAll(table).then(function(rows) {
+      Object.keys(parsed.filters).forEach(function(field) {
+        const val = parsed.filters[field];
+        rows = rows.filter(function(r) { return r[field] != null && String(r[field]) === String(val); });
+      });
+      rows.sort(function(a, b) {
+        const va = a[parsed.orderField];
+        const vb = b[parsed.orderField];
+        // Numeric sort for number fields (e.g. seitennummer)
+        if (typeof va === 'number' || typeof vb === 'number') {
+          const na = va != null ? Number(va) : 0;
+          const nb = vb != null ? Number(vb) : 0;
+          return parsed.orderDir === 'desc' ? nb - na : na - nb;
+        }
+        const sa = va != null ? String(va) : '';
+        const sb_str = vb != null ? String(vb) : '';
+        return parsed.orderDir === 'desc' ? sb_str.localeCompare(sa) : sa.localeCompare(sb_str);
+      });
+      return rows;
+    });
+  },
+  insert: function(table, data) {
+    return idbOpen().then(function(db) {
+      const record = Object.assign({
+        id: crypto.randomUUID(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }, data);
+      return new Promise(function(resolve, reject) {
+        const req = db.transaction(table, 'readwrite').objectStore(table).add(record);
+        req.onsuccess = function() { resolve([record]); };
+        req.onerror = function() { reject(req.error); };
+      });
+    });
+  },
+  update: function(table, id, data) {
+    return idbOpen().then(function(db) {
+      return new Promise(function(resolve, reject) {
+        const tx = db.transaction(table, 'readwrite');
+        const store = tx.objectStore(table);
+        const getReq = store.get(id);
+        getReq.onsuccess = function() {
+          const existing = getReq.result;
+          if (!existing) { reject(new Error('Datensatz nicht gefunden: ' + id)); return; }
+          const updated = Object.assign({}, existing, data, { updated_at: new Date().toISOString() });
+          const putReq = store.put(updated);
+          putReq.onsuccess = function() { resolve([updated]); };
+          putReq.onerror = function() { reject(putReq.error); };
+        };
+        getReq.onerror = function() { reject(getReq.error); };
+      });
+    });
+  },
+  delete: function(table, id) {
+    return idbOpen().then(function(db) {
+      return new Promise(function(resolve, reject) {
+        const req = db.transaction(table, 'readwrite').objectStore(table).delete(id);
+        req.onsuccess = function() { resolve([]); };
+        req.onerror = function() { reject(req.error); };
+      });
+    });
+  },
+};
+
+async function sbStorageUpload(bucket, filePath, file) {
+  const db = await idbOpen();
+  return new Promise(function(resolve, reject) {
+    const tx = db.transaction('_files', 'readwrite');
+    const req = tx.objectStore('_files').put({ id: filePath, bucket: bucket, blob: file, contentType: file.type || 'application/octet-stream' });
+    req.onsuccess = function() { resolve(bucket + '/' + filePath); };
+    req.onerror = function() { reject(req.error); };
+  });
+}
+
+async function sbStorageUrl(bucket, filePath) {
+  const db = await idbOpen();
+  return new Promise(function(resolve) {
+    const req = db.transaction('_files', 'readonly').objectStore('_files').get(filePath);
+    req.onsuccess = function() {
+      if (!req.result || !req.result.blob) { resolve(null); return; }
+      resolve(URL.createObjectURL(req.result.blob));
+    };
+    req.onerror = function() { resolve(null); };
+  });
+}
+
+// =============================================================
+// EXPORT / IMPORT
+// =============================================================
+async function exportAllData() {
+  showToast('Export wird erstellt…', 'info');
+  try {
+    const backup = { version: 1, exported_at: new Date().toISOString(), data: {}, files: [] };
+    for (const store of IDB_STORES) {
+      if (store === '_files') continue;
+      backup.data[store] = await idbAll(store);
+    }
+    const fileRecords = await idbAll('_files');
+    backup.files = await Promise.all(fileRecords.map(async function(f) {
+      const dataUrl = await blobToDataUrl(f.blob);
+      return { id: f.id, bucket: f.bucket, contentType: f.contentType, data: dataUrl };
+    }));
+    const json = JSON.stringify(backup);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'pruefai_backup_' + new Date().toISOString().split('T')[0] + '.json';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Daten exportiert!', 'success');
+  } catch(e) { showToast('Export fehlgeschlagen: ' + e.message, 'error'); }
+}
+
+async function importAllData(file) {
+  if (!confirm('Alle lokalen Daten werden mit dem Backup überschrieben. Fortfahren?')) return;
+  try {
+    showToast('Import läuft…', 'info');
+    const text = await file.text();
+    const backup = JSON.parse(text);
+    const db = await idbOpen();
+    for (const store of IDB_STORES) {
+      await new Promise(function(resolve, reject) {
+        const tx = db.transaction(store, 'readwrite');
+        tx.objectStore(store).clear();
+        tx.oncomplete = resolve; tx.onerror = function() { reject(tx.error); };
+      });
+    }
+    for (const storeName of Object.keys(backup.data || {})) {
+      if (!IDB_STORES.includes(storeName)) continue;
+      const records = backup.data[storeName];
+      await new Promise(function(resolve, reject) {
+        const tx = db.transaction(storeName, 'readwrite');
+        const store = tx.objectStore(storeName);
+        records.forEach(function(r) { store.put(r); });
+        tx.oncomplete = resolve; tx.onerror = function() { reject(tx.error); };
+      });
+    }
+    for (const f of (backup.files || [])) {
+      const blob = await fetch(f.data).then(function(r) { return r.blob(); });
+      await new Promise(function(resolve, reject) {
+        const tx = db.transaction('_files', 'readwrite');
+        tx.objectStore('_files').put({ id: f.id, bucket: f.bucket, contentType: f.contentType, blob: blob });
+        tx.oncomplete = resolve; tx.onerror = function() { reject(tx.error); };
+      });
+    }
+    showToast('Daten erfolgreich importiert!', 'success');
+    loadDashboard();
+  } catch(e) { showToast('Import fehlgeschlagen: ' + e.message, 'error'); }
+}
+
+// =============================================================
+// NAVIGATION
+// =============================================================
+function showView(name) {
+  document.querySelectorAll('.view').forEach(function(v) { v.classList.remove('active'); });
+  document.querySelectorAll('.nav-tab').forEach(function(t) { t.classList.remove('active'); });
+  document.getElementById('view-' + name).classList.add('active');
+  var tab = document.getElementById('tab-' + name);
+  if (tab) tab.classList.add('active');
+  document.querySelectorAll('.mobile-nav__item').forEach(function(i) { i.classList.remove('active'); });
+  var mItem = document.getElementById('mnav-' + name);
+  if (mItem) mItem.classList.add('active');
+  var fab = document.getElementById('fab-foto');
+  if (fab) fab.style.display = (name === 'korrektur') ? 'flex' : 'none';
+
+  if (name === 'klassen')    loadKlassen();
+  if (name === 'schueler')   { loadKlassenIntoSelect('schueler-filter-klasse'); loadSchueler(); }
+  if (name === 'faecher')    loadFaecher();
+  if (name === 'pruefungen') loadPruefungen();
+  if (name === 'lernstoff')  { loadPruefungenIntoSelect('lernstoff-filter-pruefung', true); loadLernstoff(); }
+  if (name === 'korrektur')  { loadPruefungenIntoSelect('korrektur-pruefung-select'); loadKlassenIntoSelect('korrektur-klasse-select'); }
+  if (name === 'noten')      { loadPruefungenIntoSelect('noten-pruefung-select'); loadKlassenIntoSelect('noten-klasse-select'); }
+  if (name === 'rubrics')    { if (!requirePro('Bewertungsraster')) { showView('dashboard'); return; } loadRubrics(); }
+  if (name === 'analytik')   { if (!requirePro('Analytik')) { showView('dashboard'); return; } loadKlassenIntoSelect('analytik-klasse-select'); }
+  if (name === 'hilfe')      { initHelpView(); }
+}
+
+function showMobileMenu() { document.getElementById('mobile-menu-modal').classList.remove('hidden'); }
+
+function openFotoModal() {
+  var pId = document.getElementById('korrektur-pruefung-select') && document.getElementById('korrektur-pruefung-select').value;
+  var kId = document.getElementById('korrektur-klasse-select') && document.getElementById('korrektur-klasse-select').value;
+  if (!pId || !kId) { showToast('Bitte zuerst Prüfung und Klasse in der Korrektur wählen.', 'info'); return; }
+  showToast('Wähle in der Liste den Schüler aus und tippe auf Upload.', 'info');
+}
+
+// =============================================================
+// DASHBOARD
+// =============================================================
+async function loadDashboard() {
+  try {
+    const [klassen, schueler, pruefungen, eintraege] = await Promise.all([
+      sb.select('klassen'), sb.select('schueler'), sb.select('pruefungen'), sb.select('eintraege')
+    ]);
+    document.getElementById('stat-klassen').textContent    = klassen.length;
+    document.getElementById('stat-schueler').textContent   = schueler.length;
+    document.getElementById('stat-pruefungen').textContent = pruefungen.length;
+    document.getElementById('stat-korrigiert').textContent = eintraege.filter(function(e) { return e.status === 'korrigiert' || e.status === 'abgeschlossen'; }).length;
+    const today = new Date().toISOString().split('T')[0];
+    const upcoming = pruefungen.filter(function(p) { return p.datum && p.datum >= today; }).sort(function(a,b) { return a.datum.localeCompare(b.datum); }).slice(0, 5);
+    const el = document.getElementById('dashboard-pruefungen-list');
+    el.innerHTML = upcoming.length ? upcoming.map(function(p) {
+      return '<div style="display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid var(--border)">' +
+      '<span>' + escHtml(p.name) + '</span>' +
+      '<span class="badge badge-blue">' + formatDate(p.datum) + '</span></div>';
+    }).join('') : '<p style="color:var(--text-muted);font-size:.875rem">Keine anstehenden Prüfungen.</p>';
+  } catch(e) { showToast('Verbindungsfehler: ' + e.message, 'error'); }
+}
+
+// =============================================================
+// KLASSEN
+// =============================================================
+async function loadKlassen() {
+  try {
+    updateKlassenSchoolTypeUI();
+    const [rows, schueler] = await Promise.all([sb.select('klassen'), sb.select('schueler')]);
+    const isBerufsschule = isBerufsschuleType();
+    const tbody = document.getElementById('klassen-tbody');
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="' + (isBerufsschule ? '6' : '4') + '" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Klassen erfasst.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(function(k) {
+      const cnt = schueler.filter(function(s) { return s.klasse_id === k.id; }).length;
+      const lehrjahrText = k.lehrjahr ? (k.lehrjahr + '. Lehrjahr') : '–';
+      return '<tr><td><strong>' + escHtml(k.name) + '</strong></td>' +
+        (isBerufsschule ? '<td>' + escHtml(k.beruf) + '</td><td>' + lehrjahrText + '</td>' : '') +
+        '<td>' + escHtml(k.schuljahr) + '</td><td>' + cnt + '</td><td>' +
+        '<button class="btn btn-sm btn-secondary" onclick="editKlasse(\'' + k.id + '\')">&#9998;</button> ' +
+        '<button class="btn btn-sm btn-danger" onclick="deleteKlasse(\'' + k.id + '\')">&#128465;</button></td></tr>';
+    }).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function openModal(id) {
+  if (id === 'klasse-modal') {
+    updateKlassenSchoolTypeUI();
+    document.getElementById('klasse-id').value = '';
+    document.getElementById('klasse-name').value = '';
+    document.getElementById('klasse-beruf').value = '';
+    document.getElementById('klasse-lehrjahr').value = '1';
+    document.getElementById('klasse-schuljahr').value = currentSchoolyear();
+    document.getElementById('klasse-modal-title').textContent = 'Neue Klasse';
+  }
+  if (id === 'schueler-modal') {
+    document.getElementById('schueler-id').value = '';
+    document.getElementById('schueler-name').value = '';
+    document.getElementById('schueler-nummer').value = '';
+    document.getElementById('schueler-modal-title').textContent = 'Neuer Schüler';
+    await loadKlassenIntoSelect('schueler-klasse-id');
+  }
+  if (id === 'fach-modal') {
+    document.getElementById('fach-id').value = '';
+    document.getElementById('fach-name').value = '';
+    document.getElementById('fach-kuerzel').value = '';
+    document.getElementById('fach-modal-title').textContent = 'Neues Fach';
+  }
+  if (id === 'pruefung-modal') {
+    document.getElementById('pruefung-id').value = '';
+    document.getElementById('pruefung-name').value = '';
+    document.getElementById('pruefung-datum').value = '';
+    document.getElementById('pruefung-max-punkte').value = '100';
+    document.getElementById('pruefung-anweisungen').value = '';
+    document.getElementById('pruefung-modal-title').textContent = 'Neue Prüfung';
+    await loadFaecherIntoSelect('pruefung-fach-id');
+    await loadKlassenCheckboxes();
+    await loadRubricsIntoSelect('pruefung-rubric-id');
+  }
+  document.getElementById(id).classList.remove('hidden');
+}
+
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+async function editKlasse(id) {
+  const rows = await sb.select('klassen', 'id=eq.' + id);
+  const k = rows[0]; if (!k) return;
+  updateKlassenSchoolTypeUI();
+  document.getElementById('klasse-id').value = k.id;
+  document.getElementById('klasse-name').value = k.name;
+  document.getElementById('klasse-beruf').value = k.beruf || '';
+  document.getElementById('klasse-lehrjahr').value = k.lehrjahr ? String(k.lehrjahr) : '';
+  document.getElementById('klasse-schuljahr').value = k.schuljahr;
+  document.getElementById('klasse-modal-title').textContent = 'Klasse bearbeiten';
+  document.getElementById('klasse-modal').classList.remove('hidden');
+}
+
+async function saveKlasse() {
+  const id = document.getElementById('klasse-id').value;
+  const name = document.getElementById('klasse-name').value.trim();
+  const isBerufsschule = isBerufsschuleType();
+  const beruf = document.getElementById('klasse-beruf').value.trim();
+  const lehrjahrRaw = document.getElementById('klasse-lehrjahr').value;
+  const lehrjahr = (isBerufsschule && lehrjahrRaw !== '') ? parseInt(lehrjahrRaw, 10) : null;
+  const schuljahr = document.getElementById('klasse-schuljahr').value.trim();
+  if (!name || !schuljahr || (isBerufsschule && !beruf)) { showToast('Bitte alle Pflichtfelder ausfüllen.', 'error'); return; }
+  if (isBerufsschule && lehrjahr === null) { showToast('Bitte ein Lehrjahr wählen.', 'error'); return; }
+  if (isBerufsschule && !Number.isFinite(lehrjahr)) { showToast('Bitte ein Lehrjahr wählen.', 'error'); return; }
+  try {
+    const payload = isBerufsschule
+      ? { name, beruf, lehrjahr, schuljahr }
+      : { name, beruf: null, lehrjahr: null, schuljahr };
+    if (id) {
+      await sb.update('klassen', id, payload);
+    } else {
+      await sb.insert('klassen', { ...payload, lehrer_id: lehrer_id });
+    }
+    closeModal('klasse-modal'); showToast('Klasse gespeichert.', 'success'); loadKlassen(); loadDashboard();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteKlasse(id) {
+  if (!confirm('Klasse wirklich löschen?')) return;
+  try { await sb.delete('klassen', id); showToast('Klasse gelöscht.', 'success'); loadKlassen(); loadDashboard(); }
+  catch(e) { showToast(e.message, 'error'); }
+}
+
+// =============================================================
+// SCHÜLER
+// =============================================================
+async function loadSchueler() {
+  try {
+    const filterKlasse = (document.getElementById('schueler-filter-klasse') && document.getElementById('schueler-filter-klasse').value) || '';
+    const q = filterKlasse ? 'klasse_id=eq.' + filterKlasse : '';
+    const [rows, klassen] = await Promise.all([sb.select('schueler', q), sb.select('klassen')]);
+    const km = {};
+    klassen.forEach(function(k) { km[k.id] = k.name; });
+    const tbody = document.getElementById('schueler-tbody');
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Keine Schüler gefunden.</td></tr>'; return; }
+    tbody.innerHTML = rows.map(function(s) {
+      return '<tr><td><strong>' + escHtml(s.name) + '</strong></td><td>' + escHtml(s.nummer || '–') + '</td><td>' + escHtml(km[s.klasse_id] || '–') + '</td><td>' +
+      '<button class="btn btn-sm btn-secondary" onclick="editSchueler(\'' + s.id + '\')">&#9998;</button> ' +
+      '<button class="btn btn-sm btn-danger" onclick="deleteSchueler(\'' + s.id + '\')">&#128465;</button></td></tr>';
+    }).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function editSchueler(id) {
+  const rows = await sb.select('schueler', 'id=eq.' + id);
+  const s = rows[0]; if (!s) return;
+  await loadKlassenIntoSelect('schueler-klasse-id');
+  document.getElementById('schueler-id').value = s.id;
+  document.getElementById('schueler-name').value = s.name;
+  document.getElementById('schueler-nummer').value = s.nummer || '';
+  document.getElementById('schueler-klasse-id').value = s.klasse_id;
+  document.getElementById('schueler-modal-title').textContent = 'Schüler bearbeiten';
+  document.getElementById('schueler-modal').classList.remove('hidden');
+}
+
+async function saveSchueler() {
+  const id = document.getElementById('schueler-id').value;
+  const name = document.getElementById('schueler-name').value.trim();
+  const nummer = document.getElementById('schueler-nummer').value.trim();
+  const klasseId = document.getElementById('schueler-klasse-id').value;
+  if (!name || !klasseId) { showToast('Name und Klasse sind Pflichtfelder.', 'error'); return; }
+  try {
+    const data = { name, nummer: nummer || null, klasse_id: klasseId };
+    if (id) await sb.update('schueler', id, data); else await sb.insert('schueler', data);
+    closeModal('schueler-modal'); showToast('Schüler gespeichert.', 'success'); loadSchueler(); loadDashboard();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteSchueler(id) {
+  if (!confirm('Schüler wirklich löschen?')) return;
+  try { await sb.delete('schueler', id); showToast('Schüler gelöscht.', 'success'); loadSchueler(); }
+  catch(e) { showToast(e.message, 'error'); }
+}
+
+// =============================================================
+// FÄCHER
+// =============================================================
+async function loadFaecher() {
+  try {
+    const rows = await sb.select('faecher');
+    const tbody = document.getElementById('faecher-tbody');
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Fächer erfasst.</td></tr>'; return; }
+    const profilLabels = { mathematik: 'Mathematik', sprache: 'Sprache', naturwissenschaften: 'Naturwiss.', ict: 'ICT', wirtschaft: 'Wirtschaft' };
+    tbody.innerHTML = rows.map(function(f) {
+      const profilCell = f.ki_profil ? '<span class="badge badge-blue">' + escHtml(profilLabels[f.ki_profil] || f.ki_profil) + '</span>' : '<span style="color:var(--text-muted);font-size:.8rem">Standard</span>';
+      return '<tr><td><strong>' + escHtml(f.name) + '</strong></td><td><span class="badge badge-blue">' + escHtml(f.kuerzel) + '</span></td><td>' + profilCell + '</td><td>' +
+      '<button class="btn btn-sm btn-secondary" onclick="editFach(\'' + f.id + '\')">&#9998;</button> ' +
+      '<button class="btn btn-sm btn-danger" onclick="deleteFach(\'' + f.id + '\')">&#128465;</button></td></tr>';
+    }).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function editFach(id) {
+  const rows = await sb.select('faecher', 'id=eq.' + id);
+  const f = rows[0]; if (!f) return;
+  document.getElementById('fach-id').value = f.id;
+  document.getElementById('fach-name').value = f.name;
+  document.getElementById('fach-kuerzel').value = f.kuerzel;
+  document.getElementById('fach-ki-profil').value = f.ki_profil || '';
+  document.getElementById('fach-modal-title').textContent = 'Fach bearbeiten';
+  document.getElementById('fach-modal').classList.remove('hidden');
+}
+
+async function saveFach() {
+  const id = document.getElementById('fach-id').value;
+  const name = document.getElementById('fach-name').value.trim();
+  const kuerzel = document.getElementById('fach-kuerzel').value.trim().toUpperCase();
+  const ki_profil = document.getElementById('fach-ki-profil').value || null;
+  if (!name || !kuerzel) { showToast('Bitte alle Pflichtfelder ausfüllen.', 'error'); return; }
+  try {
+    if (id) {
+      await sb.update('faecher', id, { name, kuerzel, ki_profil });
+    } else {
+      await sb.insert('faecher', { name, kuerzel, ki_profil, lehrer_id: lehrer_id });
+    }
+    closeModal('fach-modal'); showToast('Fach gespeichert.', 'success'); loadFaecher();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteFach(id) {
+  if (!confirm('Fach wirklich löschen?')) return;
+  try { await sb.delete('faecher', id); showToast('Fach gelöscht.', 'success'); loadFaecher(); }
+  catch(e) { showToast(e.message, 'error'); }
+}
+
+// =============================================================
+// PRÜFUNGEN
+// =============================================================
+async function loadPruefungen() {
+  try {
+    const [rows, faecher, pruefungKlassen, klassen] = await Promise.all([
+      sb.select('pruefungen'), sb.select('faecher'), sb.select('pruefung_klassen'), sb.select('klassen')
+    ]);
+    const fm = {};
+    faecher.forEach(function(f) { fm[f.id] = f; });
+    const km = {};
+    klassen.forEach(function(k) { km[k.id] = k.name; });
+    const tbody = document.getElementById('pruefungen-tbody');
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Prüfungen erfasst.</td></tr>'; return; }
+    tbody.innerHTML = rows.map(function(p) {
+      const fach = p.fach_id ? fm[p.fach_id] : null;
+      const kNames = pruefungKlassen.filter(function(pk) { return pk.pruefung_id === p.id; }).map(function(pk) { return km[pk.klasse_id] || '?'; }).join(', ');
+      return '<tr><td><strong>' + escHtml(p.name) + '</strong></td><td>' + (p.datum ? formatDate(p.datum) : '–') + '</td><td>' +
+        (fach ? '<span class="badge badge-blue">' + escHtml(fach.kuerzel) + '</span>' : '–') + '</td><td>' + p.max_punkte + '</td>' +
+        '<td><small>' + escHtml(kNames || '–') + '</small></td><td>' +
+        '<button class="btn btn-sm btn-secondary" onclick="editPruefung(\'' + p.id + '\')">&#9998;</button> ' +
+        '<button class="btn btn-sm btn-success" onclick="erstelleEintraege(\'' + p.id + '\')">&#128203; Einträge</button> ' +
+        '<button class="btn btn-sm btn-danger" onclick="deletePruefung(\'' + p.id + '\')">&#128465;</button></td></tr>';
+    }).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function editPruefung(id) {
+  const rows = await sb.select('pruefungen', 'id=eq.' + id);
+  const p = rows[0]; if (!p) return;
+  await loadFaecherIntoSelect('pruefung-fach-id');
+  await loadKlassenCheckboxes(id);
+  await loadRubricsIntoSelect('pruefung-rubric-id');
+  document.getElementById('pruefung-id').value = p.id;
+  document.getElementById('pruefung-name').value = p.name;
+  document.getElementById('pruefung-datum').value = p.datum || '';
+  document.getElementById('pruefung-fach-id').value = p.fach_id || '';
+  document.getElementById('pruefung-max-punkte').value = p.max_punkte;
+  document.getElementById('pruefung-anweisungen').value = p.anweisungen || '';
+  document.getElementById('pruefung-rubric-id').value = p.rubric_id || '';
+  document.getElementById('pruefung-modal-title').textContent = 'Prüfung bearbeiten';
+  document.getElementById('pruefung-modal').classList.remove('hidden');
+}
+
+async function savePruefung() {
+  const id = document.getElementById('pruefung-id').value;
+  const name = document.getElementById('pruefung-name').value.trim();
+  const datum = document.getElementById('pruefung-datum').value || null;
+  const fachId = document.getElementById('pruefung-fach-id').value || null;
+  const maxPunkte = parseFloat(document.getElementById('pruefung-max-punkte').value) || 100;
+  const anweisungen = document.getElementById('pruefung-anweisungen').value.trim() || null;
+  const rubricId = document.getElementById('pruefung-rubric-id').value || null;
+  if (!name) { showToast('Name ist ein Pflichtfeld.', 'error'); return; }
+  const checked = Array.from(document.querySelectorAll('#pruefung-klassen-checkboxes input[type=checkbox]:checked')).map(function(cb) { return cb.value; });
+  try {
+    let pruefungId = id;
+    const payload = { name, datum, fach_id: fachId, max_punkte: maxPunkte, anweisungen, rubric_id: rubricId };
+    if (id) {
+      await sb.update('pruefungen', id, payload);
+    } else {
+      const r = await sb.insert('pruefungen', Object.assign({}, payload, { lehrer_id: lehrer_id }));
+      pruefungId = r[0].id;
+    }
+    if (pruefungId) {
+      const existing = await sb.select('pruefung_klassen', 'pruefung_id=eq.' + pruefungId);
+      for (const ex of existing) await sb.delete('pruefung_klassen', ex.id);
+      for (const kid of checked) await sb.insert('pruefung_klassen', { pruefung_id: pruefungId, klasse_id: kid });
+    }
+    closeModal('pruefung-modal'); showToast('Prüfung gespeichert.', 'success'); loadPruefungen();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deletePruefung(id) {
+  if (!confirm('Prüfung wirklich löschen?')) return;
+  try { await sb.delete('pruefungen', id); showToast('Prüfung gelöscht.', 'success'); loadPruefungen(); loadDashboard(); }
+  catch(e) { showToast(e.message, 'error'); }
+}
+
+async function erstelleEintraege(pruefungId) {
+  try {
+    const pks = await sb.select('pruefung_klassen', 'pruefung_id=eq.' + pruefungId);
+    let total = 0;
+    for (const pk of pks) {
+      const schueler = await sb.select('schueler', 'klasse_id=eq.' + pk.klasse_id);
+      for (const s of schueler) {
+        const ex = await sb.select('eintraege', 'schueler_id=eq.' + s.id + '&pruefung_id=eq.' + pruefungId);
+        if (!ex.length) { await sb.insert('eintraege', { schueler_id: s.id, pruefung_id: pruefungId, status: 'offen' }); total++; }
+      }
+    }
+    showToast(total + ' Einträge erstellt.', 'success'); loadDashboard();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// =============================================================
+// LERNSTOFF
+// =============================================================
+function openLernstoffModal() {
+  document.getElementById('lernstoff-bezeichnung').value = '';
+  document.getElementById('lernstoff-file-name').textContent = 'PDF, Bild oder Dokument auswählen…';
+  document.getElementById('lernstoff-upload-progress').classList.add('hidden');
+  document.getElementById('lernstoff-progress-bar').style.width = '0%';
+  lernstoffFileObj = null;
+  loadPruefungenIntoSelect('lernstoff-pruefung-id', true);
+  document.getElementById('lernstoff-modal').classList.remove('hidden');
+}
+
+function handleLernstoffFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  lernstoffFileObj = file;
+  document.getElementById('lernstoff-file-name').textContent = file.name + ' (' + formatBytes(file.size) + ')';
+}
+
+async function uploadLernstoff() {
+  const bezeichnung = document.getElementById('lernstoff-bezeichnung').value.trim();
+  const pruefungId  = document.getElementById('lernstoff-pruefung-id').value || null;
+  if (!bezeichnung) { showToast('Bitte Bezeichnung eingeben.', 'error'); return; }
+  if (!lernstoffFileObj) { showToast('Bitte Datei auswählen.', 'error'); return; }
+  if (lernstoffFileObj.size > 20 * 1024 * 1024) { showToast('Datei zu gross (max. 20 MB).', 'error'); return; }
+  document.getElementById('lernstoff-upload-progress').classList.remove('hidden');
+  document.getElementById('lernstoff-upload-btn').disabled = true;
+  try {
+    const ext = lernstoffFileObj.name.split('.').pop();
+    const filePath = lehrer_id + '/' + Date.now() + '.' + ext;
+    const storedPath = await sbStorageUpload('lernmaterial', filePath, lernstoffFileObj);
+    await sb.insert('lernmaterial', {
+      bezeichnung,
+      pruefung_id:   pruefungId,
+      lehrer_id:     lehrer_id,
+      storage_pfad:  storedPath,
+      dateiname:     lernstoffFileObj.name,
+      mime_type:     lernstoffFileObj.type,
+      groesse_bytes: lernstoffFileObj.size,
+    });
+    document.getElementById('lernstoff-progress-bar').style.width = '100%';
+    showToast('Material hochgeladen.', 'success');
+    setTimeout(function() { closeModal('lernstoff-modal'); loadLernstoff(); }, 800);
+  } catch(e) { showToast('Upload-Fehler: ' + e.message, 'error'); }
+  finally { document.getElementById('lernstoff-upload-btn').disabled = false; }
+}
+
+async function loadLernstoff() {
+  try {
+    const pruefungId = (document.getElementById('lernstoff-filter-pruefung') && document.getElementById('lernstoff-filter-pruefung').value) || '';
+    const q = pruefungId ? 'pruefung_id=eq.' + pruefungId : '';
+    const [rows, pruefungen] = await Promise.all([sb.select('lernmaterial', q), sb.select('pruefungen')]);
+    const pm = {};
+    pruefungen.forEach(function(p) { pm[p.id] = p.name; });
+    const el = document.getElementById('lernstoff-list');
+    if (!rows.length) { el.innerHTML = '<p style="color:var(--text-muted);font-size:.875rem">Noch keine Materialien hochgeladen.</p>'; return; }
+    el.innerHTML = rows.map(function(m) {
+      const icon = m.mime_type && m.mime_type.includes('pdf') ? '&#128196;' : (m.mime_type && m.mime_type.startsWith('image/')) ? '&#128444;&#65039;' : '&#128196;';
+      return '<div class="lernmaterial-item">' +
+        '<div class="lernmaterial-item__icon">' + icon + '</div>' +
+        '<div style="flex:1"><div class="lernmaterial-item__name">' + escHtml(m.bezeichnung) + '</div>' +
+        '<div class="lernmaterial-item__meta">' + escHtml(m.dateiname || '') +
+        (m.pruefung_id ? ' · ' + escHtml(pm[m.pruefung_id] || m.pruefung_id) : '') +
+        (m.groesse_bytes ? ' · ' + formatBytes(m.groesse_bytes) : '') + '</div></div>' +
+        '<button class="btn btn-sm btn-danger" onclick="deleteLernstoff(\'' + m.id + '\')">&#128465;</button></div>';
+    }).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteLernstoff(id) {
+  if (!confirm('Material wirklich löschen?')) return;
+  try { await sb.delete('lernmaterial', id); showToast('Material gelöscht.', 'success'); loadLernstoff(); }
+  catch(e) { showToast(e.message, 'error'); }
+}
+
+// =============================================================
+// KORREKTUR
+// =============================================================
+async function loadKorrekturEintraege() {
+  const pruefungId = document.getElementById('korrektur-pruefung-select').value;
+  const klasseId   = document.getElementById('korrektur-klasse-select').value;
+  const el = document.getElementById('korrektur-eintraege-list');
+  if (!pruefungId || !klasseId) { el.innerHTML = '<div class="alert alert-info">Bitte Prüfung und Klasse wählen.</div>'; return; }
+  try {
+    const [schueler, eintraege] = await Promise.all([
+      sb.select('schueler', 'klasse_id=eq.' + klasseId),
+      sb.select('eintraege', 'pruefung_id=eq.' + pruefungId)
+    ]);
+    const eMap = {};
+    eintraege.forEach(function(e) { eMap[e.schueler_id] = e; });
+    if (!schueler.length) { el.innerHTML = '<div class="alert alert-warning">Keine Schüler in dieser Klasse.</div>'; return; }
+    el.innerHTML = '<div class="card"><div class="card__title">&#128221; Einträge (' + schueler.length + ' Schüler)</div>' +
+      '<div class="table-wrap"><table><thead><tr><th>Schüler</th><th>Status</th><th>Note</th><th>Aktionen</th></tr></thead><tbody>' +
+      schueler.map(function(s) {
+        const e = eMap[s.id];
+        const safePruefungId = String(pruefungId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+        const safeSchuelerId = String(s.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
+        const safeName = escHtml(s.name).replace(/'/g, "\\'");
+        const status = e ? e.status : 'kein Eintrag';
+        const note = e && (e.note_manuell || e.note) ? noteHtml(e.note_manuell || e.note) : '–';
+        return '<tr><td><strong>' + escHtml(s.name) + '</strong>' + (s.nummer ? '<br><small>' + escHtml(s.nummer) + '</small>' : '') + '</td>' +
+          '<td><span class="badge ' + statusBadge(status) + '">' + escHtml(status) + '</span></td><td>' + note + '</td><td>' +
+          '<button class="btn btn-sm btn-secondary" onclick="openUploadForSchueler(\'' + safePruefungId + '\', \'' + safeSchuelerId + '\', \'' + safeName + '\')">&#128248; Upload</button> ' +
+          (e ? '<button class="btn btn-sm btn-primary" onclick="kiKorrigieren(\'' + e.id + '\')">&#129302; KI</button> ' +
+               '<button class="btn btn-sm btn-secondary" onclick="noteManuelleingabe(\'' + e.id + '\')">&#9998; Note</button>'
+            : '<span style="color:var(--text-muted);font-size:.8rem">Eintrag wird beim Upload erstellt</span>') + '</td></tr>';
+      }).join('') + '</tbody></table></div></div>';
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// =============================================================
+// UPLOAD (Prüfungsfotos)
+// =============================================================
+function openUploadModal(eintragsId, name) {
+  uploadPages = [];
+  uploadSchuelerName = name || '';
+  document.getElementById('upload-eintrag-id').value = eintragsId;
+  document.getElementById('upload-modal-title').textContent = 'Prüfung hochladen: ' + name;
+  document.getElementById('pages-preview').innerHTML = '';
+  document.getElementById('upload-progress').classList.add('hidden');
+  document.getElementById('upload-modal').classList.remove('hidden');
+}
+
+async function openUploadForSchueler(pruefungId, schuelerId, name) {
+  try {
+    const safePruefungId = String(pruefungId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+    const safeSchuelerId = String(schuelerId || '').replace(/[^a-zA-Z0-9_-]/g, '');
+    if (!safePruefungId || !safeSchuelerId) { showToast('Ungültige Auswahl für Prüfung/Schüler.', 'error'); return; }
+    let existing = await sb.select('eintraege', 'schueler_id=eq.' + safeSchuelerId + '&pruefung_id=eq.' + safePruefungId);
+    let eintrag = existing[0];
+    if (!eintrag) {
+      const created = await sb.insert('eintraege', { schueler_id: safeSchuelerId, pruefung_id: safePruefungId, status: 'offen' });
+      eintrag = created && created[0] ? created[0] : null;
+      if (!eintrag) {
+        existing = await sb.select('eintraege', 'schueler_id=eq.' + safeSchuelerId + '&pruefung_id=eq.' + safePruefungId);
+        eintrag = existing[0];
+      }
+    }
+    if (!eintrag) { showToast('Eintrag konnte nicht erstellt werden.', 'error'); return; }
+    openUploadModal(eintrag.id, name);
+    loadKorrekturEintraege();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+function handleDragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function handleDragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+function handleDrop(e) { e.preventDefault(); e.currentTarget.classList.remove('drag-over'); addFiles(e.dataTransfer.files); }
+function handleFileSelect(e) { addFiles(e.target.files); e.target.value = ''; }
+
+function addFiles(files) {
+  Array.from(files).forEach(function(file) {
+    if (!file.type.startsWith('image/')) { showToast('Nur Bilder erlaubt: ' + file.name, 'error'); return; }
+    compressImage(file, 1600, 0.82).then(function(compressed) {
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        uploadPages.push({ file: compressed, dataUrl: ev.target.result, seitenNr: uploadPages.length + 1 });
+        renderPagesPreview();
+      };
+      reader.readAsDataURL(compressed);
+    });
+  });
+}
+
+async function compressImage(file, maxDim, quality) {
+  return new Promise(function(resolve) {
+    const img = new Image();
+    img.onload = function() {
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w <= maxDim && h <= maxDim) { resolve(file); return; }
+      if (w > h) { h = Math.round(h * maxDim / w); w = maxDim; }
+      else       { w = Math.round(w * maxDim / h); h = maxDim; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      canvas.toBlob(function(blob) { resolve(blob || file); }, 'image/jpeg', quality);
+    };
+    img.onerror = function() { resolve(file); };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function renderPagesPreview() {
+  document.getElementById('pages-preview').innerHTML = uploadPages.map(function(pg, i) {
+    return '<div class="page-thumb">' +
+    '<img src="' + pg.dataUrl + '" alt="Seite ' + pg.seitenNr + '" />' +
+    '<div class="page-thumb__num">Seite ' + pg.seitenNr + '</div>' +
+    '<button class="page-thumb__del" onclick="removePage(' + i + ')">&#10005;</button></div>';
+  }).join('');
+}
+
+function removePage(i) { uploadPages.splice(i, 1); uploadPages.forEach(function(pg, j) { pg.seitenNr = j + 1; }); renderPagesPreview(); }
+
+async function uploadSeiten() {
+  if (!uploadPages.length) { showToast('Bitte Seiten hinzufügen.', 'error'); return; }
+  const eintragsId = document.getElementById('upload-eintrag-id').value;
+  const progBar = document.getElementById('upload-progress-bar');
+  const progTxt = document.getElementById('upload-progress-text');
+  document.getElementById('upload-progress').classList.remove('hidden');
+  document.getElementById('upload-btn').disabled = true;
+  try {
+    for (let i = 0; i < uploadPages.length; i++) {
+      const pg = uploadPages[i];
+      progBar.style.width = Math.round((i / uploadPages.length) * 100) + '%';
+      progTxt.textContent = 'Lade Seite ' + (i + 1) + ' von ' + uploadPages.length + ' hoch…';
+      const filePath = lehrer_id + '/' + eintragsId + '/' + pg.seitenNr + '_' + Date.now() + '.jpg';
+      const storedPath = await sbStorageUpload('pruefungsfotos', filePath, pg.file);
+      await sb.insert('seiten_uploads', { eintrag_id: eintragsId, seitennummer: pg.seitenNr, storage_pfad: storedPath, dateiname: 'seite_' + pg.seitenNr + '.jpg', mime_type: pg.file.type || 'image/jpeg', groesse_bytes: pg.file.size });
+    }
+    await sb.update('eintraege', eintragsId, { status: 'hochgeladen' });
+    progBar.style.width = '100%'; progTxt.textContent = 'Upload abgeschlossen!';
+    showToast('Seiten erfolgreich hochgeladen.', 'success');
+    setTimeout(function() { closeModal('upload-modal'); loadKorrekturEintraege(); }, 1000);
+  } catch(e) { showToast('Upload-Fehler: ' + e.message, 'error'); }
+  finally { document.getElementById('upload-btn').disabled = false; }
+}
+
+// =============================================================
+// QR-CODE RELAY (PC-Seite)
+// =============================================================
+function openQrModal() {
+  const eintragsId = document.getElementById('upload-eintrag-id').value;
+  if (!eintragsId) { showToast('Bitte zuerst einen Schüler-Upload öffnen.', 'error'); return; }
+  if (typeof QRCode === 'undefined') { showToast('QR-Code Bibliothek nicht geladen. Bitte Seite neu laden.', 'error'); return; }
+  relayToken = (typeof crypto.randomUUID === 'function')
+    ? crypto.randomUUID()
+    : ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16));
+  const url = location.origin + '/?mode=mobile&t=' + relayToken + '&n=' + encodeURIComponent(uploadSchuelerName || '');
+  document.getElementById('qr-schueler-label').textContent = uploadSchuelerName ? 'Schüler/in: ' + uploadSchuelerName : '';
+  document.getElementById('qr-status').innerHTML = '&#9679; Warten auf Fotos…';
+  document.getElementById('qr-count').classList.add('hidden');
+  document.getElementById('qr-modal').classList.remove('hidden');
+  QRCode.toCanvas(document.getElementById('qr-canvas'), url, { width: 240, margin: 2 }, function(err) {
+    if (err) showToast('QR-Code Fehler: ' + err.message, 'error');
+  });
+  startRelayPolling(relayToken);
+}
+
+function closeQrModal() {
+  stopRelayPolling();
+  document.getElementById('qr-modal').classList.add('hidden');
+}
+
+function startRelayPolling(token) {
+  stopRelayPolling();
+  let receivedCount = 0;
+  let failCount = 0;
+  relayPollInterval = setInterval(async function() {
+    if (document.getElementById('qr-modal').classList.contains('hidden')) { stopRelayPolling(); return; }
+    try {
+      const res = await fetch('/api/relay?t=' + encodeURIComponent(token));
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      failCount = 0;
+      const data = await res.json();
+      if (!data.photos || !data.photos.length) return;
+      for (const p of data.photos) {
+        const blob = dataUrlToBlob(p.data, p.mime);
+        // Photos from mobile are already compressed; no need to re-compress
+        const dataUrl = p.data;
+        uploadPages.push({ file: blob, dataUrl: dataUrl, seitenNr: uploadPages.length + 1 });
+        receivedCount++;
+      }
+      renderPagesPreview();
+      const countEl = document.getElementById('qr-count');
+      countEl.textContent = receivedCount + (receivedCount === 1 ? ' Foto' : ' Fotos') + ' empfangen ✓';
+      countEl.classList.remove('hidden');
+      document.getElementById('qr-status').innerHTML = '&#10003; Fotos kommen an – weitere aufnehmen oder schliessen';
+    } catch(e) {
+      failCount++;
+      console.error('[relay] poll error:', e);
+      if (failCount >= 5) {
+        stopRelayPolling();
+        document.getElementById('qr-status').innerHTML = '<span style="color:var(--danger)">&#10007; Verbindung unterbrochen – bitte manuell hochladen</span>';
+      }
+    }
+  }, 3000);
+}
+
+function stopRelayPolling() {
+  if (relayPollInterval) { clearInterval(relayPollInterval); relayPollInterval = null; }
+}
+
+function dataUrlToBlob(dataUrl, mime) {
+  const arr = dataUrl.split(',');
+  const bstr = atob(arr[1]);
+  const u8 = new Uint8Array(bstr.length);
+  for (let i = 0; i < bstr.length; i++) u8[i] = bstr.charCodeAt(i);
+  return new Blob([u8], { type: mime || 'image/jpeg' });
+}
+
+// =============================================================
+// MOBILE UPLOAD PAGE
+// =============================================================
+function initMobileMode() {
+  const params = new URLSearchParams(location.search);
+  if (params.get('mode') !== 'mobile') return false;
+  const token = params.get('t');
+  if (!token) return false;
+  window._mobileRelayToken = token;
+  const name = params.get('n') || '';
+  document.getElementById('mobile-app').classList.add('active');
+  document.getElementById('app').style.display = 'none';
+  if (name) document.getElementById('mobile-schueler-info').textContent = 'Schüler/in: ' + name;
+  return true;
+}
+
+function mobileAddPhoto(event) {
+  const files = Array.from(event.target.files);
+  event.target.value = '';
+  files.forEach(function(file) {
+    if (!file.type.startsWith('image/')) return;
+    compressImage(file, 1600, 0.82).then(function(compressed) {
+      blobToDataUrl(compressed).then(function(dataUrl) {
+        mobilePhotos.push({ file: compressed, dataUrl: dataUrl });
+        renderMobilePhotos();
+        document.getElementById('mobile-send-btn').disabled = false;
+      });
+    });
+  });
+}
+
+function renderMobilePhotos() {
+  const grid = document.getElementById('mobile-photo-grid');
+  grid.innerHTML = mobilePhotos.map(function(p, i) {
+    return '<div class="mobile-photo-thumb">' +
+      '<img src="' + p.dataUrl + '" alt="Seite ' + (i + 1) + '" />' +
+      '<button class="mobile-photo-del" onclick="mobileRemovePhoto(' + i + ')">&#10005;</button>' +
+      '</div>';
+  }).join('');
+}
+
+function mobileRemovePhoto(i) {
+  mobilePhotos.splice(i, 1);
+  renderMobilePhotos();
+  if (!mobilePhotos.length) document.getElementById('mobile-send-btn').disabled = true;
+}
+
+async function mobileSendPhotos() {
+  const token = window._mobileRelayToken;
+  if (!token || !mobilePhotos.length) return;
+  const btn = document.getElementById('mobile-send-btn');
+  const status = document.getElementById('mobile-send-status');
+  btn.disabled = true;
+  let sent = 0;
+  let failed = 0;
+  const toSend = mobilePhotos.slice();
+  for (let i = 0; i < toSend.length; i++) {
+    const p = toSend[i];
+    status.textContent = 'Sende Foto ' + (i + 1) + ' von ' + toSend.length + '…';
+    try {
+      const res = await fetch('/api/relay?t=' + encodeURIComponent(token), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: p.dataUrl, mime: p.file.type || 'image/jpeg' })
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      sent++;
+    } catch(e) {
+      failed++;
+    }
+  }
+  if (failed === 0) {
+    status.innerHTML = '<span style="color:var(--success);font-weight:600">&#10003; ' + sent + ' ' + (sent === 1 ? 'Foto' : 'Fotos') + ' gesendet! Seite kann geschlossen werden.</span>';
+    mobilePhotos = [];
+    renderMobilePhotos();
+  } else {
+    status.innerHTML = '<span style="color:var(--danger)">' + failed + ' Foto(s) fehlgeschlagen – bitte nochmal versuchen.</span>';
+    btn.disabled = false;
+  }
+}
+
+// =============================================================
+// KI-KORREKTUR
+// =============================================================
+async function kiKorrigieren(eintragsId) {
+  try {
+    const eintraege = await sb.select('eintraege', 'id=eq.' + eintragsId);
+    const eintrag = eintraege[0]; if (!eintrag) return;
+    if (eintrag.status === 'offen') { showToast('Zuerst Seiten hochladen.', 'error'); return; }
+    const seiten = await sb.select('seiten_uploads', 'eintrag_id=eq.' + eintragsId + '&order=seitennummer.asc');
+    if (!seiten.length) { showToast('Keine Seiten vorhanden.', 'error'); return; }
+    const [pruefungen, schuelerRows] = await Promise.all([
+      sb.select('pruefungen', 'id=eq.' + eintrag.pruefung_id),
+      sb.select('schueler', 'id=eq.' + eintrag.schueler_id)
+    ]);
+    const pruefung = pruefungen[0]; const schueler = schuelerRows[0];
+    showToast('KI-Korrektur läuft…', 'info');
+
+    // Load fach ki_profil and rubric (Pro features, gracefully optional)
+    let kiProfilInstruction = '';
+    if (pruefung && pruefung.fach_id) {
+      const fachRows = await sb.select('faecher', 'id=eq.' + pruefung.fach_id);
+      const fach = fachRows[0];
+      if (fach && fach.ki_profil && isPro()) {
+        const profilMap = {
+          mathematik: 'Achte besonders auf korrekte Rechenwege, Zwischenschritte und mathematische Genauigkeit.',
+          sprache: 'Achte besonders auf Grammatik, Orthographie, Stil, Kohärenz und sprachlichen Ausdruck.',
+          naturwissenschaften: 'Achte besonders auf korrekte Fachterminologie, wissenschaftliche Methodik und logischen Aufbau.',
+          ict: 'Achte besonders auf Korrektheit, Best Practices, Effizienz und Vollständigkeit des Codes / der Lösung.',
+          wirtschaft: 'Achte besonders auf korrekte Fachbegriffe, wirtschaftliche Konzepte und Praxisbezug.',
+        };
+        kiProfilInstruction = profilMap[fach.ki_profil] || '';
+      }
+    }
+    let rubricInstruction = '';
+    if (pruefung && pruefung.rubric_id && isPro()) {
+      const rubricRows = await sb.select('rubrics', 'id=eq.' + pruefung.rubric_id);
+      const rubric = rubricRows[0];
+      if (rubric && rubric.kriterien && rubric.kriterien.length) {
+        rubricInstruction = '\nBewertungsraster "' + rubric.name + '":\n' +
+          rubric.kriterien.map(function(k) { return '- ' + k.name + ' (' + k.max_punkte + ' Pkt)' + (k.beschreibung ? ': ' + k.beschreibung : ''); }).join('\n');
+      }
+    }
+    const imageBlocks = (await Promise.all(seiten.map(async function(s) {
+      const storagePath = s.storage_pfad.replace(/^pruefungsfotos\//, '');
+      const fetchUrl = await sbStorageUrl('pruefungsfotos', storagePath);
+      if (!fetchUrl) return null;
+      const res = await fetch(fetchUrl);
+      const blob = await res.blob();
+      const dataUrl = await blobToDataUrl(blob);
+      return { type: 'image', source: { type: 'base64', media_type: blob.type || 'image/jpeg', data: dataUrl.split(',')[1] } };
+    }))).filter(function(b) { return b !== null; });
+    const schoolTypeLabels = { 'berufsschule': 'Berufsschule', 'gymnasium': 'Gymnasium', 'mittelschule': 'Mittelschule', 'primarschule': 'Primarschule', 'sekundarschule': 'Sekundarschule', 'hochschule': 'Hochschule' };
+    const schoolTypeLabel = schoolTypeLabels[cfg.schoolType] || 'Schule';
+    const systemPrompt = 'Du bist ein erfahrener Lehrer an einer ' + schoolTypeLabel + '.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\n' + (kiProfilInstruction ? kiProfilInstruction + '\n' : '') + (rubricInstruction ? rubricInstruction + '\n' : '') + 'Antworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "...", "max": <Zahl>, "erreicht": <Zahl>, "feedback": "..."}]}';
+    const userContent = imageBlocks.concat([{ type: 'text', text: 'Prüfung: ' + (pruefung && pruefung.name || '') + '\nSchüler: ' + (schueler && schueler.name || '') + '\nMax. Punkte: ' + (pruefung && pruefung.max_punkte || 100) + (pruefung && pruefung.anweisungen ? '\nAufgabenstellung:\n' + pruefung.anweisungen : '') + '\n\nBitte korrigiere diese Prüfung als JSON.' }]);
+    const licenseKey = localStorage.getItem('lernortai_license_key') || '';
+    const schulCode = localStorage.getItem('lernortai_schul_code') || '';
+    // Free-trial gate: if no license key and no schulCode, consume one free correction (up to FREE_TRIAL_LIMIT)
+    if (!licenseKey && !schulCode) {
+      const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
+      if (used >= FREE_TRIAL_LIMIT) {
+        document.getElementById('upsell-modal').classList.remove('hidden');
+        return 'limit';
+      }
+      localStorage.setItem(LS.FREE_USED, String(used + 1));
+      updateFreeTrialBadge();
+    }
+    const headers = { 'content-type': 'application/json' };
+    if (licenseKey) headers['x-license-key'] = licenseKey;
+    if (schulCode) headers['x-schul-code'] = schulCode;
+    if (!licenseKey && !schulCode) {
+      const trialToken = localStorage.getItem(LS.TRIAL_TOKEN) || '';
+      if (trialToken) headers['x-trial-token'] = trialToken;
+    }
+    const correctionFeature = (kiProfilInstruction || rubricInstruction) ? 'correction_pro' : 'correction';
+    const response = await fetch('/api/claude', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 1024, system: systemPrompt, messages: [{ role: 'user', content: userContent }], feature: correctionFeature }),
+    });
+    // Store updated trial token if returned by server
+    const newTrialToken = response.headers.get('x-trial-token');
+    if (newTrialToken) localStorage.setItem(LS.TRIAL_TOKEN, newTrialToken);
+    if (response.status === 402 || response.status === 429) {
+      const d = await response.json();
+      document.getElementById('upsell-modal').classList.remove('hidden');
+      return 'limit';
+    }
+    if (!response.ok) throw new Error('Claude API: ' + response.status + ' ' + await response.text());
+    const data = await response.json();
+    const raw = data.content && data.content[0] && data.content[0].text || '';
+    let result;
+    try { const m = raw.match(/\{[\s\S]*\}/); result = JSON.parse(m ? m[0] : raw); result.ki_qualitaet_unsicher = false; }
+    catch(pe) { throw new Error('KI-Antwort konnte nicht geparst werden: ' + raw); }
+    kiPendingData = { eintragsId, result };
+    showKiErgebnis(result, schueler && schueler.name || 'Schüler', pruefung && pruefung.max_punkte || 100);
+  } catch(e) { showToast('KI-Fehler: ' + e.message, 'error'); }
+}
+
+function showKiErgebnis(result, name, maxPunkte) {
+  const n = result.note || 0;
+  document.getElementById('ki-ergebnis-content').innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">' +
+    '<div><strong>' + escHtml(name) + '</strong><div style="font-size:.8rem;color:var(--text-muted)">' + (result.punkte || '–') + ' / ' + maxPunkte + ' Punkte</div></div>' +
+    '<div class="stat-card" style="text-align:center;padding:.75rem 1.5rem"><div class="stat-card__num ' + noteClass(n) + '">' + n.toFixed(1) + '</div>' +
+    (result.ki_qualitaet_unsicher ? '<div class="badge badge-unsicher" style="margin-top:.25rem">&#9888;&#65039; Grenzfall</div>' : '') +
+    '<div class="stat-card__lbl">Note</div></div></div>' +
+    '<div class="alert ' + (n >= 4.0 ? 'alert-success' : 'alert-danger') + '" style="margin-bottom:1rem">' + (n >= 4.0 ? '&#10003; Bestanden' : '&#10007; Nicht bestanden') + '</div>' +
+    (result.kommentar ? '<p style="margin-bottom:1rem;font-size:.875rem"><strong>Kommentar:</strong> ' + escHtml(result.kommentar) + '</p>' : '') +
+    ((result.aufgaben || []).length ? '<div class="table-wrap"><table><thead><tr><th>Aufgabe</th><th>Max.</th><th>Erreicht</th><th>Feedback</th></tr></thead><tbody>' +
+      result.aufgaben.map(function(a) { return '<tr><td>' + escHtml(a.bezeichnung || '') + '</td><td>' + (a.max || '') + '</td><td>' + (a.erreicht || '') + '</td><td><small>' + escHtml(a.feedback || '') + '</small></td></tr>'; }).join('') +
+      '</tbody></table></div>' : '');
+  // Show quality check option for borderline grades (Pro feature)
+  const qualWrap = document.getElementById('ki-qualitaets-wrap');
+  const qualResult = document.getElementById('ki-qualitaets-result');
+  qualResult.classList.add('hidden');
+  qualResult.innerHTML = '';
+  if (n >= 3.5 && n <= 4.5) {
+    qualWrap.classList.remove('hidden');
+  } else {
+    qualWrap.classList.add('hidden');
+  }
+  document.getElementById('ki-ergebnis-modal').classList.remove('hidden');
+}
+
+async function saveKiErgebnis() {
+  if (!kiPendingData) return;
+  const eintragsId = kiPendingData.eintragsId;
+  const result = kiPendingData.result;
+  try {
+    await sb.update('eintraege', eintragsId, { status: 'korrigiert', note: parseFloat(result.note) || null, punkte: result.punkte || null, ergebnis: result, kommentar: result.kommentar || null, ki_bewertet_am: new Date().toISOString() });
+    kiPendingData = null; closeModal('ki-ergebnis-modal'); showToast('KI-Note gespeichert.', 'success'); loadKorrekturEintraege(); loadDashboard();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function kiAlleKorrigieren() {
+  const pruefungId = document.getElementById('korrektur-pruefung-select').value;
+  const klasseId   = document.getElementById('korrektur-klasse-select').value;
+  if (!pruefungId || !klasseId) { showToast('Prüfung und Klasse wählen.', 'error'); return; }
+  const [eintraege, schueler] = await Promise.all([sb.select('eintraege', 'pruefung_id=eq.' + pruefungId), sb.select('schueler', 'klasse_id=eq.' + klasseId)]);
+  const sIds = new Set(schueler.map(function(s) { return s.id; }));
+  const todo = eintraege.filter(function(e) { return sIds.has(e.schueler_id) && e.status === 'hochgeladen'; });
+  if (!todo.length) { showToast('Keine hochgeladenen Prüfungen gefunden.', 'info'); return; }
+  // Pre-check trial budget
+  const licenseKey = localStorage.getItem('lernortai_license_key') || '';
+  const schulCode = localStorage.getItem('lernortai_schul_code') || '';
+  if (!licenseKey && !schulCode) {
+    const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
+    const remaining = Math.max(0, FREE_TRIAL_LIMIT - used);
+    if (remaining === 0) {
+      document.getElementById('upsell-modal').classList.remove('hidden');
+      return;
+    }
+    if (remaining < todo.length) {
+      showToast('Nur noch ' + remaining + ' von ' + FREE_TRIAL_LIMIT + ' Gratis-Korrekturen verfügbar. Bitte Plan wählen.', 'error');
+      document.getElementById('upsell-modal').classList.remove('hidden');
+      return;
+    }
+  }
+  if (!confirm(todo.length + ' Prüfungen mit KI korrigieren?')) return;
+  let done = 0;
+  for (let i = 0; i < todo.length; i++) {
+    const result = await kiKorrigieren(todo[i].id);
+    if (result === 'limit') { showToast('Limit erreicht – ' + done + ' von ' + todo.length + ' Korrekturen abgeschlossen.', 'error'); return; }
+    done++;
+    showToast('Korrigiert: ' + done + '/' + todo.length, 'info');
+  }
+  showToast('Alle Korrekturen abgeschlossen.', 'success');
+}
+
+// =============================================================
+// HILFE / KI-CHATBOT
+// =============================================================
+function initHelpView() {
+  if (!helpChatHistory.length) {
+    helpChatHistory.push({ role: 'assistant', text: 'Hallo! Ich helfe Ihnen bei Fragen zu Pruefai (z.B. Klassen, Prüfungen, Upload, Korrektur, Export, Lizenz).' });
+  }
+  renderHelpChat();
+}
+
+function renderHelpChat() {
+  const log = document.getElementById('help-chat-log');
+  if (!log) return;
+  log.innerHTML = helpChatHistory.map(function(m) {
+    const cls = m.role === 'user' ? 'help-chat-msg help-chat-msg--user' : 'help-chat-msg help-chat-msg--bot';
+    return '<div class="' + cls + '">' + escHtml(m.text || '') + '</div>';
+  }).join('');
+  log.scrollTop = log.scrollHeight;
+}
+
+function resetHelpChat() {
+  helpChatHistory = [{ role: 'assistant', text: 'Chat zurückgesetzt. Wobei kann ich helfen?' }];
+  renderHelpChat();
+}
+
+async function sendHelpChatMessage() {
+  const input = document.getElementById('help-chat-input');
+  const btn = document.getElementById('help-chat-send-btn');
+  if (!input || !btn) return;
+  const text = input.value.trim();
+  if (!text) return;
+  if (text.length > HELP_CHAT_MAX_MESSAGE_LENGTH) { showToast('Bitte Nachricht auf max. ' + HELP_CHAT_MAX_MESSAGE_LENGTH + ' Zeichen kürzen.', 'error'); return; }
+
+  helpChatHistory.push({ role: 'user', text: text });
+  input.value = '';
+  renderHelpChat();
+  btn.disabled = true;
+  btn.textContent = 'Antwortet…';
+
+  try {
+    const licenseKey = localStorage.getItem('lernortai_license_key') || '';
+    const schulCode = localStorage.getItem('lernortai_schul_code') || '';
+    const isTrialUser = !licenseKey && !schulCode;
+    if (isTrialUser) {
+      const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
+      if (used >= FREE_TRIAL_LIMIT) {
+        document.getElementById('upsell-modal').classList.remove('hidden');
+        helpChatHistory.push({ role: 'assistant', text: 'Ihr Gratis-Kontingent ist aufgebraucht. Bitte wählen Sie einen Plan, um den KI-Chat weiter zu nutzen.' });
+        renderHelpChat();
+        return;
+      }
+    }
+
+    const headers = { 'content-type': 'application/json' };
+    if (licenseKey) headers['x-license-key'] = licenseKey;
+    if (schulCode) headers['x-schul-code'] = schulCode;
+    if (!licenseKey && !schulCode) {
+      const trialToken = localStorage.getItem(LS.TRIAL_TOKEN) || '';
+      if (trialToken) headers['x-trial-token'] = trialToken;
+    }
+
+    // System-Prompt wird separat als `system`-Parameter an die API übergeben.
+    // Anthropic erfordert, dass die erste Nachricht die Rolle `user` hat – rein lokale
+    // Begrüssungsnachrichten (role: assistant) am Anfang werden daher herausgefiltert.
+    const apiMessages = helpChatHistory.slice(-HELP_CHAT_HISTORY_LIMIT);
+    const firstUserIdx = apiMessages.findIndex(function(m) { return m.role === 'user'; });
+    const messages = (firstUserIdx > 0 ? apiMessages.slice(firstUserIdx) : apiMessages)
+      .map(function(m) { return { role: m.role === 'assistant' ? 'assistant' : 'user', content: [{ type: 'text', text: m.text }] }; });
+
+    let response;
+    try {
+      response = await fetch('/api/claude', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: HELP_CHAT_MAX_TOKENS, system: HELP_CHAT_SYSTEM_PROMPT, messages: messages, feature: 'help_chat' }),
+      });
+    } catch (networkErr) {
+      helpChatHistory.push({ role: 'assistant', text: '⚠️ Der Hilfe-Server ist aktuell nicht erreichbar. Bitte prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.' });
+      renderHelpChat();
+      return;
+    }
+
+    const newTrialToken = response.headers.get('x-trial-token');
+    if (newTrialToken) localStorage.setItem(LS.TRIAL_TOKEN, newTrialToken);
+
+    if (response.status === 402 || response.status === 429) {
+      document.getElementById('upsell-modal').classList.remove('hidden');
+      helpChatHistory.push({ role: 'assistant', text: 'Für weitere KI-Anfragen benötigen Sie einen aktiven Plan. Bitte öffnen Sie «Plan wählen».' });
+      renderHelpChat();
+      return;
+    }
+    if (!response.ok) {
+      const retryable = response.status === 502 || response.status === 503 || response.status === 504;
+      const statusMap = {
+        400: 'Ungültige Anfrage.',
+        401: 'Nicht autorisiert.',
+        403: 'Zugriff verweigert.',
+        500: 'Serverfehler bei der KI-Anfrage.',
+        502: 'KI-Dienst aktuell nicht erreichbar.',
+        503: 'KI-Dienst vorübergehend nicht verfügbar.',
+        504: 'Zeitüberschreitung beim KI-Dienst.',
+      };
+      const base = statusMap[response.status] || ('KI-Dienst-Fehler (' + response.status + ').');
+      throw new Error(base + (retryable ? ' Bitte versuchen Sie es in einem Moment erneut.' : ''));
+    }
+    if (isTrialUser) {
+      const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
+      localStorage.setItem(LS.FREE_USED, String(used + 1));
+      updateFreeTrialBadge();
+    }
+
+    const data = await response.json();
+    const blocks = (data && Array.isArray(data.content)) ? data.content : [];
+    const answer = blocks
+      .filter(function(b) { return b && b.type === 'text' && typeof b.text === 'string'; })
+      .map(function(b) { return b.text.trim(); })
+      .join('\n\n')
+      .trim();
+
+    helpChatHistory.push({ role: 'assistant', text: answer || 'Die KI-Antwort war leer. Bitte formulieren Sie Ihre Frage anders oder kontaktieren Sie den Support.' });
+    renderHelpChat();
+  } catch (e) {
+    helpChatHistory.push({ role: 'assistant', text: '⚠️ ' + e.message });
+    renderHelpChat();
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Senden';
+  }
+}
+
+async function noteManuelleingabe(eintragsId) {
+  document.getElementById('manual-note-eintrag-id').value = eintragsId;
+  document.getElementById('manual-note-value').value = '';
+  document.getElementById('manual-note-punkte').value = '';
+  document.getElementById('manual-note-kommentar').value = '';
+  await renderTextbausteineChips();
+  document.getElementById('manual-note-modal').classList.remove('hidden');
+}
+
+async function saveManualNote() {
+  const eintragsId = document.getElementById('manual-note-eintrag-id').value;
+  const noteStr = document.getElementById('manual-note-value').value.replace(',', '.');
+  const note = parseFloat(noteStr);
+  if (isNaN(note) || note < 1.0 || note > 6.0) { showToast('Ungültige Note (1.0–6.0).', 'error'); return; }
+  const punkte = parseFloat(document.getElementById('manual-note-punkte').value) || null;
+  const kommentar = document.getElementById('manual-note-kommentar').value.trim() || null;
+  try {
+    await sb.update('eintraege', eintragsId, { note_manuell: note, punkte: punkte, kommentar: kommentar, status: 'abgeschlossen' });
+    closeModal('manual-note-modal');
+    showToast('Note gespeichert.', 'success');
+    loadKorrekturEintraege();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// =============================================================
+// NOTEN
+// =============================================================
+async function loadNotenTabelle() {
+  const pruefungId = document.getElementById('noten-pruefung-select').value;
+  const klasseId   = document.getElementById('noten-klasse-select').value;
+  const wrap = document.getElementById('noten-tabelle-wrap');
+  if (!pruefungId || !klasseId) { wrap.innerHTML = '<div class="alert alert-info">Bitte Prüfung und Klasse wählen.</div>'; return; }
+  try {
+    const [schueler, eintraege, pruefungenRows, klassenRows] = await Promise.all([
+      sb.select('schueler', 'klasse_id=eq.' + klasseId),
+      sb.select('eintraege', 'pruefung_id=eq.' + pruefungId),
+      sb.select('pruefungen', 'id=eq.' + pruefungId),
+      sb.select('klassen', 'id=eq.' + klasseId)
+    ]);
+    const eMap = {};
+    eintraege.forEach(function(e) { eMap[e.schueler_id] = e; });
+    const p = pruefungenRows[0]; const k = klassenRows[0];
+    const noten = schueler.map(function(s) {
+      const e = eMap[s.id]; const n = e ? (e.note_manuell || e.note) : null;
+      return { name: s.name, nummer: s.nummer, note: n, punkte: e && e.punkte, status: e && e.status };
+    }).sort(function(a,b) { return a.name.localeCompare(b.name); });
+    const mitNote = noten.filter(function(n) { return n.note !== null; });
+    const bestanden = mitNote.filter(function(n) { return n.note >= 4.0; }).length;
+    const avg = mitNote.length ? (mitNote.reduce(function(s, n) { return s + n.note; }, 0) / mitNote.length).toFixed(2) : '–';
+    wrap.innerHTML = '<div class="card" style="margin-bottom:1rem"><div style="display:flex;gap:1.5rem;flex-wrap:wrap">' +
+      '<div><strong>Prüfung:</strong> ' + escHtml(p && p.name || '') + '</div>' +
+      '<div><strong>Datum:</strong> ' + (p && p.datum ? formatDate(p.datum) : '–') + '</div>' +
+      '<div><strong>Max. Punkte:</strong> ' + (p && p.max_punkte || '–') + '</div>' +
+      '<div><strong>&#216; Note:</strong> <span style="font-weight:700">' + avg + '</span></div>' +
+      '<div><strong>Bestanden:</strong> ' + bestanden + ' / ' + noten.length + '</div></div></div>' +
+      '<div class="card"><div class="table-wrap"><table><thead><tr><th>#</th><th>Name</th><th>Nummer</th><th>Punkte</th><th>Note</th><th>Status</th></tr></thead><tbody>' +
+      noten.map(function(n, i) {
+        return '<tr><td>' + (i+1) + '</td><td><strong>' + escHtml(n.name) + '</strong></td><td>' + escHtml(n.nummer || '–') + '</td><td>' + (n.punkte != null ? n.punkte : '–') + '</td><td>' + (n.note !== null ? noteHtml(n.note) : '–') + '</td><td><span class="badge ' + statusBadge(n.status || 'offen') + '">' + escHtml(n.status || 'offen') + '</span></td></tr>';
+      }).join('') +
+      '</tbody></table></div></div>';
+    renderHistogram(mitNote.map(function(n) { return n.note; }));
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+function renderHistogram(noten) {
+  const wrap = document.getElementById('noten-histogram-wrap');
+  if (!noten.length) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  const buckets = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0];
+  const counts = buckets.map(function(b) { return noten.filter(function(n) { return Math.round(n * 2) / 2 === b; }).length; });
+  const maxCnt = Math.max.apply(null, counts.concat([1]));
+  document.getElementById('noten-histogram').innerHTML =
+    '<div class="histogram">' + buckets.map(function(b, i) {
+      return '<div class="histogram-bar" style="height:' + Math.round((counts[i]/maxCnt)*100) + '%;background:' + (b >= 4.0 ? 'var(--success-light)' : 'var(--danger-light)') + '" title="' + b + ': ' + counts[i] + 'x"></div>';
+    }).join('') + '</div>' +
+    '<div style="display:flex;gap:4px;font-size:.7rem;color:var(--text-muted);margin-top:4px">' + buckets.map(function(b) { return '<div style="flex:1;text-align:center">' + b + '</div>'; }).join('') + '</div>';
+}
+
+// =============================================================
+// PDF / CSV
+// =============================================================
+async function exportNotenPDF() {
+  const pruefungId = document.getElementById('noten-pruefung-select').value;
+  const klasseId   = document.getElementById('noten-klasse-select').value;
+  if (!pruefungId || !klasseId) { showToast('Prüfung und Klasse wählen.', 'error'); return; }
+  if (!window.jspdf) { showToast('jsPDF nicht geladen.', 'error'); return; }
+  try {
+    const jsPDF = window.jspdf.jsPDF;
+    const doc = new jsPDF();
+    const [schueler, eintraege, pRows, kRows] = await Promise.all([
+      sb.select('schueler', 'klasse_id=eq.' + klasseId),
+      sb.select('eintraege', 'pruefung_id=eq.' + pruefungId),
+      sb.select('pruefungen', 'id=eq.' + pruefungId),
+      sb.select('klassen', 'id=eq.' + klasseId)
+    ]);
+    const eMap = {};
+    eintraege.forEach(function(e) { eMap[e.schueler_id] = e; });
+    const p = pRows[0]; const k = kRows[0];
+    doc.setFontSize(16); doc.text('Pruefai – Notenliste', 14, 20);
+    doc.setFontSize(11);
+    doc.text('Prüfung: ' + (p && p.name || ''), 14, 30);
+    doc.text('Klasse: ' + (k && k.name || '') + '  |  Datum: ' + (p && p.datum ? formatDate(p.datum) : '–'), 14, 37);
+    doc.text('Erstellt: ' + formatDate(new Date().toISOString().split('T')[0]) + '  |  ' + cfg.schoolName, 14, 44);
+    const rows = schueler.sort(function(a,b) { return a.name.localeCompare(b.name); }).map(function(s, i) {
+      const e = eMap[s.id]; const note = e ? (e.note_manuell || e.note) : null;
+      return [i+1, s.name, s.nummer || '', e && e.punkte || '', note !== null ? parseFloat(note).toFixed(1) : '', note !== null ? (note >= 4.0 ? 'Bestanden' : 'Nicht best.') : ''];
+    });
+    doc.autoTable({ startY: 52, head: [['#', 'Name', 'Nummer', 'Punkte', 'Note', 'Status']], body: rows, styles: { fontSize: 10 }, headStyles: { fillColor: [26, 86, 219] } });
+    doc.save('Noten_' + (p && p.name || 'Pruefung') + '_' + (k && k.name || '') + '.pdf');
+    showToast('PDF erstellt.', 'success');
+  } catch(e) { showToast('PDF-Fehler: ' + e.message, 'error'); }
+}
+
+async function exportNotenCSV() {
+  const pruefungId = document.getElementById('noten-pruefung-select').value;
+  const klasseId   = document.getElementById('noten-klasse-select').value;
+  if (!pruefungId || !klasseId) { showToast('Prüfung und Klasse wählen.', 'error'); return; }
+  try {
+    const [schueler, eintraege, pRows, kRows] = await Promise.all([
+      sb.select('schueler', 'klasse_id=eq.' + klasseId),
+      sb.select('eintraege', 'pruefung_id=eq.' + pruefungId),
+      sb.select('pruefungen', 'id=eq.' + pruefungId),
+      sb.select('klassen', 'id=eq.' + klasseId)
+    ]);
+    const eMap = {};
+    eintraege.forEach(function(e) { eMap[e.schueler_id] = e; });
+    const p = pRows[0]; const k = kRows[0];
+    const lines = ['Pruefung;' + (p && p.name || '') + ';Klasse;' + (k && k.name || '') + ';Datum;' + (p && p.datum || ''), '',
+      'Nr;Name;Nummer;Punkte;Note;Status',
+    ].concat(schueler.sort(function(a,b) { return a.name.localeCompare(b.name); }).map(function(s, i) {
+        const e = eMap[s.id]; const note = e ? (e.note_manuell || e.note) : '';
+        return (i+1) + ';' + s.name + ';' + (s.nummer || '') + ';' + (e && e.punkte || '') + ';' + (note !== '' && note !== null ? parseFloat(note).toFixed(1) : '') + ';' + (note !== '' && note !== null ? (note >= 4.0 ? 'Bestanden' : 'Nicht bestanden') : '');
+    }));
+    const blob = new Blob(['\uFEFF' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'Noten_' + (p && p.name || '') + '_' + (k && k.name || '') + '.csv'; a.click();
+    URL.revokeObjectURL(url); showToast('CSV erstellt.', 'success');
+  } catch(e) { showToast('CSV-Fehler: ' + e.message, 'error'); }
+}
+
+// =============================================================
+// EINSTELLUNGEN
+// =============================================================
+async function openSettingsModal() {
+  document.getElementById('settings-school-name').value = cfg.schoolName;
+  document.getElementById('settings-school-type').value = cfg.schoolType || '';
+  try {
+    const rows = await sb.select('lehrer', 'id=eq.' + lehrer_id);
+    document.getElementById('settings-lehrer-name').value = (rows[0] && rows[0].name) || '';
+  } catch(e) { /* ignore */ }
+  const lk = localStorage.getItem('lernortai_license_key') || '';
+  document.getElementById('settings-license-key').value = lk;
+  document.getElementById('settings-schul-code').value = localStorage.getItem('lernortai_schul_code') || '';
+  const sc = localStorage.getItem('lernortai_schul_code') || '';
+  if (lk) { checkLicenseInfo(lk); }
+  else if (sc) { checkLicenseInfo(null, sc); }
+  else {
+    const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
+    const left = Math.max(0, FREE_TRIAL_LIMIT - used);
+    const el = document.getElementById('license-info');
+    if (left > 0) {
+      el.innerHTML = '🎓 Testphase – noch <strong>' + left + '</strong> von ' + FREE_TRIAL_LIMIT + ' Gratis-Korrekturen verfügbar. <a href="/">Plan wählen &#8594;</a>';
+    } else {
+      el.innerHTML = '&#9888;&#65039; Gratis-Kontingent aufgebraucht. <a href="/">Plan wählen &#8594;</a>';
+    }
+  }
+  await loadTextbausteineSettings();
+  document.getElementById('settings-modal').classList.remove('hidden');
+}
+
+async function saveSettings() {
+  cfg.schoolName = document.getElementById('settings-school-name').value.trim() || 'Pruefai';
+  cfg.schoolType = document.getElementById('settings-school-type').value;
+  localStorage.setItem(LS.CONFIG, JSON.stringify(cfg));
+  applyConfig();
+  const name = document.getElementById('settings-lehrer-name').value.trim();
+  try {
+    const existing = await sb.select('lehrer', 'id=eq.' + lehrer_id);
+    if (existing.length) {
+      await sb.update('lehrer', lehrer_id, { name: name || null });
+    } else {
+      await sb.insert('lehrer', { id: lehrer_id, name: name || null });
+    }
+  } catch(e) { /* ignore */ }
+  const lk = document.getElementById('settings-license-key').value.trim();
+  const sc = document.getElementById('settings-schul-code').value.trim().toUpperCase();
+  const hadLicenseBefore = !!localStorage.getItem('lernortai_license_key') || !!localStorage.getItem('lernortai_schul_code');
+  if (lk) localStorage.setItem('lernortai_license_key', lk);
+  else localStorage.removeItem('lernortai_license_key');
+  if (sc) localStorage.setItem('lernortai_schul_code', sc);
+  else localStorage.removeItem('lernortai_schul_code');
+  const hasLicenseNow = !!lk || !!sc;
+  updateFreeTrialBadge();
+  loadUsageBar();
+  // Show onboarding wizard on first license activation
+  if (hasLicenseNow && !hadLicenseBefore && !localStorage.getItem(LS.ONBOARDED)) {
+    localStorage.setItem(LS.ONBOARDED, '1');
+    closeModal('settings-modal'); showToast('Einstellungen gespeichert.', 'success'); loadDashboard();
+    setTimeout(function() { document.getElementById('onboarding-modal').classList.remove('hidden'); }, 300);
+    return;
+  }
+  closeModal('settings-modal'); showToast('Einstellungen gespeichert.', 'success'); loadDashboard();
+}
+
+// =============================================================
+// LICENSE & STRIPE
+// =============================================================
+function updateFreeTrialBadge() {
+  const lk = localStorage.getItem('lernortai_license_key') || '';
+  const sc = localStorage.getItem('lernortai_schul_code') || '';
+  const badge = document.getElementById('free-trial-badge');
+  const remaining = document.getElementById('free-trial-remaining');
+  if (!badge) return;
+  if (lk || sc) { badge.style.display = 'none'; return; }
+  const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
+  const left = Math.max(0, FREE_TRIAL_LIMIT - used);
+  if (left > 0) {
+    remaining.textContent = left + '\u00d7';
+    badge.style.display = '';
+  } else {
+    remaining.textContent = '0\u00d7';
+    badge.style.display = '';
+    badge.style.background = 'var(--danger-light)';
+    badge.style.color = 'var(--danger)';
+    badge.style.borderColor = '#fca5a5';
+    badge.title = 'Gratis-Kontingent aufgebraucht – Plan wählen';
+  }
+}
+async function checkLicenseInfo(key, schulCode) {
+  try {
+    const body = schulCode ? { schul_code: schulCode, action: 'check' } : { license_key: key, action: 'check' };
+    const r = await fetch('/api/validate-license', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json();
+    const el = document.getElementById('license-info');
+    if (!el) return;
+    if (d.valid) {
+      localStorage.setItem('lernortai_plan', d.plan || '');
+      el.innerHTML = '&#10003;&#65039; Aktiv – Plan: <strong>' + d.plan + '</strong> | Korrekturen: ' + d.corrections_this_month + ' / ' + (d.limit >= 99999 ? '&#8734;' : d.limit);
+    } else {
+      localStorage.removeItem('lernortai_plan');
+      el.innerHTML = '&#10060; Ungültig oder abgelaufen. <a href="/">Plan wählen &#8594;</a>';
+    }
+  } catch(e) { /* ignore */ }
+}
+
+async function openStripePortal() {
+  const lk = localStorage.getItem('lernortai_license_key') || '';
+  if (!lk) {
+    if (localStorage.getItem('lernortai_schul_code')) {
+      showToast('Abo-Verwaltung ist nur für den Account-Inhaber verfügbar. Bitte beim Administrator nachfragen.', 'info');
+      return;
+    }
+    window.open('/', '_blank');
+    return;
+  }
+  try {
+    const r = await fetch('/api/stripe-portal', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ license_key: lk }) });
+    const d = await r.json();
+    if (d.url) window.location.href = d.url;
+  } catch(e) { showToast('Portal konnte nicht geöffnet werden.', 'error'); }
+}
+
+// =============================================================
+// EMAIL CAPTURE
+// =============================================================
+function maybeShowEmailCapture() {
+  if (localStorage.getItem(LS.LEAD)) return;
+  if (localStorage.getItem('lernortai_license_key')) return;
+  if (localStorage.getItem('lernortai_schul_code')) return;
+  setTimeout(function() {
+    document.getElementById('email-capture-modal').classList.remove('hidden');
+  }, 1500);
+}
+
+async function submitEmailCapture() {
+  const email = document.getElementById('capture-email').value.trim();
+  const name = document.getElementById('capture-name').value.trim();
+  const errEl = document.getElementById('capture-error');
+  if (!email || !email.includes('@')) {
+    errEl.textContent = 'Bitte eine gültige E-Mail-Adresse eingeben.';
+    errEl.style.display = '';
+    return;
+  }
+  errEl.style.display = 'none';
+  localStorage.setItem(LS.LEAD, '1');
+  document.getElementById('email-capture-modal').classList.add('hidden');
+  try {
+    await fetch('/api/capture-lead', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ name, email }),
+    });
+  } catch(e) { /* ignore – lead email is best-effort */ }
+  showToast('Willkommen! Ihre 3 Korrekturen sind freigeschaltet.', 'success');
+}
+
+function skipEmailCapture() {
+  localStorage.setItem(LS.LEAD, 'skipped');
+  document.getElementById('email-capture-modal').classList.add('hidden');
+}
+
+// =============================================================
+// USAGE BAR
+// =============================================================
+async function loadUsageBar() {
+  const wrap = document.getElementById('usage-bar-wrap');
+  if (!wrap) return;
+  const lk = localStorage.getItem('lernortai_license_key') || '';
+  const sc = localStorage.getItem('lernortai_schul_code') || '';
+  if (!lk && !sc) { wrap.style.display = 'none'; return; }
+  try {
+    const body = sc ? { schul_code: sc, action: 'check' } : { license_key: lk, action: 'check' };
+    const r = await fetch('/api/validate-license', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!d.valid) { wrap.style.display = 'none'; return; }
+    const used = d.corrections_this_month || 0;
+    const limit = d.limit >= 99999 ? null : d.limit;
+    const label = document.getElementById('usage-bar-label');
+    const fill = document.getElementById('usage-bar-fill');
+    if (limit) {
+      const pct = Math.min(100, Math.round((used / limit) * 100));
+      label.textContent = used + '/' + limit;
+      fill.style.width = pct + '%';
+      if (pct >= 80) fill.classList.add('usage-bar-warn');
+    } else {
+      label.textContent = used + ' korr.';
+      fill.style.width = '0%';
+    }
+    wrap.style.display = 'flex';
+  } catch(e) { wrap.style.display = 'none'; }
+}
+
+// =============================================================
+// HELPER
+// =============================================================
+async function loadKlassenIntoSelect(selectId) {
+  try {
+    const rows = await sb.select('klassen');
+    const el = document.getElementById(selectId); if (!el) return;
+    const cur = el.value;
+    el.innerHTML = '<option value="">– wählen –</option>' + rows.map(function(k) {
+      return '<option value="' + k.id + '">' + escHtml(k.name) + ' (' + escHtml(k.schuljahr) + ')</option>';
+    }).join('');
+    if (cur) el.value = cur;
+  } catch(e) { /* ignore */ }
+}
+
+async function loadFaecherIntoSelect(selectId) {
+  try {
+    const rows = await sb.select('faecher');
+    const el = document.getElementById(selectId); if (!el) return;
+    const cur = el.value;
+    el.innerHTML = '<option value="">– optional –</option>' + rows.map(function(f) {
+      return '<option value="' + f.id + '">' + escHtml(f.name) + ' (' + escHtml(f.kuerzel) + ')</option>';
+    }).join('');
+    if (cur) el.value = cur;
+  } catch(e) { /* ignore */ }
+}
+
+async function loadPruefungenIntoSelect(selectId, withAllOption) {
+  try {
+    const rows = await sb.select('pruefungen');
+    const el = document.getElementById(selectId); if (!el) return;
+    const cur = el.value;
+    const firstOpt = withAllOption ? '<option value="">Alle Materialien</option>' : '<option value="">– bitte wählen –</option>';
+    el.innerHTML = firstOpt + rows.map(function(p) {
+      return '<option value="' + p.id + '">' + escHtml(p.name) + (p.datum ? ' (' + formatDate(p.datum) + ')' : '') + '</option>';
+    }).join('');
+    if (cur) el.value = cur;
+  } catch(e) { /* ignore */ }
+}
+
+async function loadKlassenCheckboxes(pruefungId) {
+  try {
+    const klassen = await sb.select('klassen');
+    let selected = new Set();
+    if (pruefungId) { const pks = await sb.select('pruefung_klassen', 'pruefung_id=eq.' + pruefungId); selected = new Set(pks.map(function(pk) { return pk.klasse_id; })); }
+    document.getElementById('pruefung-klassen-checkboxes').innerHTML = klassen.length ?
+      klassen.map(function(k) { return '<label style="display:flex;align-items:center;gap:.4rem;font-size:.875rem;cursor:pointer"><input type="checkbox" value="' + k.id + '" ' + (selected.has(k.id) ? 'checked' : '') + ' /> ' + escHtml(k.name) + '</label>'; }).join('') :
+      '<span style="color:var(--text-muted);font-size:.8rem">Keine Klassen vorhanden.</span>';
+  } catch(e) { /* ignore */ }
+}
+
+function currentSchoolyear() { const n = new Date(); const y = n.getFullYear(); return n.getMonth() >= 7 ? y + '/' + (y+1) : (y-1) + '/' + y; }
+function formatDate(iso) { if (!iso) return '–'; const parts = iso.split('-'); return parts[2] + '.' + parts[1] + '.' + parts[0]; }
+function formatBytes(b) { if (!b) return ''; if (b < 1024) return b + ' B'; if (b < 1048576) return Math.round(b/1024) + ' KB'; return (b/1048576).toFixed(1) + ' MB'; }
+function escHtml(str) { if (str === null || str === undefined) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+function noteHtml(note) { if (note === null || note === undefined) return '–'; const n = parseFloat(note); return '<span class="' + noteClass(n) + '">' + n.toFixed(1) + '</span>'; }
+function noteClass(n) { if (n >= 5.5) return 'note-6'; if (n >= 4.5) return 'note-5'; if (n >= 4.0) return 'note-4'; return 'note-bad'; }
+function statusBadge(s) { if (s === 'abgeschlossen') return 'badge-green'; if (s === 'korrigiert') return 'badge-blue'; if (s === 'hochgeladen') return 'badge-yellow'; return 'badge-gray'; }
+function blobToDataUrl(blob) { return new Promise(function(res, rej) { const r = new FileReader(); r.onload = function(e) { res(e.target.result); }; r.onerror = rej; r.readAsDataURL(blob); }); }
+
+function showToast(msg, type) {
+  type = type || 'info';
+  const c = document.getElementById('toast-container');
+  const el = document.createElement('div');
+  const icons = { success: '&#10003;', error: '&#10007;', info: 'i' };
+  el.className = 'toast toast-' + type;
+  el.innerHTML = icons[type] + ' ' + escHtml(msg);
+  c.appendChild(el);
+  setTimeout(function() { el.remove(); }, 4500);
+}
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    if (!document.getElementById('qr-modal').classList.contains('hidden')) stopRelayPolling();
+    document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(function(m) { m.classList.add('hidden'); });
+  }
+});
+
+// =============================================================
+// RUBRICS (Bewertungsraster) – Pro Feature
+// =============================================================
+async function loadRubrics() {
+  try {
+    const [rows, faecher] = await Promise.all([sb.select('rubrics'), sb.select('faecher')]);
+    const fm = {};
+    faecher.forEach(function(f) { fm[f.id] = f.name; });
+    const el = document.getElementById('rubrics-list');
+    if (!rows.length) { el.innerHTML = '<p style="color:var(--text-muted);font-size:.875rem">Noch keine Bewertungsraster erstellt.</p>'; return; }
+    el.innerHTML = rows.map(function(r) {
+      const kriterien = (r.kriterien || []);
+      const totalPts = kriterien.reduce(function(s, k) { return s + (k.max_punkte || 0); }, 0);
+      return '<div class="card" style="margin-bottom:.75rem">' +
+        '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem">' +
+        '<div><div class="card__title" style="margin-bottom:.25rem">&#128203; ' + escHtml(r.name) + '</div>' +
+        '<div style="font-size:.8rem;color:var(--text-muted)">' + (r.fach_id && fm[r.fach_id] ? escHtml(fm[r.fach_id]) + ' · ' : '') + kriterien.length + ' Kriterien · ' + totalPts + ' Punkte total</div></div>' +
+        '<div style="display:flex;gap:.5rem">' +
+        '<button class="btn btn-sm btn-secondary" onclick="editRubric(\'' + r.id + '\')">&#9998;</button> ' +
+        '<button class="btn btn-sm btn-danger" onclick="deleteRubric(\'' + r.id + '\')">&#128465;</button></div></div>' +
+        (kriterien.length ? '<div>' + kriterien.map(function(k) {
+          return '<div class="rubric-kriterium"><span class="rubric-kriterium__name">' + escHtml(k.name) + (k.beschreibung ? '<span style="font-size:.75rem;color:var(--text-muted);display:block">' + escHtml(k.beschreibung) + '</span>' : '') + '</span><span class="rubric-kriterium__pts">' + k.max_punkte + ' Pkt</span></div>';
+        }).join('') + '</div>' : '') + '</div>';
+    }).join('');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function openRubricModal() {
+  document.getElementById('rubric-id').value = '';
+  document.getElementById('rubric-name').value = '';
+  await loadFaecherIntoSelect('rubric-fach-id');
+  document.getElementById('rubric-kriterien-list').innerHTML = '';
+  document.getElementById('rubric-modal-title').textContent = 'Neues Bewertungsraster';
+  document.getElementById('rubric-modal').classList.remove('hidden');
+}
+
+async function editRubric(id) {
+  const rows = await sb.select('rubrics', 'id=eq.' + id);
+  const r = rows[0]; if (!r) return;
+  await loadFaecherIntoSelect('rubric-fach-id');
+  document.getElementById('rubric-id').value = r.id;
+  document.getElementById('rubric-name').value = r.name;
+  document.getElementById('rubric-fach-id').value = r.fach_id || '';
+  const list = document.getElementById('rubric-kriterien-list');
+  list.innerHTML = '';
+  (r.kriterien || []).forEach(function(k) { appendRubricKriteriumRow(k.name, k.max_punkte, k.beschreibung); });
+  document.getElementById('rubric-modal-title').textContent = 'Bewertungsraster bearbeiten';
+  document.getElementById('rubric-modal').classList.remove('hidden');
+}
+
+function addRubricKriterium() { appendRubricKriteriumRow('', 10, ''); }
+
+function appendRubricKriteriumRow(name, pts, beschreibung) {
+  const row = document.createElement('div');
+  row.className = 'rubric-kriterium';
+  row.innerHTML = '<input type="text" class="form-control rk-name" placeholder="Kriteriumname *" value="' + escHtml(name) + '" style="flex:2" />' +
+    '<input type="number" class="form-control rk-pts" placeholder="Pkt" value="' + (pts || '') + '" min="0" style="width:70px;flex:none" />' +
+    '<input type="text" class="form-control rk-desc" placeholder="Beschreibung (opt.)" value="' + escHtml(beschreibung || '') + '" style="flex:3" />' +
+    '<button class="btn btn-sm btn-danger" onclick="this.closest(\'.rubric-kriterium\').remove()">&#10005;</button>';
+  document.getElementById('rubric-kriterien-list').appendChild(row);
+}
+
+async function saveRubric() {
+  const id = document.getElementById('rubric-id').value;
+  const name = document.getElementById('rubric-name').value.trim();
+  const fachId = document.getElementById('rubric-fach-id').value || null;
+  if (!name) { showToast('Rastername ist Pflicht.', 'error'); return; }
+  const rows = document.querySelectorAll('#rubric-kriterien-list .rubric-kriterium');
+  const kriterien = [];
+  let valid = true;
+  rows.forEach(function(row) {
+    const n = row.querySelector('.rk-name').value.trim();
+    const p = parseFloat(row.querySelector('.rk-pts').value) || 0;
+    const d = row.querySelector('.rk-desc').value.trim();
+    if (!n) { valid = false; return; }
+    kriterien.push({ name: n, max_punkte: p, beschreibung: d || null });
+  });
+  if (!valid) { showToast('Alle Kriterien benötigen einen Namen.', 'error'); return; }
+  try {
+    const payload = { name, fach_id: fachId, kriterien };
+    if (id) { await sb.update('rubrics', id, payload); }
+    else { await sb.insert('rubrics', payload); }
+    closeModal('rubric-modal'); showToast('Bewertungsraster gespeichert.', 'success'); loadRubrics();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteRubric(id) {
+  if (!confirm('Bewertungsraster wirklich löschen?')) return;
+  try { await sb.delete('rubrics', id); showToast('Raster gelöscht.', 'success'); loadRubrics(); }
+  catch(e) { showToast(e.message, 'error'); }
+}
+
+async function loadRubricsIntoSelect(selectId) {
+  try {
+    const rows = await sb.select('rubrics');
+    const el = document.getElementById(selectId); if (!el) return;
+    const cur = el.value;
+    el.innerHTML = '<option value="">– kein Raster –</option>' + rows.map(function(r) {
+      return '<option value="' + r.id + '">' + escHtml(r.name) + '</option>';
+    }).join('');
+    if (cur) el.value = cur;
+  } catch(e) { /* ignore */ }
+}
+
+// =============================================================
+// QUALITÄTSMODUS – Pro Feature
+// =============================================================
+async function runQualitaetsCheck() {
+  if (!requirePro('Qualitätscheck')) return;
+  if (!kiPendingData) return;
+  const btn = document.querySelector('#ki-qualitaets-wrap button');
+  if (btn) { btn.disabled = true; btn.textContent = '&#8987; Prüfe…'; }
+  try {
+    const { eintragsId, result } = kiPendingData;
+    const eintraege = await sb.select('eintraege', 'id=eq.' + eintragsId);
+    const eintrag = eintraege[0];
+    const seiten = await sb.select('seiten_uploads', 'eintrag_id=eq.' + eintragsId + '&order=seitennummer.asc');
+    const imageBlocks = (await Promise.all(seiten.map(async function(s) {
+      const storagePath = s.storage_pfad.replace(/^pruefungsfotos\//, '');
+      const fetchUrl = await sbStorageUrl('pruefungsfotos', storagePath);
+      if (!fetchUrl) return null;
+      const res = await fetch(fetchUrl);
+      const blob = await res.blob();
+      const dataUrl = await blobToDataUrl(blob);
+      return { type: 'image', source: { type: 'base64', media_type: blob.type || 'image/jpeg', data: dataUrl.split(',')[1] } };
+    }))).filter(function(b) { return b !== null; });
+    const systemPrompt = 'Du bist ein zweiter unabhängiger Korrekteur. Eine erste KI hat folgendes Ergebnis erzielt: Note ' + Number(result.note) + ', Punkte ' + Number(result.punkte) + '. Kommentar: ' + JSON.stringify(result.kommentar || '') + '. Bitte überprüfe kritisch, ob diese Bewertung korrekt ist. Antworte als JSON: {"bestaetigt": true/false, "note_vorschlag": <1.0-6.0>, "begruendung": "<string>", "abweichung": "<string oder null>"}';
+    const licenseKey = localStorage.getItem('lernortai_license_key') || '';
+    const schulCode = localStorage.getItem('lernortai_schul_code') || '';
+    const headers = { 'content-type': 'application/json' };
+    if (licenseKey) headers['x-license-key'] = licenseKey;
+    if (schulCode) headers['x-schul-code'] = schulCode;
+    const response = await fetch('/api/claude', {
+      method: 'POST', headers,
+      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 512, system: systemPrompt, messages: [{ role: 'user', content: imageBlocks.concat([{ type: 'text', text: 'Bitte überprüfe diese Prüfungskorrektur.' }]) }], feature: 'quality_check' }),
+    });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    const data = await response.json();
+    const raw = data.content && data.content[0] && data.content[0].text || '';
+    let qResult;
+    try { const m = raw.match(/\{[\s\S]*\}/); qResult = JSON.parse(m ? m[0] : raw); }
+    catch(pe) { throw new Error('Qualitätscheck-Antwort konnte nicht geparst werden.'); }
+    const wrap = document.getElementById('ki-qualitaets-result');
+    if (qResult.bestaetigt) {
+      wrap.innerHTML = '<div class="alert alert-success">&#10003; Zweiter Korrekteur bestätigt Note ' + result.note + '. ' + escHtml(qResult.begruendung || '') + '</div>';
+      kiPendingData.result.ki_qualitaet_unsicher = false;
+    } else {
+      wrap.innerHTML = '<div class="alert alert-warning">&#9888;&#65039; Abweichung erkannt! Vorschlag: <strong>' + qResult.note_vorschlag + '</strong> – ' + escHtml(qResult.begruendung || '') + (qResult.abweichung ? '<br><small>' + escHtml(qResult.abweichung) + '</small>' : '') + '</div>';
+      kiPendingData.result.ki_qualitaet_unsicher = true;
+      if (qResult.note_vorschlag) kiPendingData.result.note = qResult.note_vorschlag;
+    }
+    wrap.classList.remove('hidden');
+    showToast('Qualitätscheck abgeschlossen.', 'success');
+  } catch(e) { showToast('Qualitätscheck-Fehler: ' + e.message, 'error'); }
+  finally { if (btn) { btn.disabled = false; btn.innerHTML = '&#128270; Qualitätscheck starten <span class="pro-badge">Pro</span>'; } }
+}
+
+// =============================================================
+// CSV-IMPORT (Schüler)
+// =============================================================
+function openCsvImportModal() {
+  document.getElementById('csv-file-name').textContent = 'CSV-Datei auswählen…';
+  document.getElementById('csv-preview-wrap').classList.add('hidden');
+  document.getElementById('csv-import-btn').disabled = true;
+  csvParsedRows = [];
+  loadKlassenIntoSelect('csv-import-klasse');
+  document.getElementById('csv-import-modal').classList.remove('hidden');
+}
+
+function handleCsvFile(event) {
+  const file = event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  document.getElementById('csv-file-name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const text = e.target.result;
+    csvParsedRows = parseCsvSchueler(text);
+    renderCsvPreview(csvParsedRows);
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCsvSchueler(text) {
+  const lines = text.split(/\r?\n/).map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+  const rows = [];
+  lines.forEach(function(line, idx) {
+    // Skip first line if it looks like a header (contains letters and no numeric first column)
+    if (idx === 0 && !/^\d/.test(line) && !line.match(/^[^;]+;/)) return;
+    const parts = line.split(';');
+    const name = (parts[0] || '').trim();
+    const nummer = (parts[1] || '').trim();
+    if (!name) return;
+    rows.push({ name: name, nummer: nummer });
+  });
+  return rows;
+}
+
+function renderCsvPreview(rows) {
+  document.getElementById('csv-preview-count').textContent = rows.length;
+  const tbody = document.getElementById('csv-preview-tbody');
+  tbody.innerHTML = rows.slice(0, 20).map(function(r) {
+    return '<tr><td>' + escHtml(r.name) + '</td><td>' + escHtml(r.nummer || '–') + '</td></tr>';
+  }).join('') + (rows.length > 20 ? '<tr><td colspan="2" style="color:var(--text-muted)">… und ' + (rows.length - 20) + ' weitere</td></tr>' : '');
+  document.getElementById('csv-preview-wrap').classList.remove('hidden');
+  document.getElementById('csv-import-btn').disabled = rows.length === 0;
+}
+
+async function doImportSchueler() {
+  const klasseId = document.getElementById('csv-import-klasse').value;
+  if (!klasseId) { showToast('Bitte Zielklasse wählen.', 'error'); return; }
+  if (!csvParsedRows.length) { showToast('Keine Schüler erkannt.', 'error'); return; }
+  const btn = document.getElementById('csv-import-btn');
+  btn.disabled = true;
+  let imported = 0;
+  let skipped = 0;
+  try {
+    const existing = await sb.select('schueler', 'klasse_id=eq.' + klasseId);
+    const existingNames = new Set(existing.map(function(s) { return s.name.toLowerCase(); }));
+    for (const row of csvParsedRows) {
+      if (existingNames.has(row.name.toLowerCase())) { skipped++; continue; }
+      await sb.insert('schueler', { name: row.name, nummer: row.nummer || null, klasse_id: klasseId });
+      imported++;
+    }
+    closeModal('csv-import-modal');
+    showToast(imported + ' Schüler importiert' + (skipped ? ', ' + skipped + ' übersprungen (bereits vorhanden)' : '') + '.', 'success');
+    loadSchueler();
+    loadDashboard();
+  } catch(e) { showToast('Import-Fehler: ' + e.message, 'error'); }
+  finally { btn.disabled = false; }
+}
+
+// =============================================================
+// FEEDBACK-TEXTBAUSTEINE – Pro Feature
+// =============================================================
+async function loadTextbausteineSettings() {
+  try {
+    const rows = await sb.select('textbausteine');
+    const el = document.getElementById('textbausteine-settings-list');
+    if (!rows.length) { el.innerHTML = '<p style="color:var(--text-muted);font-size:.8rem">Noch keine Textbausteine definiert.</p>'; return; }
+    el.innerHTML = rows.map(function(t) {
+      return '<div class="textbaustein-list-item"><span class="textbaustein-list-item__text">' + escHtml(t.text) + '</span><button class="btn btn-sm btn-danger" onclick="deleteTextbaustein(\'' + t.id + '\')">&#128465;</button></div>';
+    }).join('');
+  } catch(e) { /* ignore */ }
+}
+
+async function addTextbaustein() {
+  if (!requirePro('Feedback-Textbausteine')) return;
+  const input = document.getElementById('new-textbaustein-input');
+  const text = input.value.trim();
+  if (!text) { showToast('Bitte Text eingeben.', 'error'); return; }
+  try {
+    await sb.insert('textbausteine', { text: text });
+    input.value = '';
+    await loadTextbausteineSettings();
+    showToast('Textbaustein gespeichert.', 'success');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function deleteTextbaustein(id) {
+  try {
+    await sb.delete('textbausteine', id);
+    await loadTextbausteineSettings();
+    showToast('Textbaustein gelöscht.', 'success');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+async function renderTextbausteineChips() {
+  const el = document.getElementById('textbausteine-chips');
+  if (!el) return;
+  if (!isPro()) {
+    el.innerHTML = '<span style="font-size:.75rem;color:var(--text-muted)">&#128274; Textbausteine – nur im Pro-Plan verfügbar</span>';
+    return;
+  }
+  try {
+    const rows = await sb.select('textbausteine');
+    if (!rows.length) { el.innerHTML = '<span style="font-size:.75rem;color:var(--text-muted)">Keine Textbausteine. Erstellen Sie welche unter &#9881;&#65039; Einstellungen.</span>'; return; }
+    el.innerHTML = rows.map(function(t) {
+      return '<button class="textbaustein-chip" onclick="insertTextbaustein(' + JSON.stringify(t.text) + ')">' + escHtml(t.text) + '</button>';
+    }).join('');
+  } catch(e) { el.innerHTML = ''; }
+}
+
+function insertTextbaustein(text) {
+  const ta = document.getElementById('manual-note-kommentar');
+  if (!ta) return;
+  const sep = ta.value && !ta.value.endsWith(' ') && !ta.value.endsWith('\n') ? ' ' : '';
+  ta.value = ta.value + sep + text;
+  ta.focus();
+}
+
+// =============================================================
+// ANALYTIK – Trends & Fehlerkatalog (Pro Feature)
+// =============================================================
+async function loadAnalytik() {
+  const klasseId = document.getElementById('analytik-klasse-select').value;
+  const el = document.getElementById('analytik-content');
+  if (!klasseId) { el.innerHTML = '<div class="alert alert-info">Klasse wählen, um Trends und Fehlerkatalog anzuzeigen.</div>'; return; }
+  el.innerHTML = '<p style="color:var(--text-muted)">Wird geladen…</p>';
+  try {
+    const [pruefungen, pruefungKlassen, schueler, eintraege] = await Promise.all([
+      sb.select('pruefungen'), sb.select('pruefung_klassen'), sb.select('schueler', 'klasse_id=eq.' + klasseId), sb.select('eintraege')
+    ]);
+    const sIds = new Set(schueler.map(function(s) { return s.id; }));
+    // Find exams assigned to this class
+    const assignedPruefungIds = new Set(pruefungKlassen.filter(function(pk) { return pk.klasse_id === klasseId; }).map(function(pk) { return pk.pruefung_id; }));
+    const relevantPruefungen = pruefungen.filter(function(p) { return assignedPruefungIds.has(p.id) && p.datum; }).sort(function(a, b) { return a.datum.localeCompare(b.datum); });
+    // Trend: average grade per exam
+    const trendData = relevantPruefungen.map(function(p) {
+      const relevant = eintraege.filter(function(e) { return e.pruefung_id === p.id && sIds.has(e.schueler_id); });
+      const withNote = relevant.filter(function(e) { const n = e.note_manuell || e.note; return n !== null && n !== undefined; });
+      const avg = withNote.length ? (withNote.reduce(function(s, e) { return s + parseFloat(e.note_manuell || e.note); }, 0) / withNote.length) : null;
+      return { name: p.name, datum: p.datum, avg: avg, count: withNote.length, total: relevant.length };
+    });
+    // Error catalog: aggregate AI feedback keywords
+    const allFeedbacks = [];
+    eintraege.forEach(function(e) {
+      if (!sIds.has(e.schueler_id)) return;
+      if (!e.ergebnis || !e.ergebnis.aufgaben) return;
+      e.ergebnis.aufgaben.forEach(function(a) { if (a.feedback) allFeedbacks.push(a.feedback); });
+    });
+    const errorKeywords = extractErrorKeywords(allFeedbacks);
+    el.innerHTML = renderAnalytikContent(trendData, errorKeywords, schueler, eintraege, relevantPruefungen);
+  } catch(e) { el.innerHTML = '<div class="alert alert-danger">Fehler: ' + escHtml(e.message) + '</div>'; }
+}
+
+function renderAnalytikContent(trendData, errorKeywords, schueler, eintraege, relevantPruefungen) {
+  const sIds = new Set(schueler.map(function(s) { return s.id; }));
+  let html = '';
+  // Trend chart
+  html += '<div class="card" style="margin-bottom:1rem">';
+  html += '<div class="card__title">&#128200; Notenentwicklung (' + trendData.length + ' Prüfungen)</div>';
+  if (!trendData.length) {
+    html += '<p style="color:var(--text-muted);font-size:.875rem">Noch keine Prüfungsdaten vorhanden.</p>';
+  } else {
+    const maxAvg = 6;
+    html += '<div class="trend-chart-wrap">';
+    trendData.forEach(function(d) {
+      const h = d.avg !== null ? Math.round((d.avg / maxAvg) * 100) : 0;
+      const color = d.avg !== null ? (d.avg >= 4 ? 'var(--success-light)' : 'var(--danger-light)') : 'var(--border)';
+      const label = d.avg !== null ? d.avg.toFixed(2) : '–';
+      html += '<div class="trend-col">';
+      html += '<span class="trend-val ' + (d.avg !== null ? noteClass(d.avg) : '') + '">' + label + '</span>';
+      html += '<div class="trend-bar" style="height:' + h + 'px;background:' + color + '" title="' + escHtml(d.name) + ': Ø ' + label + ' (' + d.count + '/' + d.total + ' Noten)"></div>';
+      html += '<span class="trend-lbl">' + escHtml(d.name.length > 12 ? d.name.slice(0, 11) + '…' : d.name) + '</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+  // Summary stats
+  const allNotes = [];
+  eintraege.forEach(function(e) {
+    if (!sIds.has(e.schueler_id)) return;
+    const n = e.note_manuell || e.note;
+    if (n !== null && n !== undefined) allNotes.push(parseFloat(n));
+  });
+  const bestanden = allNotes.filter(function(n) { return n >= 4; }).length;
+  const avg = allNotes.length ? (allNotes.reduce(function(s, n) { return s + n; }, 0) / allNotes.length).toFixed(2) : '–';
+  html += '<div class="stats-grid" style="margin-bottom:1rem">';
+  html += '<div class="stat-card"><div class="stat-card__num">' + schueler.length + '</div><div class="stat-card__lbl">Schüler</div></div>';
+  html += '<div class="stat-card"><div class="stat-card__num">' + avg + '</div><div class="stat-card__lbl">Ø Note (gesamt)</div></div>';
+  html += '<div class="stat-card"><div class="stat-card__num">' + bestanden + '/' + allNotes.length + '</div><div class="stat-card__lbl">Bestanden</div></div>';
+  html += '</div>';
+  // Error catalog
+  html += '<div class="card">';
+  html += '<div class="card__title">&#128270; Fehlerkatalog – häufige KI-Rückmeldungen</div>';
+  if (!errorKeywords.length) {
+    html += '<p style="color:var(--text-muted);font-size:.875rem">Noch keine KI-Korrekturen vorhanden für diese Klasse.</p>';
+  } else {
+    html += '<div class="table-wrap"><table><thead><tr><th>Thema / Fehlertyp</th><th>Häufigkeit</th></tr></thead><tbody>';
+    errorKeywords.slice(0, 15).forEach(function(kw) {
+      html += '<tr><td>' + escHtml(kw.word) + '</td><td><span class="badge ' + (kw.count >= 5 ? 'badge-red' : kw.count >= 3 ? 'badge-yellow' : 'badge-gray') + '">' + kw.count + 'x</span></td></tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+  html += '</div>';
+  // Jahresübersicht pro Schüler
+  if (relevantPruefungen && relevantPruefungen.length) {
+    html += renderJahresuebersicht(schueler, eintraege, relevantPruefungen);
+  }
+  return html;
+}
+
+function roundToHalf(n) { return Math.round(n * 2) / 2; }
+
+// Returns 1 for HJ1 (Aug–Jan) or 2 for HJ2 (Feb–Jul) based on exam date (YYYY-MM-DD)
+function getHalbjahr(datum) {
+  if (!datum) return null;
+  const month = parseInt(datum.slice(5, 7), 10);
+  return (month >= 8 && month <= 12) || month === 1 ? 1 : 2;
+}
+
+function renderJahresuebersicht(schueler, eintraege, relevantPruefungen) {
+  const pruefungMap = {};
+  relevantPruefungen.forEach(function(p) { pruefungMap[p.id] = p; });
+
+  // Categorise exams into HJ1 / HJ2
+  const hj1Exams = relevantPruefungen.filter(function(p) { return getHalbjahr(p.datum) === 1; });
+  const hj2Exams = relevantPruefungen.filter(function(p) { return getHalbjahr(p.datum) === 2; });
+  const hasHj1 = hj1Exams.length > 0;
+  const hasHj2 = hj2Exams.length > 0;
+
+  let html = '<div class="card" style="margin-top:1rem">';
+  html += '<div class="card__title">&#128203; Jahresübersicht pro Schüler/in <span class="pro-badge">Pro</span></div>';
+  html += '<p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.75rem">Noten über das gesamte Schuljahr, Halbjahresdurchschnitt und vorgeschlagene Zeugnisnote (gerundet auf 0.5)</p>';
+  html += '<div class="table-wrap"><table><thead><tr>';
+  html += '<th>Name</th>';
+  if (hasHj1) { html += '<th>HJ 1 – Noten</th><th>Ø HJ 1</th><th>Zeugnisnote HJ 1</th>'; }
+  if (hasHj2) { html += '<th>HJ 2 – Noten</th><th>Ø HJ 2</th><th>Zeugnisnote HJ 2</th>'; }
+  html += '<th>Jahresschnitt</th>';
+  html += '</tr></thead><tbody>';
+
+  const sortedSchueler = schueler.slice().sort(function(a, b) { return a.name.localeCompare(b.name); });
+
+  sortedSchueler.forEach(function(s) {
+    const sEintraege = eintraege.filter(function(e) { return e.schueler_id === s.id; });
+
+    function getNote(pruefungId) {
+      const e = sEintraege.find(function(e) { return e.pruefung_id === pruefungId; });
+      if (!e) return null;
+      const n = e.note_manuell || e.note;
+      return (n !== null && n !== undefined) ? parseFloat(n) : null;
+    }
+
+    function calcHj(exams) {
+      const notes = exams.map(function(p) { return getNote(p.id); }).filter(function(n) { return n !== null; });
+      const avg = notes.length ? notes.reduce(function(s, n) { return s + n; }, 0) / notes.length : null;
+      const zn = avg !== null ? roundToHalf(avg) : null;
+      return { notes: notes, avg: avg, zn: zn };
+    }
+
+    const hj1 = hasHj1 ? calcHj(hj1Exams) : null;
+    const hj2 = hasHj2 ? calcHj(hj2Exams) : null;
+    const allNotes = relevantPruefungen.map(function(p) { return getNote(p.id); }).filter(function(n) { return n !== null; });
+    const jahresAvg = allNotes.length ? allNotes.reduce(function(s, n) { return s + n; }, 0) / allNotes.length : null;
+
+    html += '<tr>';
+    html += '<td><strong>' + escHtml(s.name) + '</strong></td>';
+    if (hasHj1) {
+      if (hj1.notes.length) {
+        const noteSpans = hj1.notes.map(function(n) { return '<span class="badge ' + noteClass(n) + '" style="margin:1px">' + n.toFixed(1) + '</span>'; }).join('');
+        html += '<td>' + noteSpans + '</td>';
+        html += '<td>' + noteHtml(hj1.avg) + '</td>';
+        html += '<td>' + noteHtml(hj1.zn) + '</td>';
+      } else {
+        html += '<td colspan="3" style="color:var(--text-muted);font-size:.8rem">Keine Noten</td>';
+      }
+    }
+    if (hasHj2) {
+      if (hj2.notes.length) {
+        const noteSpans = hj2.notes.map(function(n) { return '<span class="badge ' + noteClass(n) + '" style="margin:1px">' + n.toFixed(1) + '</span>'; }).join('');
+        html += '<td>' + noteSpans + '</td>';
+        html += '<td>' + noteHtml(hj2.avg) + '</td>';
+        html += '<td>' + noteHtml(hj2.zn) + '</td>';
+      } else {
+        html += '<td colspan="3" style="color:var(--text-muted);font-size:.8rem">Keine Noten</td>';
+      }
+    }
+    html += '<td>' + (jahresAvg !== null ? noteHtml(jahresAvg) : '<span style="color:var(--text-muted)">–</span>') + '</td>';
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  html += '</div>';
+  return html;
+}
+
+function extractErrorKeywords(feedbacks) {
+  // Simple keyword frequency analysis – filter stopwords
+  const stopwords = new Set(['und','die','der','das','des','den','dem','ist','ein','eine','einer','nicht','auch','für','mit','von','in','an','zu','als','bei','es','auf','oder','so','wie','am','im','aus','nach','dass','wird','sind','haben','hat','sie','er','ich','wir','aber','noch','kann','wenn','beim','zum','zur','vor','durch','eine','sich','kein','keine','mehr','sehr','gut','richtig','falsch','leider','bitte','sollte','muss','alle','sollten','viele']);
+  const wordFreq = {};
+  feedbacks.forEach(function(text) {
+    if (!text) return;
+    text.split(/[\s,.\-;:!?()]+/).forEach(function(w) {
+      const lower = w.toLowerCase();
+      if (lower.length < 4 || stopwords.has(lower) || /^\d+$/.test(lower)) return;
+      wordFreq[lower] = (wordFreq[lower] || 0) + 1;
+    });
+  });
+  return Object.entries(wordFreq)
+    .filter(function(e) { return e[1] >= 2; })
+    .sort(function(a, b) { return b[1] - a[1]; })
+    .map(function(e) { return { word: e[0], count: e[1] }; });
+}
+
+</script>
+
+</body>
+</html>
