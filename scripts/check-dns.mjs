@@ -65,6 +65,20 @@ const checks = [
     fix: 'docs/domain-setup.md §1 – Cyon: CAA-Record `0 issue "letsencrypt.org"` am Apex anlegen.',
   },
   {
+    id: 'zoho-mx',
+    label: 'Zoho: Apex MX (Posteingang)',
+    required: true,
+    async run() {
+      const mx = await dns.resolveMx(DOMAIN);
+      const onZoho = mx.some((m) => /zoho/i.test(m.exchange));
+      return {
+        ok: onZoho,
+        info: mx.map((m) => `${m.priority} ${m.exchange}`).join('; ') || '(keine MX)',
+      };
+    },
+    fix: 'docs/domain-setup.md §3.1 – Cyon: Apex-MX auf mx.zoho.eu / mx2.zoho.eu / mx3.zoho.eu setzen (Zoho Mail).',
+  },
+  {
     id: 'send-mx',
     label: 'Resend: send.<domain> MX',
     required: true,
@@ -109,6 +123,26 @@ const checks = [
     fix: 'docs/domain-setup.md §2 – Resend Dashboard zeigt den DKIM-Wert; als TXT auf resend._domainkey.<domain> eintragen.',
   },
   {
+    id: 'zoho-dkim',
+    label: 'Zoho: DKIM (Apex)',
+    required: false,
+    async run() {
+      const selectors = ['zmail', 'zoho'];
+      for (const sel of selectors) {
+        try {
+          const txts = await dns.resolveTxt(`${sel}._domainkey.${DOMAIN}`);
+          const flat = txts.map((t) => t.join(''));
+          const dkim = flat.find((t) => /\bp=/.test(t));
+          if (dkim) return { ok: true, info: `${sel}._domainkey – ${dkim.slice(0, 40)}…` };
+        } catch {
+          // Selektor nicht gesetzt – nächsten probieren.
+        }
+      }
+      return { ok: false, info: `(kein DKIM unter ${selectors.join('/')}._domainkey)` };
+    },
+    fix: 'docs/domain-setup.md §3.3 – Zoho-Konsole zeigt Selektor + DKIM-Wert; als TXT auf <selektor>._domainkey.<domain> eintragen.',
+  },
+  {
     id: 'dmarc',
     label: 'DMARC-Policy',
     required: true,
@@ -123,19 +157,24 @@ const checks = [
       const note = policy === 'none' ? ' (Start-Policy – nach 2 Wochen auf quarantine ziehen)' : '';
       return { ok, info: `p=${policy}${note}` };
     },
-    fix: 'docs/domain-setup.md §3 – TXT auf _dmarc.<domain> mit `v=DMARC1; p=none; rua=mailto:dmarc-reports@<domain>` setzen.',
+    fix: 'docs/domain-setup.md §4 – TXT auf _dmarc.<domain> mit `v=DMARC1; p=none; rua=mailto:dmarc-reports@<domain>` setzen.',
   },
   {
     id: 'apex-spf',
-    label: 'Apex-SPF (optional, empfohlen)',
-    required: false,
+    label: 'Apex-SPF → Zoho',
+    required: true,
     async run() {
       const txts = await dns.resolveTxt(DOMAIN);
       const flat = txts.map((t) => t.join(''));
       const spf = flat.find((t) => /^v=spf1\b/.test(t));
-      return { ok: !!spf, info: spf || '(kein Apex-SPF)' };
+      if (!spf) return { ok: false, info: '(kein Apex-SPF)' };
+      const hasZoho = /zoho/i.test(spf);
+      return {
+        ok: hasZoho,
+        info: spf + (hasZoho ? '' : ' (kein Zoho-Include)'),
+      };
     },
-    fix: 'docs/domain-setup.md §4 – TXT am Apex mit `v=spf1 -all` (Default-Reject) oder Provider-Include setzen.',
+    fix: 'docs/domain-setup.md §5 – TXT am Apex mit `v=spf1 include:zohomail.eu ~all` setzen (Zoho versendet ab info@<domain>).',
   },
 ];
 

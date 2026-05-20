@@ -8,6 +8,32 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+---
+
+## [1.2.0] – 2026-05-20
+
+### Hinzugefügt
+- **Marketing-Senior-Agent** (`.claude/agents/marketing-senior.md`) plus
+  `docs/marketing-plan.md`: wiederverwendbarer Growth-/Conversion-Audit-Agent
+  mit priorisierten Quick Wins für Landing-Page, SEO und Pricing.
+- **SEO-Foundation**: `robots.txt`, `sitemap.xml`, JSON-LD-Structured-Data,
+  Canonical-Tags und überarbeitete Meta-/OpenGraph-Tags auf der Landing-Page.
+- **Auto-Aktivierung der Lizenz** via `?activate=<UUID>`-URL in der
+  Willkommens-Mail — Ein-Klick-Onboarding ohne manuelles Key-Einfügen.
+
+### Geändert
+- **Landing-Page-Rewrite**: neuer Hero, Trust-Strip, Founder-Section und
+  geschärfte Pricing-Darstellung.
+- **Vercel-Routing umgestellt**: `/` zeigt jetzt die Landing-Page,
+  `/app` die Anwendung.
+- **`vercel-deploy.yml` deployt automatisch bei Push auf `main`** (vorher
+  nur manueller `workflow_dispatch`). `paths-ignore` überspringt reine
+  Doku-Änderungen, eine `concurrency`-Group verhindert überlappende
+  Production-Deploys.
+- Sämtliches „DSGVO"-Wording durch das schweizerische **„nDSG"** ersetzt.
+- `sw.js`: Cache-Bust auf `pruefai-v6`, damit die SEO- und Onboarding-
+  Änderungen an `index.html` auch bereits installierte PWAs erreichen.
+
 ### Sicherheit (Lizenz-Härtung Phase 1)
 - **Webhook-Idempotenz** für `checkout.session.completed`: Stripe-Doppelzustellungen erzeugen
   keine zweite Lizenz mehr und schicken keine doppelte Willkommens-Mail. Implementiert
@@ -34,12 +60,14 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ### Domain & Mail
 - `docs/domain-setup.md`: vollständige Anleitung für CAA-Record, Resend-Domain-
-  Verifikation (SPF + DKIM auf `send.pruefai.ch`), DMARC-Policy mit
-  gestaffeltem Rollout (`none` → `quarantine` → `reject`) sowie
-  Submission-Links für SmartScreen / Safe Browsing / Talos / BrightCloud.
+  Verifikation (SPF + DKIM auf `send.pruefai.ch`), **Zoho Mail** (Apex-MX,
+  -SPF und -DKIM für `info@pruefai.ch`), DMARC-Policy mit gestaffeltem
+  Rollout (`none` → `quarantine` → `reject`) sowie Submission-Links für
+  SmartScreen / Safe Browsing / Talos / BrightCloud.
 - `scripts/check-dns.mjs`: idempotenter DNS-Verifizierer, prüft alle
   Pflicht- und optionalen Records via `node:dns`, druckt Checkliste mit
-  konkretem Fix-Vorschlag bei Lücken.
+  konkretem Fix-Vorschlag bei Lücken. Neu mit **Zoho-Checks** (Apex-MX,
+  Apex-SPF mit Zoho-Include, Zoho-DKIM).
 - `.github/workflows/check-dns.yml`: täglicher Cron + `workflow_dispatch`.
   Schlägt fehl wenn ein Pflicht-Record verschwindet — frühe Warnung bei
   versehentlichen Cyon-DNS-Änderungen.
