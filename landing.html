@@ -726,20 +726,20 @@
 
 
   // ── COOKIE BANNER ──
-  (function() {
-    if (localStorage.getItem('cookie_consent')) return;
-    const banner = document.getElementById('cookie-banner');
-    if (banner) banner.classList.remove('hidden');
-  })();
   function acceptCookies() {
     localStorage.setItem('cookie_consent', '1');
     const banner = document.getElementById('cookie-banner');
-    if (banner) banner.classList.add('hidden');
+    if (banner) banner.style.display = 'none';
   }
+  window.addEventListener('DOMContentLoaded', function() {
+    if (localStorage.getItem('cookie_consent')) return;
+    const banner = document.getElementById('cookie-banner');
+    if (banner) banner.style.display = 'flex';
+  });
 </script>
 
 <!-- ── COOKIE BANNER ── -->
-<div id="cookie-banner" class="hidden" style="position:fixed;bottom:0;left:0;right:0;background:#1f2937;color:#e5e7eb;padding:.875rem 1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;z-index:9998;font-size:.85rem">
+<div id="cookie-banner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1f2937;color:#e5e7eb;padding:.875rem 1.5rem;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;z-index:9998;font-size:.85rem">
   <span>
     Diese Website nutzt Cookies für grundlegende Funktionen. Durch die Nutzung stimmen Sie unserer
     <a href="./datenschutz.html" style="color:#93c5fd">Datenschutzerklärung</a> zu.
