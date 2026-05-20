@@ -1,7 +1,7 @@
 # Pruefai – KI-gestützte Prüfungskorrektur
 
 [![MIT Lizenz](https://img.shields.io/badge/Lizenz-MIT-blue.svg)](LICENSE)
-[![Vanilla JS](https://img.shields.io/badge/JavaScript-Vanilla-yellow.svg)](index.html)
+[![Vanilla JS](https://img.shields.io/badge/JavaScript-Vanilla-yellow.svg)](app.html)
 
 **Pruefai** ist eine webbasierte Applikation für Lehrpersonen, die bei der Korrektur von Prüfungen mithilfe von KI (Claude) unterstützt. Alle Daten werden lokal im Browser (IndexedDB) gespeichert – kein externes Backend, keine Cloud-Datenbank.
 
@@ -112,8 +112,8 @@ Setze folgende **Environment Variables** in Vercel (Settings → Environment Var
 
 ```
 pruefai-app/
-├── index.html              # Komplette App (Single-File, Vanilla JS)
-├── landing.html            # Marketing-Landingpage mit Preistabelle
+├── index.html              # Marketing-Landingpage (Startseite, /)
+├── app.html                # Komplette App (Single-File, Vanilla JS, /app)
 ├── checkout-success.html   # Stripe Checkout Success-Seite
 ├── agb.html                # AGB
 ├── avv.html                # Auftragsverarbeitungsvertrag
@@ -149,7 +149,7 @@ pruefai-app/
 
 ## Datenmodell (IndexedDB)
 
-Alle Daten werden in IndexedDB-Stores im Browser gespeichert. Der `sb`-Wrapper in `index.html` bietet eine Supabase-kompatible API für einfache Datenbankoperationen.
+Alle Daten werden in IndexedDB-Stores im Browser gespeichert. Der `sb`-Wrapper in `app.html` bietet eine Supabase-kompatible API für einfache Datenbankoperationen.
 
 ```
 klassen ──< schueler
@@ -203,7 +203,7 @@ vercel deploy --prod
 ### Netlify (Alternative, nur Frontend)
 
 1. Gehe zu https://netlify.com
-2. Ziehe `index.html` direkt ins Dashboard (Drag & Drop)
+2. Ziehe den Projektordner direkt ins Dashboard (Drag & Drop)
 3. Fertig – du erhältst eine öffentliche URL (ohne KI-Funktionen)
 
 ---

@@ -97,7 +97,7 @@ Beim Hinzufügen neuer API-Funktionen unter `api/` bitte entsprechende Tests in 
 
 ## Architektur-Hinweis: Modularisierung
 
-Die gesamte Frontend-Logik liegt derzeit in `index.html` (Single-File-Ansatz). Das ist für ein kleines Team ohne Build-Prozess pragmatisch, hat aber Grenzen bei Wartbarkeit und Testbarkeit.
+Die gesamte Frontend-Logik liegt derzeit in `app.html` (Single-File-Ansatz). Das ist für ein kleines Team ohne Build-Prozess pragmatisch, hat aber Grenzen bei Wartbarkeit und Testbarkeit.
 
 **Mittelfristiges Ziel** (Tracking via GitHub Issues):
 - JS-Logik in separate Module unter `js/` auslagern (`<script type="module">`)
