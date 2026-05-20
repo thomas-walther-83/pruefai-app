@@ -1,5 +1,5 @@
 // Pruefai Service Worker – App-Shell caching
-const CACHE_NAME = 'pruefai-v5';
+const CACHE_NAME = 'pruefai-v6';
 const APP_SHELL = [
   './',
   './index.html',
