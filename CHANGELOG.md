@@ -9,6 +9,13 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
+- **Musterlösung & Lernstoff fliessen in die KI-Korrektur ein**: Lernmaterial
+  lässt sich beim Upload als „Musterlösung" markieren (neue Checkbox). Bei der
+  KI-Korrektur werden die der Prüfung zugeordneten Unterlagen mitgeschickt –
+  gewichtet nach Priorität 1 Musterlösung, 2 Unterrichtsmaterial,
+  3 Allgemeinwissen. PDF- und Bilddateien werden direkt verarbeitet. Das pro
+  Prüfung identische Material wird per Prompt-Caching nur einmal berechnet,
+  sodass auch „Alle korrigieren" bezahlbar bleibt.
 - **Lernstoff-Massenupload**: Im Dialog „Material hochladen" lassen sich jetzt
   mehrere Dateien gleichzeitig auswählen und in einem Durchgang hochladen.
   Eine Fortschrittsanzeige zählt die Dateien durch; schlägt eine Datei fehl,
