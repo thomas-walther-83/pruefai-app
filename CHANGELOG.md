@@ -8,6 +8,14 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+- **Frontend-Smoke-Tests (Playwright)**: 14 End-to-End-Tests in `tests/e2e/`
+  decken Landing-Page, Cookie-Banner, App-Shell und das Routing ab. Ein
+  schlanker Vercel-Routing-Emulator (`tests/e2e/static-server.mjs`) spielt
+  die `vercel.json`-Reihenfolge (redirects → Dateisystem → rewrites) durch,
+  sodass Routing-Bugs wie in PR #45 / #50 künftig vor dem Merge auffallen.
+  Neuer CI-Job „Frontend-Smoke-Tests" und npm-Skript `test:e2e`.
+
 ---
 
 ## [1.2.0] – 2026-05-20

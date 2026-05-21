@@ -60,3 +60,34 @@ jobs:
 
       - name: API-Tests ausführen
         run: node --test tests/relay.test.mjs tests/validate-license.test.mjs tests/claude.test.mjs tests/stripe-webhook.test.mjs tests/stripe-checkout.test.mjs tests/stripe-portal.test.mjs tests/get-license.test.mjs tests/capture-lead.test.mjs tests/contact-enterprise.test.mjs tests/admin-revoke.test.mjs
+
+  e2e:
+    name: Frontend-Smoke-Tests (Playwright)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+
+      - name: Abhängigkeiten installieren
+        run: npm install
+
+      - name: Playwright-Browser installieren
+        run: npx playwright install --with-deps chromium
+
+      - name: Smoke-Tests ausführen
+        run: npx playwright test
+
+      - name: Playwright-Report archivieren
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
