@@ -9,6 +9,17 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
+- **Bearbeitbare Korrektur-Bestätigung**: Nach der KI-Korrektur kann der Lehrer
+  die Punkte und das Feedback pro Aufgabe direkt überschreiben. Die Punktsumme
+  und die Note werden dabei live neu berechnet; die Note bleibt zusätzlich
+  manuell anpassbar. Ein Schritt „Bestätigen & abschliessen" schliesst die
+  Korrektur ab. Bereits korrigierte Prüfungen lassen sich über die neue
+  Schaltfläche „Prüfen" erneut öffnen – damit funktioniert auch „Alle
+  korrigieren" sauber (Ergebnisse werden sofort gesichert und einzeln geprüft).
+- **Notenformel & -rundung pro Prüfung**: Im Prüfungs-Dialog wählbar – lineare
+  Formel oder Knick-Formel mit Bestehensgrenze 60 % bzw. 50 %, Rundung auf
+  0.5/0.25/0.1. Die zuletzt gewählte Einstellung dient neuen Prüfungen als
+  Vorgabe.
 - **Musterlösung & Lernstoff fliessen in die KI-Korrektur ein**: Lernmaterial
   lässt sich beim Upload als „Musterlösung" markieren (neue Checkbox). Bei der
   KI-Korrektur werden die der Prüfung zugeordneten Unterlagen mitgeschickt –
