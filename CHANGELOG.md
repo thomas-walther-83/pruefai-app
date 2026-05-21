@@ -41,6 +41,14 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
   Bild-Komprimierung (max. 1240 px) vor jedem KI-Aufruf. SW-Cache auf
   `pruefai-v7` gebumpt, damit Bestandsnutzer die korrigierte `app.html`
   erhalten.
+- **QR-Code-Foto-Relay (Handy → PC) verlor Fotos**. Der Relay nutzte einen
+  In-Memory-Speicher; da der Foto-Upload des Handys und das Abrufen am PC
+  auf getrennten, zustandslosen Serverless-Instanzen landen, kamen die Fotos
+  oft nie an. `api/relay.js` speichert die Fotos jetzt in Upstash Redis
+  (Vercel-Storage) und reicht sie zuverlässig weiter. Handy-Fotos werden
+  zudem kompakter komprimiert (1280 px). SW-Cache auf `pruefai-v9` gebumpt.
+  Hinweis: erfordert die neuen Umgebungsvariablen `KV_REST_API_URL` und
+  `KV_REST_API_TOKEN` (siehe `.env.example`).
 
 ---
 

@@ -2093,7 +2093,9 @@ function mobileAddPhoto(event) {
   event.target.value = '';
   files.forEach(function(file) {
     if (!file.type.startsWith('image/')) return;
-    compressImage(file, 1600, 0.82).then(function(compressed) {
+    // Fürs Relay kleiner komprimieren: hält jeden Upload klein genug für den
+    // Redis-Zwischenspeicher. Die KI-Korrektur skaliert ohnehin auf 1240 px.
+    compressImage(file, 1280, 0.72).then(function(compressed) {
       blobToDataUrl(compressed).then(function(dataUrl) {
         mobilePhotos.push({ file: compressed, dataUrl: dataUrl });
         renderMobilePhotos();
