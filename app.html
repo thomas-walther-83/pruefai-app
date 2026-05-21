@@ -2167,7 +2167,11 @@ async function kiKorrigieren(eintragsId) {
       const fetchUrl = await sbStorageUrl('pruefungsfotos', storagePath);
       if (!fetchUrl) return null;
       const res = await fetch(fetchUrl);
-      const blob = await res.blob();
+      let blob = await res.blob();
+      // Vor dem KI-Versand verkleinern – hält die Gesamtanfrage auch bei vielen
+      // Prüfungsseiten unter Vercels 4,5-MB-Limit. compressImage fällt bei
+      // Nicht-Bildern bzw. Fehlern automatisch auf das Original zurück.
+      blob = await compressImage(blob, 1240, 0.72);
       const dataUrl = await blobToDataUrl(blob);
       return { type: 'image', source: { type: 'base64', media_type: blob.type || 'image/jpeg', data: dataUrl.split(',')[1] } };
     }))).filter(function(b) { return b !== null; });
@@ -2952,7 +2956,11 @@ async function runQualitaetsCheck() {
       const fetchUrl = await sbStorageUrl('pruefungsfotos', storagePath);
       if (!fetchUrl) return null;
       const res = await fetch(fetchUrl);
-      const blob = await res.blob();
+      let blob = await res.blob();
+      // Vor dem KI-Versand verkleinern – hält die Gesamtanfrage auch bei vielen
+      // Prüfungsseiten unter Vercels 4,5-MB-Limit. compressImage fällt bei
+      // Nicht-Bildern bzw. Fehlern automatisch auf das Original zurück.
+      blob = await compressImage(blob, 1240, 0.72);
       const dataUrl = await blobToDataUrl(blob);
       return { type: 'image', source: { type: 'base64', media_type: blob.type || 'image/jpeg', data: dataUrl.split(',')[1] } };
     }))).filter(function(b) { return b !== null; });

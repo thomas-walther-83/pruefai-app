@@ -22,6 +22,15 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
   Fremd-Request entfällt, und `plausible.io` wurde aus der Content-Security-
   Policy (`script-src`, `connect-src`) gestrichen.
 
+### Behoben
+- **KI-Korrektur scheiterte bei mehreren Prüfungsseiten** („KI-Fehler: load
+  failed"). Ursache: `/api/claude` hatte kein Funktions-Timeout und die
+  Base64-Bilder sprengten Vercels Body-Limit. Behoben durch `maxDuration=60`
+  und ein höheres Body-Limit in `api/claude.js` sowie clientseitige
+  Bild-Komprimierung (max. 1240 px) vor jedem KI-Aufruf. SW-Cache auf
+  `pruefai-v7` gebumpt, damit Bestandsnutzer die korrigierte `app.html`
+  erhalten.
+
 ---
 
 ## [1.2.0] – 2026-05-20
