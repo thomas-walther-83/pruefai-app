@@ -9,6 +9,15 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ## [Unveröffentlicht]
 
 ### Behoben
+- **KI-Korrektur scheiterte grundsätzlich mit „Load failed"** (eigentliche
+  Ursache von Bug #6). Die Prüfungsbilder liegen in IndexedDB und wurden über
+  eine `blob:`-URL per `fetch()` wieder eingelesen. Die Content-Security-Policy
+  erlaubt `blob:` aber nur fürs Anzeigen (`img-src`), nicht für `connect-src` –
+  Safari blockierte den `fetch()` daher hart, noch bevor überhaupt etwas an die
+  KI ging. Behoben: Prüfungsbilder werden jetzt direkt aus IndexedDB gelesen
+  und Backup-Dateien lokal dekodiert – ganz ohne `fetch()` auf `blob:`/`data:`-
+  URLs. Die strikte Content-Security-Policy (`connect-src 'self'`) bleibt damit
+  unverändert.
 - **KI-Korrektur scheiterte weiterhin bei vielen Prüfungsseiten** („KI-Fehler:
   load failed"). Die fixe Komprimierung auf 1240 px reichte für ~12 Seiten
   nicht – die Anfrage überschritt Vercels hartes 4,5-MB-Limit. Neu wird die
