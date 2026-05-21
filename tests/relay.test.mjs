@@ -139,6 +139,23 @@ describe('relay – Storage-Konfiguration', () => {
     process.env.KV_REST_API_URL = savedUrl;
     process.env.KV_REST_API_TOKEN = savedTok;
   });
+
+  it('erkennt Redis-Zugangsdaten auch mit projektspezifischem Präfix', async () => {
+    const savedUrl = process.env.KV_REST_API_URL;
+    const savedTok = process.env.KV_REST_API_TOKEN;
+    delete process.env.KV_REST_API_URL;
+    delete process.env.KV_REST_API_TOKEN;
+    process.env.MYSTORE_KV_REST_API_URL = 'https://prefixed.upstash.io';
+    process.env.MYSTORE_KV_REST_API_TOKEN = 'prefixed-token';
+    const res = mockRes();
+    await handler(mockReq({ method: 'GET', query: { t: randomUUID() } }), res);
+    assert.equal(res.statusCode, 200);
+    assert.deepEqual(res.body, { photos: [] });
+    delete process.env.MYSTORE_KV_REST_API_URL;
+    delete process.env.MYSTORE_KV_REST_API_TOKEN;
+    process.env.KV_REST_API_URL = savedUrl;
+    process.env.KV_REST_API_TOKEN = savedTok;
+  });
 });
 
 describe('relay – GET (Foto-Abruf)', () => {
