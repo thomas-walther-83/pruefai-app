@@ -11,6 +11,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>Pruefai</title>
+  <!-- Plausible Analytics – cookieless, kein PII (anonyme Funnel-Events) -->
+  <script>window.plausible=window.plausible||function(){(window.plausible.q=window.plausible.q||[]).push(arguments)};</script>
+  <script defer data-domain="pruefai.ch" src="https://plausible.io/js/script.js"></script>
   <link rel="manifest" href="./manifest.json" />
   <!-- jsPDF -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
@@ -1032,6 +1035,20 @@
 // =============================================================
 const LS = { CONFIG: 'lernortai_config', LEHRER_ID: 'lernortai_lehrer_id', FREE_USED: 'lernortai_free_used', LEAD: 'lernortai_lead_captured', TRIAL_TOKEN: 'lernortai_trial_token', ONBOARDED: 'lernortai_onboarded' };
 const FREE_TRIAL_LIMIT = 3;
+
+// Plausible Custom-Events – anonyme Funnel-Events, kein PII. Darf nie die App brechen.
+function pa(name, props) {
+  try { if (window.plausible) window.plausible(name, props ? { props: props } : undefined); } catch (e) { /* ignore */ }
+}
+// Funnel-Events, die pro Browser nur einmal feuern dürfen.
+function paOnce(flag, name, props) {
+  try {
+    if (localStorage.getItem(flag)) return;
+    localStorage.setItem(flag, '1');
+  } catch (e) { /* ignore */ }
+  pa(name, props);
+}
+function trackTrialLimitHit() { paOnce('lernortai_trial_limit_hit', 'Trial Limit Hit'); }
 const HELP_CHAT_MAX_MESSAGE_LENGTH = 2000; // max. Nutzerzeichen pro Chat-Nachricht
 const HELP_CHAT_HISTORY_LIMIT = 10; // Anzahl letzter Nachrichten als Kontext
 const HELP_CHAT_MAX_TOKENS = 700; // Obergrenze für KI-Antwortlänge
@@ -1101,6 +1118,7 @@ async function maybeAutoActivateLicense() {
     if (res.ok && data.valid) {
       localStorage.setItem('lernortai_license_key', candidate);
       if (data.plan) localStorage.setItem('lernortai_plan', data.plan);
+      pa('License Activated', { plan: data.plan || 'aktiv' });
       showToast('Lizenz aktiviert. Plan: ' + (data.plan || 'aktiv').toUpperCase(), 'success');
     } else if (data.code === 'license_revoked') {
       showToast('Diese Lizenz wurde gesperrt. Bitte info@pruefai.ch kontaktieren.', 'error');
@@ -2182,6 +2200,7 @@ async function kiKorrigieren(eintragsId) {
       const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
       if (used >= FREE_TRIAL_LIMIT) {
         document.getElementById('upsell-modal').classList.remove('hidden');
+        trackTrialLimitHit();
         return 'limit';
       }
       localStorage.setItem(LS.FREE_USED, String(used + 1));
@@ -2206,6 +2225,7 @@ async function kiKorrigieren(eintragsId) {
     if (response.status === 402 || response.status === 429) {
       const d = await response.json();
       document.getElementById('upsell-modal').classList.remove('hidden');
+      trackTrialLimitHit();
       return 'limit';
     }
     if (!response.ok) throw new Error('Claude API: ' + response.status + ' ' + await response.text());
@@ -2216,6 +2236,7 @@ async function kiKorrigieren(eintragsId) {
     catch(pe) { throw new Error('KI-Antwort konnte nicht geparst werden: ' + raw); }
     kiPendingData = { eintragsId, result };
     showKiErgebnis(result, schueler && schueler.name || 'Schüler', pruefung && pruefung.max_punkte || 100);
+    paOnce('lernortai_first_correction_done', 'First Correction');
   } catch(e) { showToast('KI-Fehler: ' + e.message, 'error'); }
 }
 
@@ -2271,6 +2292,7 @@ async function kiAlleKorrigieren() {
     const remaining = Math.max(0, FREE_TRIAL_LIMIT - used);
     if (remaining === 0) {
       document.getElementById('upsell-modal').classList.remove('hidden');
+      trackTrialLimitHit();
       return;
     }
     if (remaining < todo.length) {
@@ -2337,6 +2359,7 @@ async function sendHelpChatMessage() {
       const used = parseInt(localStorage.getItem(LS.FREE_USED) || '0', 10);
       if (used >= FREE_TRIAL_LIMIT) {
         document.getElementById('upsell-modal').classList.remove('hidden');
+        trackTrialLimitHit();
         helpChatHistory.push({ role: 'assistant', text: 'Ihr Gratis-Kontingent ist aufgebraucht. Bitte wählen Sie einen Plan, um den KI-Chat weiter zu nutzen.' });
         renderHelpChat();
         return;
@@ -2377,6 +2400,7 @@ async function sendHelpChatMessage() {
 
     if (response.status === 402 || response.status === 429) {
       document.getElementById('upsell-modal').classList.remove('hidden');
+      trackTrialLimitHit();
       helpChatHistory.push({ role: 'assistant', text: 'Für weitere KI-Anfragen benötigen Sie einen aktiven Plan. Bitte öffnen Sie «Plan wählen».' });
       renderHelpChat();
       return;
@@ -2612,6 +2636,9 @@ async function saveSettings() {
   if (sc) localStorage.setItem('lernortai_schul_code', sc);
   else localStorage.removeItem('lernortai_schul_code');
   const hasLicenseNow = !!lk || !!sc;
+  if (hasLicenseNow && !hadLicenseBefore) {
+    pa('License Activated', { plan: localStorage.getItem('lernortai_plan') || (sc ? 'schule' : 'aktiv') });
+  }
   updateFreeTrialBadge();
   loadUsageBar();
   // Show onboarding wizard on first license activation
@@ -3316,6 +3343,23 @@ function extractErrorKeywords(feedbacks) {
     .map(function(e) { return { word: e[0], count: e[1] }; });
 }
 
+</script>
+
+<!-- Plausible: Stripe-Checkout-Klicks (In-App-Upgrade) zuverlässig tracken -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('a[href^="/api/stripe-checkout"]').forEach(function (a) {
+    var plan = new URL(a.href).searchParams.get('plan') || 'unbekannt';
+    a.addEventListener('click', function (e) {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+      e.preventDefault();
+      var done = false;
+      function go() { if (done) return; done = true; window.location.href = a.href; }
+      if (window.plausible) window.plausible('Stripe Checkout Start', { props: { plan: plan }, callback: go });
+      setTimeout(go, 500);
+    });
+  });
+});
 </script>
 
 </body>

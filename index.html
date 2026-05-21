@@ -748,7 +748,62 @@
 </div>
 
 <!-- ── PLAUSIBLE ANALYTICS ── -->
+<script>window.plausible=window.plausible||function(){(window.plausible.q=window.plausible.q||[]).push(arguments)};</script>
 <script defer data-domain="pruefai.ch" src="https://plausible.io/js/script.js"></script>
+
+<!-- ── PLAUSIBLE CUSTOM-EVENTS (Conversion-Funnel) ── -->
+<script>
+(function () {
+  // Feuert Events und navigiert danach – Callback plus Timeout-Fallback,
+  // damit das Event den Seitenwechsel zuverlässig überlebt.
+  function trackThenGo(url, events) {
+    var done = false;
+    function go() { if (done) return; done = true; window.location.href = url; }
+    events.forEach(function (ev, i) {
+      var opts = ev.props ? { props: ev.props } : {};
+      if (i === events.length - 1) opts.callback = go;
+      window.plausible(ev.name, opts);
+    });
+    setTimeout(go, 500);
+  }
+  function isPlainClick(e) {
+    return !(e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0);
+  }
+  document.addEventListener('DOMContentLoaded', function () {
+    // App Test Click – Trial-Intent über alle App-Links
+    document.querySelectorAll('a[href="/app"]').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        if (!isPlainClick(e)) return;
+        e.preventDefault();
+        trackThenGo('/app', [{ name: 'App Test Click' }]);
+      });
+    });
+    // Plan Click + Stripe Checkout Start – Pricing-CTAs
+    document.querySelectorAll('a[href^="/api/stripe-checkout"]').forEach(function (a) {
+      var plan = new URL(a.href).searchParams.get('plan') || 'unbekannt';
+      a.addEventListener('click', function (e) {
+        if (!isPlainClick(e)) return;
+        e.preventDefault();
+        trackThenGo(a.href, [
+          { name: 'Plan Click', props: { plan: plan } },
+          { name: 'Stripe Checkout Start', props: { plan: plan } }
+        ]);
+      });
+    });
+    // Pricing View – einmalig, sobald die Preis-Sektion sichtbar wird
+    var preise = document.getElementById('preise');
+    if (preise && 'IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function (entries) {
+        if (entries.some(function (en) { return en.isIntersecting; })) {
+          window.plausible('Pricing View');
+          io.disconnect();
+        }
+      });
+      io.observe(preise);
+    }
+  });
+})();
+</script>
 
 </body>
 </html>

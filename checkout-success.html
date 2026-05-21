@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Zahlung erfolgreich – Pruefai</title>
   <meta name="description" content="Ihr Abonnement ist aktiv. Hier finden Sie Ihren Lizenzschlüssel." />
+
+  <!-- Plausible Analytics – cookieless, kein PII -->
+  <script>window.plausible=window.plausible||function(){(window.plausible.q=window.plausible.q||[]).push(arguments)};</script>
+  <script defer data-domain="pruefai.ch" src="https://plausible.io/js/script.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -175,6 +179,7 @@
     const planLabel = PLAN_LABELS[plan] || (plan ? plan.charAt(0).toUpperCase() + plan.slice(1) + '-Plan' : 'Ihr Plan');
     document.getElementById('planBadge').textContent = '✓ ' + planLabel + ' aktiv';
     show('successState');
+    if (window.plausible) window.plausible('Checkout Success', { props: { plan: plan || 'unbekannt' } });
   }
 
   function show(id) {
