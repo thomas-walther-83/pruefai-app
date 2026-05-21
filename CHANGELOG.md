@@ -16,6 +16,12 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
   sodass Routing-Bugs wie in PR #45 / #50 künftig vor dem Merge auffallen.
   Neuer CI-Job „Frontend-Smoke-Tests" und npm-Skript `test:e2e`.
 
+### Entfernt
+- **Plausible-Analytics komplett entfernt**: Das Snippet auf der Landing-Page
+  war wirkungslos, da für `pruefai.ch` kein Plausible-Konto existiert. Der
+  Fremd-Request entfällt, und `plausible.io` wurde aus der Content-Security-
+  Policy (`script-src`, `connect-src`) gestrichen.
+
 ---
 
 ## [1.2.0] – 2026-05-20
