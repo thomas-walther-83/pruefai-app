@@ -22,11 +22,23 @@ export const config = {
   api: { bodyParser: { sizeLimit: '5mb' } },
 };
 
+// Reads the Upstash REST credentials. Accepts the two standard naming schemes
+// (Vercel KV and Upstash native) and, as a fallback, auto-detects any env-var
+// pair that follows the REST naming convention — Vercel storage integrations
+// sometimes assign a project-specific prefix (e.g. "<NAME>_KV_REST_API_URL").
 function redisCreds() {
-  return {
-    url:   process.env.KV_REST_API_URL   || process.env.UPSTASH_REDIS_REST_URL   || '',
-    token: process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '',
-  };
+  const env = process.env;
+  let url   = env.KV_REST_API_URL   || env.UPSTASH_REDIS_REST_URL   || '';
+  let token = env.KV_REST_API_TOKEN || env.UPSTASH_REDIS_REST_TOKEN || '';
+  if (!url || !token) {
+    for (const k of Object.keys(env)) {
+      const v = env[k];
+      if (!v) continue;
+      if (!url   && /_REST_API_URL$|_REST_URL$/.test(k)     && /^https:\/\//.test(v)) url = v;
+      if (!token && /_REST_API_TOKEN$|_REST_TOKEN$/.test(k) && !/READ_ONLY/.test(k))  token = v;
+    }
+  }
+  return { url: url, token: token };
 }
 
 async function redisCall(path, payload) {
