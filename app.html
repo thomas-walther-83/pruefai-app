@@ -810,6 +810,13 @@
       <select id="lernstoff-pruefung-id" class="form-control"><option value="">– keine Zuordnung –</option></select>
     </div>
     <div class="form-group">
+      <label style="display:flex;align-items:center;gap:.5rem;font-size:.875rem;cursor:pointer">
+        <input type="checkbox" id="lernstoff-ist-musterloesung" />
+        <span>Dies ist die Musterlösung der zugeordneten Prüfung</span>
+      </label>
+      <p style="font-size:.75rem;color:var(--text-muted);margin:.3rem 0 0 1.6rem">Musterlösungen nutzt die KI-Korrektur mit höchster Priorität. Erfordert eine Prüfungs-Zuordnung.</p>
+    </div>
+    <div class="form-group">
       <label class="form-label">Datei(en) *</label>
       <div class="upload-zone" onclick="document.getElementById('lernstoff-file-input').click()">
         <div class="upload-zone__icon">&#128196;</div>
@@ -1760,6 +1767,7 @@ function openLernstoffModal() {
   bezEl.placeholder = 'optional – leer lassen für Dateiname';
   document.getElementById('lernstoff-file-name').textContent = 'PDF, Bild oder Dokument auswählen…';
   document.getElementById('lernstoff-file-input').value = '';
+  document.getElementById('lernstoff-ist-musterloesung').checked = false;
   document.getElementById('lernstoff-upload-progress').classList.add('hidden');
   document.getElementById('lernstoff-progress-bar').style.width = '0%';
   lernstoffFiles = [];
@@ -1789,7 +1797,9 @@ function handleLernstoffFile(e) {
 async function uploadLernstoff() {
   const bezeichnungInput = document.getElementById('lernstoff-bezeichnung').value.trim();
   const pruefungId  = document.getElementById('lernstoff-pruefung-id').value || null;
+  const istMusterloesung = document.getElementById('lernstoff-ist-musterloesung').checked;
   if (!lernstoffFiles.length) { showToast('Bitte mindestens eine Datei auswählen.', 'error'); return; }
+  if (istMusterloesung && !pruefungId) { showToast('Für eine Musterlösung bitte eine Prüfung zuordnen.', 'error'); return; }
   const tooBig = lernstoffFiles.filter(function(f) { return f.size > 20 * 1024 * 1024; })[0];
   if (tooBig) { showToast('Datei „' + tooBig.name + '" ist zu gross (max. 20 MB).', 'error'); return; }
   const progressBar = document.getElementById('lernstoff-progress-bar');
@@ -1808,13 +1818,14 @@ async function uploadLernstoff() {
         const filePath = lehrer_id + '/' + Date.now() + '-' + i + '.' + ext;
         const storedPath = await sbStorageUpload('lernmaterial', filePath, file);
         await sb.insert('lernmaterial', {
-          bezeichnung:   bezeichnung,
-          pruefung_id:   pruefungId,
-          lehrer_id:     lehrer_id,
-          storage_pfad:  storedPath,
-          dateiname:     file.name,
-          mime_type:     file.type,
-          groesse_bytes: file.size,
+          bezeichnung:       bezeichnung,
+          pruefung_id:       pruefungId,
+          lehrer_id:         lehrer_id,
+          storage_pfad:      storedPath,
+          dateiname:         file.name,
+          mime_type:         file.type,
+          groesse_bytes:     file.size,
+          ist_musterloesung: istMusterloesung,
         });
         done++;
       } catch(err) { failed++; }
@@ -1825,7 +1836,7 @@ async function uploadLernstoff() {
     } else {
       showToast(done === 1 ? 'Material hochgeladen.' : done + ' Materialien hochgeladen.', 'success');
     }
-    if (done) setTimeout(function() { closeModal('lernstoff-modal'); loadLernstoff(); }, 800);
+    if (done) { kiMaterialCache = null; setTimeout(function() { closeModal('lernstoff-modal'); loadLernstoff(); }, 800); }
   } catch(e) { showToast('Upload-Fehler: ' + e.message, 'error'); }
   finally { document.getElementById('lernstoff-upload-btn').disabled = false; }
 }
@@ -1843,7 +1854,8 @@ async function loadLernstoff() {
       const icon = m.mime_type && m.mime_type.includes('pdf') ? '&#128196;' : (m.mime_type && m.mime_type.startsWith('image/')) ? '&#128444;&#65039;' : '&#128196;';
       return '<div class="lernmaterial-item">' +
         '<div class="lernmaterial-item__icon">' + icon + '</div>' +
-        '<div style="flex:1"><div class="lernmaterial-item__name">' + escHtml(m.bezeichnung) + '</div>' +
+        '<div style="flex:1"><div class="lernmaterial-item__name">' + escHtml(m.bezeichnung) +
+        (m.ist_musterloesung ? ' <span style="display:inline-block;background:var(--success);color:#fff;border-radius:4px;padding:.1rem .4rem;font-size:.65rem;font-weight:600;vertical-align:middle">Musterlösung</span>' : '') + '</div>' +
         '<div class="lernmaterial-item__meta">' + escHtml(m.dateiname || '') +
         (m.pruefung_id ? ' · ' + escHtml(pm[m.pruefung_id] || m.pruefung_id) : '') +
         (m.groesse_bytes ? ' · ' + formatBytes(m.groesse_bytes) : '') + '</div></div>' +
@@ -2158,6 +2170,73 @@ async function mobileSendPhotos() {
 // =============================================================
 // KI-KORREKTUR
 // =============================================================
+let kiMaterialCache = null; // { pruefungId, prefixBlocks, hasMaterial } – pro Prüfung einmal aufbauen
+
+// Lädt die der Prüfung zugeordneten Lernmaterialien als KI-Content-Blöcke.
+// Reihenfolge: Musterlösung (Prio 1) vor Unterrichtsmaterial (Prio 2). Der
+// letzte Block trägt cache_control, damit Anthropic das für alle Schüler einer
+// Prüfung identische Material nur einmal verarbeitet (Prompt Caching).
+async function ladeKiMaterialBlocks(pruefungId) {
+  const leer = { pruefungId: pruefungId || null, prefixBlocks: [], hasMaterial: false };
+  if (!pruefungId) return leer;
+  if (kiMaterialCache && kiMaterialCache.pruefungId === pruefungId) return kiMaterialCache;
+  let rows;
+  try { rows = await sb.select('lernmaterial', 'pruefung_id=eq.' + pruefungId); }
+  catch (e) { return leer; }
+  const feedbar = (rows || []).filter(function(m) {
+    const t = m.mime_type || '';
+    return t.indexOf('image/') === 0 || t === 'application/pdf';
+  });
+  if (!feedbar.length) { kiMaterialCache = leer; return leer; }
+
+  async function toBlock(m) {
+    try {
+      const path = (m.storage_pfad || '').replace(/^lernmaterial\//, '');
+      const url = await sbStorageUrl('lernmaterial', path);
+      if (!url) return null;
+      const res = await fetch(url);
+      let blob = await res.blob();
+      const mime = m.mime_type || blob.type || '';
+      if (mime === 'application/pdf') {
+        const dataUrl = await blobToDataUrl(blob);
+        return { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: dataUrl.split(',')[1] } };
+      }
+      blob = await compressImage(blob, 1240, 0.72);
+      const dataUrl = await blobToDataUrl(blob);
+      return { type: 'image', source: { type: 'base64', media_type: blob.type || 'image/jpeg', data: dataUrl.split(',')[1] } };
+    } catch (e) { return null; }
+  }
+
+  const mBlocks = (await Promise.all(feedbar.filter(function(m) { return m.ist_musterloesung; }).map(toBlock))).filter(Boolean);
+  const uBlocks = (await Promise.all(feedbar.filter(function(m) { return !m.ist_musterloesung; }).map(toBlock))).filter(Boolean);
+
+  // Budget: Material darf die Gesamtanfrage nicht über Vercels 4,5-MB-Limit
+  // treiben. Musterlösung hat Vorrang, Unterrichtsmaterial wird zuerst gekürzt.
+  const MATERIAL_BUDGET = 2.6 * 1024 * 1024;
+  function blockSize(b) { return b && b.source && b.source.data ? b.source.data.length : 0; }
+  let total = mBlocks.reduce(function(s, b) { return s + blockSize(b); }, 0);
+  const keptU = [];
+  for (let i = 0; i < uBlocks.length; i++) {
+    if (total + blockSize(uBlocks[i]) > MATERIAL_BUDGET) break;
+    total += blockSize(uBlocks[i]);
+    keptU.push(uBlocks[i]);
+  }
+
+  const prefix = [];
+  if (mBlocks.length) {
+    prefix.push({ type: 'text', text: '=== MUSTERLÖSUNG (Priorität 1) ===' });
+    Array.prototype.push.apply(prefix, mBlocks);
+  }
+  if (keptU.length) {
+    prefix.push({ type: 'text', text: '=== UNTERRICHTSMATERIAL (Priorität 2) ===' });
+    Array.prototype.push.apply(prefix, keptU);
+  }
+  if (prefix.length) prefix[prefix.length - 1].cache_control = { type: 'ephemeral' };
+
+  kiMaterialCache = { pruefungId: pruefungId, prefixBlocks: prefix, hasMaterial: prefix.length > 0 };
+  return kiMaterialCache;
+}
+
 async function kiKorrigieren(eintragsId) {
   try {
     const eintraege = await sb.select('eintraege', 'id=eq.' + eintragsId);
@@ -2212,8 +2291,14 @@ async function kiKorrigieren(eintragsId) {
     }))).filter(function(b) { return b !== null; });
     const schoolTypeLabels = { 'berufsschule': 'Berufsschule', 'gymnasium': 'Gymnasium', 'mittelschule': 'Mittelschule', 'primarschule': 'Primarschule', 'sekundarschule': 'Sekundarschule', 'hochschule': 'Hochschule' };
     const schoolTypeLabel = schoolTypeLabels[cfg.schoolType] || 'Schule';
-    const systemPrompt = 'Du bist ein erfahrener Lehrer an einer ' + schoolTypeLabel + '.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\n' + (kiProfilInstruction ? kiProfilInstruction + '\n' : '') + (rubricInstruction ? rubricInstruction + '\n' : '') + 'Antworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "...", "max": <Zahl>, "erreicht": <Zahl>, "feedback": "..."}]}';
-    const userContent = imageBlocks.concat([{ type: 'text', text: 'Prüfung: ' + (pruefung && pruefung.name || '') + '\nSchüler: ' + (schueler && schueler.name || '') + '\nMax. Punkte: ' + (pruefung && pruefung.max_punkte || 100) + (pruefung && pruefung.anweisungen ? '\nAufgabenstellung:\n' + pruefung.anweisungen : '') + '\n\nBitte korrigiere diese Prüfung als JSON.' }]);
+    const matInfo = await ladeKiMaterialBlocks(eintrag.pruefung_id);
+    const materialHinweis = matInfo.hasMaterial
+      ? 'Dir liegen Referenzunterlagen bei. Gewichte sie in dieser Reihenfolge:\n1. MUSTERLÖSUNG – massgeblich für die richtigen Antworten und die Punkteverteilung.\n2. UNTERRICHTSMATERIAL – der behandelte Lehrstoff, an dem sich die Bewertung orientiert.\n3. Allgemeinwissen – nur ergänzend, wenn 1 und 2 nichts hergeben.\n'
+      : '';
+    const systemPrompt = 'Du bist ein erfahrener Lehrer an einer ' + schoolTypeLabel + '.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\n' + materialHinweis + (kiProfilInstruction ? kiProfilInstruction + '\n' : '') + (rubricInstruction ? rubricInstruction + '\n' : '') + 'Antworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "...", "max": <Zahl>, "erreicht": <Zahl>, "feedback": "..."}]}';
+    const examLabel = { type: 'text', text: '=== ZU KORRIGIERENDE PRÜFUNG' + (schueler && schueler.name ? ' VON ' + schueler.name : '') + ' ===' };
+    const examText = { type: 'text', text: 'Prüfung: ' + (pruefung && pruefung.name || '') + '\nSchüler: ' + (schueler && schueler.name || '') + '\nMax. Punkte: ' + (pruefung && pruefung.max_punkte || 100) + (pruefung && pruefung.anweisungen ? '\nAufgabenstellung:\n' + pruefung.anweisungen : '') + '\n\nBitte korrigiere diese Prüfung als JSON.' };
+    const userContent = matInfo.prefixBlocks.concat([examLabel], imageBlocks, [examText]);
     const licenseKey = localStorage.getItem('lernortai_license_key') || '';
     const schulCode = localStorage.getItem('lernortai_schul_code') || '';
     // Free-trial gate: if no license key and no schulCode, consume one free correction (up to FREE_TRIAL_LIMIT)
