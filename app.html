@@ -2241,7 +2241,7 @@ async function ladeKiMaterialBlocks(pruefungId) {
 
   // Budget: Material darf die Gesamtanfrage nicht über Vercels 4,5-MB-Limit
   // treiben. Musterlösung hat Vorrang, Unterrichtsmaterial wird zuerst gekürzt.
-  const MATERIAL_BUDGET = 2.6 * 1024 * 1024;
+  const MATERIAL_BUDGET = 1.7 * 1024 * 1024;
   function blockSize(b) { return b && b.source && b.source.data ? b.source.data.length : 0; }
   let total = mBlocks.reduce(function(s, b) { return s + blockSize(b); }, 0);
   const keptU = [];
@@ -2264,6 +2264,37 @@ async function ladeKiMaterialBlocks(pruefungId) {
 
   kiMaterialCache = { pruefungId: pruefungId, prefixBlocks: prefix, hasMaterial: prefix.length > 0 };
   return kiMaterialCache;
+}
+
+// Prüfungsseiten als komprimierte Bild-Blöcke für die KI. Die Auflösung sinkt
+// mit der Seitenzahl; zusätzlich wird die Gesamtgrösse gemessen und bei Bedarf
+// stufenweise weiter verkleinert, damit die Anfrage sicher unter Vercels
+// 4,5-MB-Limit bleibt – auch bei vielen Seiten.
+async function ladeSeitenBlocks(seiten) {
+  const blobs = [];
+  for (let i = 0; i < seiten.length; i++) {
+    const sp = (seiten[i].storage_pfad || '').replace(/^pruefungsfotos\//, '');
+    const url = await sbStorageUrl('pruefungsfotos', sp);
+    if (!url) continue;
+    try { const r = await fetch(url); blobs.push(await r.blob()); } catch (e) { /* Seite überspringen */ }
+  }
+  const n = blobs.length;
+  const dimStufen = n <= 6 ? [1240, 980, 760] : n <= 12 ? [1040, 840, 680] : [820, 660, 540];
+  const EXAM_BUDGET = 2.4 * 1024 * 1024;
+  for (let stufe = 0; stufe < dimStufen.length; stufe++) {
+    const dim = dimStufen[stufe];
+    const blocks = [];
+    let total = 0;
+    for (let i = 0; i < blobs.length; i++) {
+      const c = await compressImage(blobs[i], dim, 0.7);
+      const dataUrl = await blobToDataUrl(c);
+      const data = dataUrl.split(',')[1] || '';
+      total += data.length;
+      blocks.push({ type: 'image', source: { type: 'base64', media_type: c.type || 'image/jpeg', data: data } });
+    }
+    if (total <= EXAM_BUDGET || stufe === dimStufen.length - 1) return blocks;
+  }
+  return [];
 }
 
 async function kiKorrigieren(eintragsId, silent) {
@@ -2305,19 +2336,7 @@ async function kiKorrigieren(eintragsId, silent) {
           rubric.kriterien.map(function(k) { return '- ' + k.name + ' (' + k.max_punkte + ' Pkt)' + (k.beschreibung ? ': ' + k.beschreibung : ''); }).join('\n');
       }
     }
-    const imageBlocks = (await Promise.all(seiten.map(async function(s) {
-      const storagePath = s.storage_pfad.replace(/^pruefungsfotos\//, '');
-      const fetchUrl = await sbStorageUrl('pruefungsfotos', storagePath);
-      if (!fetchUrl) return null;
-      const res = await fetch(fetchUrl);
-      let blob = await res.blob();
-      // Vor dem KI-Versand verkleinern – hält die Gesamtanfrage auch bei vielen
-      // Prüfungsseiten unter Vercels 4,5-MB-Limit. compressImage fällt bei
-      // Nicht-Bildern bzw. Fehlern automatisch auf das Original zurück.
-      blob = await compressImage(blob, 1240, 0.72);
-      const dataUrl = await blobToDataUrl(blob);
-      return { type: 'image', source: { type: 'base64', media_type: blob.type || 'image/jpeg', data: dataUrl.split(',')[1] } };
-    }))).filter(function(b) { return b !== null; });
+    const imageBlocks = await ladeSeitenBlocks(seiten);
     const schoolTypeLabels = { 'berufsschule': 'Berufsschule', 'gymnasium': 'Gymnasium', 'mittelschule': 'Mittelschule', 'primarschule': 'Primarschule', 'sekundarschule': 'Sekundarschule', 'hochschule': 'Hochschule' };
     const schoolTypeLabel = schoolTypeLabels[cfg.schoolType] || 'Schule';
     const matInfo = await ladeKiMaterialBlocks(eintrag.pruefung_id);
@@ -2351,7 +2370,7 @@ async function kiKorrigieren(eintragsId, silent) {
     const response = await fetch('/api/claude', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 1024, system: systemPrompt, messages: [{ role: 'user', content: userContent }], feature: correctionFeature }),
+      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 4096, system: systemPrompt, messages: [{ role: 'user', content: userContent }], feature: correctionFeature }),
     });
     // Store updated trial token if returned by server
     const newTrialToken = response.headers.get('x-trial-token');
@@ -3237,19 +3256,7 @@ async function runQualitaetsCheck() {
     const eintraege = await sb.select('eintraege', 'id=eq.' + eintragsId);
     const eintrag = eintraege[0];
     const seiten = await sb.select('seiten_uploads', 'eintrag_id=eq.' + eintragsId + '&order=seitennummer.asc');
-    const imageBlocks = (await Promise.all(seiten.map(async function(s) {
-      const storagePath = s.storage_pfad.replace(/^pruefungsfotos\//, '');
-      const fetchUrl = await sbStorageUrl('pruefungsfotos', storagePath);
-      if (!fetchUrl) return null;
-      const res = await fetch(fetchUrl);
-      let blob = await res.blob();
-      // Vor dem KI-Versand verkleinern – hält die Gesamtanfrage auch bei vielen
-      // Prüfungsseiten unter Vercels 4,5-MB-Limit. compressImage fällt bei
-      // Nicht-Bildern bzw. Fehlern automatisch auf das Original zurück.
-      blob = await compressImage(blob, 1240, 0.72);
-      const dataUrl = await blobToDataUrl(blob);
-      return { type: 'image', source: { type: 'base64', media_type: blob.type || 'image/jpeg', data: dataUrl.split(',')[1] } };
-    }))).filter(function(b) { return b !== null; });
+    const imageBlocks = await ladeSeitenBlocks(seiten);
     const systemPrompt = 'Du bist ein zweiter unabhängiger Korrekteur. Eine erste KI hat folgendes Ergebnis erzielt: Note ' + Number(result.note) + ', Punkte ' + Number(result.punkte) + '. Kommentar: ' + JSON.stringify(result.kommentar || '') + '. Bitte überprüfe kritisch, ob diese Bewertung korrekt ist. Antworte als JSON: {"bestaetigt": true/false, "note_vorschlag": <1.0-6.0>, "begruendung": "<string>", "abweichung": "<string oder null>"}';
     const licenseKey = localStorage.getItem('lernortai_license_key') || '';
     const schulCode = localStorage.getItem('lernortai_schul_code') || '';
