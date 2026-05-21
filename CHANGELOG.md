@@ -9,6 +9,14 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
+- **Word-Export der Korrektur (.docx)**: Im KI-Ergebnis-Dialog erzeugt der
+  Knopf „Word herunterladen" pro Schüler ein sauber gegliedertes Word-Dokument
+  (Prüfung, Schüler, Ergebnis, Bewertung pro Aufgabe, Gesamtkommentar). Der
+  `.docx`-Generator ist vollständig in die App eingebaut – keine externe
+  Bibliothek, funktioniert auch offline.
+- **Lesbareres KI-Ergebnis**: Die Aufgaben werden im Korrektur-Dialog nicht
+  mehr in einer engen Tabelle, sondern als übersichtliche Blöcke mit
+  vollbreitem Feedback-Feld dargestellt.
 - **Prüfungsseiten verwalten**: Der „Upload"-Dialog zeigt jetzt die bereits
   hochgeladenen Blätter als Vorschau. Einzelne Seiten lassen sich löschen,
   weitere ergänzen; neue Seiten werden korrekt hinter den bestehenden
