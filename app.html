@@ -738,6 +738,7 @@
     </div>
     <div class="modal__footer">
       <button class="btn btn-secondary" onclick="closeModal('ki-ergebnis-modal')">Schliessen</button>
+      <button class="btn btn-secondary" onclick="downloadKorrekturWord()">&#128196; Word herunterladen</button>
       <button class="btn btn-success" onclick="saveKiErgebnis()">&#10003; Bestätigen &amp; abschliessen</button>
     </div>
   </div>
@@ -2521,14 +2522,17 @@ function showKiErgebnis() {
     (result.ki_qualitaet_unsicher ? ' <span class="badge badge-unsicher">&#9888;&#65039; Grenzfall</span>' : '') + '</div>';
 
   if (aufgaben.length) {
-    html += '<div class="table-wrap"><table><thead><tr><th>Aufgabe</th><th style="width:54px">Max.</th><th style="width:96px">Punkte</th><th>Feedback</th></tr></thead><tbody>';
     aufgaben.forEach(function(a, i) {
-      html += '<tr><td>' + escHtml(a.bezeichnung || ('Aufgabe ' + (i + 1))) + '</td>' +
-        '<td>' + (a.max != null ? a.max : '–') + '</td>' +
-        '<td><input type="number" class="form-control ki-erreicht" data-i="' + i + '" value="' + (a.erreicht != null ? a.erreicht : 0) + '" min="0" step="any" style="padding:.25rem .4rem" oninput="kiErgebnisRecalc()" /></td>' +
-        '<td><textarea class="form-control ki-feedback" data-i="' + i + '" rows="2" style="padding:.3rem .4rem;font-size:.8rem">' + escHtml(a.feedback || '') + '</textarea></td></tr>';
+      html += '<div style="border:1px solid var(--border);border-radius:8px;padding:.7rem .8rem;margin-bottom:.6rem">' +
+        '<div style="font-weight:600;margin-bottom:.45rem">' + escHtml(a.bezeichnung || ('Aufgabe ' + (i + 1))) + '</div>' +
+        '<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem">' +
+        '<label style="font-size:.8rem;color:var(--text-muted)">Punkte</label>' +
+        '<input type="number" class="form-control ki-erreicht" data-i="' + i + '" value="' + (a.erreicht != null ? a.erreicht : 0) + '" min="0" step="any" style="width:90px;padding:.3rem .4rem" oninput="kiErgebnisRecalc()" />' +
+        '<span style="color:var(--text-muted)">/ ' + (a.max != null ? a.max : '–') + '</span>' +
+        '</div>' +
+        '<textarea class="form-control ki-feedback" data-i="' + i + '" rows="3" placeholder="Feedback zu dieser Aufgabe">' + escHtml(a.feedback || '') + '</textarea>' +
+        '</div>';
     });
-    html += '</tbody></table></div>';
     html += '<div style="display:flex;gap:1.25rem;align-items:flex-end;flex-wrap:wrap;margin-top:.75rem">' +
       '<div><div style="font-size:.75rem;color:var(--text-muted)">Punkte total</div>' +
       '<div style="font-size:1.15rem;font-weight:700"><span id="ki-total-erreicht">0</span> / ' + maxTotal + '</div></div>' +
@@ -2589,10 +2593,9 @@ function kiErgebnisRecalc() {
   }
 }
 
-// Bestätigt die geprüfte Korrektur und schliesst den Eintrag ab.
-async function saveKiErgebnis() {
+// Liest die aktuellen Eingabewerte des Ergebnis-Dialogs nach kiPendingData.result.
+function kiErgebnisAktuelleWerte() {
   if (!kiPendingData) return;
-  const eintragsId = kiPendingData.eintragsId;
   const result = kiPendingData.result;
   kiErgebnisRecalc();
   document.querySelectorAll('#ki-ergebnis-content .ki-feedback').forEach(function(ta) {
@@ -2603,6 +2606,16 @@ async function saveKiErgebnis() {
   if (kommentarEl) result.kommentar = kommentarEl.value.trim();
   const noteEl = document.getElementById('ki-note-input');
   const note = noteEl ? parseFloat(noteEl.value) : NaN;
+  if (!isNaN(note)) result.note = note;
+}
+
+// Bestätigt die geprüfte Korrektur und schliesst den Eintrag ab.
+async function saveKiErgebnis() {
+  if (!kiPendingData) return;
+  const eintragsId = kiPendingData.eintragsId;
+  const result = kiPendingData.result;
+  kiErgebnisAktuelleWerte();
+  const note = parseFloat(result.note);
   if (isNaN(note) || note < 1.0 || note > 6.0) { showToast('Bitte eine gültige Note (1.0–6.0) bestätigen.', 'error'); return; }
   result.note = note;
   try {
@@ -2635,6 +2648,160 @@ async function reviewKorrektur(eintragsId) {
     kiPendingData = { eintragsId: eintragsId, result: eintrag.ergebnis, pruefung: pruefungen[0] || {}, schueler: schuelerRows[0] || {} };
     showKiErgebnis();
   } catch(e) { showToast(e.message, 'error'); }
+}
+
+// =============================================================
+// WORD-EXPORT (.docx) – eigenständig erzeugt, ohne externe Bibliothek
+// =============================================================
+function crc32(bytes) {
+  if (!crc32._t) {
+    crc32._t = [];
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      crc32._t[n] = c >>> 0;
+    }
+  }
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i++) crc = (crc >>> 8) ^ crc32._t[(crc ^ bytes[i]) & 0xFF];
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+// Erzeugt ein ZIP-Archiv (Methode "store", ohne Kompression) – genügt für .docx.
+function zipStore(files) {
+  const enc = new TextEncoder();
+  const u16 = function(n) { return [n & 255, (n >>> 8) & 255]; };
+  const u32 = function(n) { return [n & 255, (n >>> 8) & 255, (n >>> 16) & 255, (n >>> 24) & 255]; };
+  const parts = [];
+  const central = [];
+  let offset = 0;
+  files.forEach(function(f) {
+    const name = enc.encode(f.name);
+    const data = f.data;
+    const crc = crc32(data);
+    const local = new Uint8Array([].concat(
+      u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0),
+      u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0)
+    ));
+    parts.push(local, name, data);
+    central.push(new Uint8Array([].concat(
+      u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0),
+      u32(crc), u32(data.length), u32(data.length), u16(name.length),
+      u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset)
+    )), name);
+    offset += local.length + name.length + data.length;
+  });
+  const cdStart = offset;
+  let cdSize = 0;
+  central.forEach(function(c) { parts.push(c); cdSize += c.length; });
+  parts.push(new Uint8Array([].concat(
+    u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length),
+    u32(cdSize), u32(cdStart), u16(0)
+  )));
+  let total = 0;
+  parts.forEach(function(p) { total += p.length; });
+  const out = new Uint8Array(total);
+  let pos = 0;
+  parts.forEach(function(p) { out.set(p, pos); pos += p.length; });
+  return out;
+}
+
+function docxEsc(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Ein Word-Absatz. opts: { bold, size (halbe Punkte), color (RRGGBB), before, spaceAfter }
+function docxP(text, opts) {
+  opts = opts || {};
+  const runText = String(text == null ? '' : text).split('\n').map(function(line, i) {
+    return (i ? '<w:br/>' : '') + '<w:t xml:space="preserve">' + docxEsc(line) + '</w:t>';
+  }).join('');
+  const rpr = (opts.bold ? '<w:b/>' : '') +
+    (opts.size ? '<w:sz w:val="' + opts.size + '"/><w:szCs w:val="' + opts.size + '"/>' : '') +
+    (opts.color ? '<w:color w:val="' + opts.color + '"/>' : '');
+  const ppr = '<w:spacing w:before="' + (opts.before || 0) + '" w:after="' + (opts.spaceAfter != null ? opts.spaceAfter : 120) + '"/>';
+  return '<w:p><w:pPr>' + ppr + '</w:pPr><w:r><w:rPr>' + rpr + '</w:rPr>' + runText + '</w:r></w:p>';
+}
+
+function buildKorrekturDocx(result, pruefung, schueler) {
+  const aufgaben = result.aufgaben || [];
+  const note = result.note != null ? result.note : '–';
+  const bestanden = Number(result.note) >= 4.0;
+  const maxTotal = aufgaben.reduce(function(s, a) { return s + (Number(a.max) || 0); }, 0) || Number(pruefung.max_punkte) || 0;
+  const datum = (pruefung && pruefung.datum) ? pruefung.datum : new Date().toISOString().slice(0, 10);
+
+  let body = '';
+  body += docxP('Prüfungskorrektur', { bold: true, size: 36, spaceAfter: 80 });
+  body += docxP((pruefung && pruefung.name) || '', { size: 26, spaceAfter: 40 });
+  body += docxP('Schüler/in: ' + ((schueler && schueler.name) || ''), { size: 24, spaceAfter: 0 });
+  body += docxP('Datum: ' + datum, { size: 24, spaceAfter: 240 });
+  body += docxP('Ergebnis', { bold: true, size: 30, before: 120, spaceAfter: 80 });
+  body += docxP('Punkte: ' + (result.punkte != null ? result.punkte : '–') + ' / ' + maxTotal, { size: 24, spaceAfter: 0 });
+  body += docxP('Note: ' + note + '   (' + (bestanden ? 'Bestanden' : 'Nicht bestanden') + ')', { bold: true, size: 26, color: bestanden ? '1A7F37' : 'B42318', spaceAfter: 240 });
+  if (aufgaben.length) {
+    body += docxP('Bewertung pro Aufgabe', { bold: true, size: 30, before: 120, spaceAfter: 120 });
+    aufgaben.forEach(function(a, i) {
+      body += docxP(a.bezeichnung || ('Aufgabe ' + (i + 1)), { bold: true, size: 24, before: 120, spaceAfter: 20 });
+      body += docxP('Punkte: ' + (a.erreicht != null ? a.erreicht : 0) + ' / ' + (a.max != null ? a.max : '–'), { size: 22, spaceAfter: 20 });
+      body += docxP(a.feedback || '–', { size: 22, spaceAfter: 80 });
+    });
+  }
+  if (result.kommentar) {
+    body += docxP('Gesamtkommentar', { bold: true, size: 30, before: 200, spaceAfter: 80 });
+    body += docxP(result.kommentar, { size: 22 });
+  }
+
+  const documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + body +
+    '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr>' +
+    '</w:body></w:document>';
+  const contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+    '<Default Extension="xml" ContentType="application/xml"/>' +
+    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+    '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>';
+  const rels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
+  const docRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+  const stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+    '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr>' +
+    '<w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="22"/><w:szCs w:val="22"/></w:rPr></w:rPrDefault></w:docDefaults></w:styles>';
+
+  const enc = new TextEncoder();
+  return zipStore([
+    { name: '[Content_Types].xml', data: enc.encode(contentTypes) },
+    { name: '_rels/.rels', data: enc.encode(rels) },
+    { name: 'word/document.xml', data: enc.encode(documentXml) },
+    { name: 'word/_rels/document.xml.rels', data: enc.encode(docRels) },
+    { name: 'word/styles.xml', data: enc.encode(stylesXml) },
+  ]);
+}
+
+function downloadKorrekturWord() {
+  if (!kiPendingData) return;
+  kiErgebnisAktuelleWerte();
+  try {
+    const result = kiPendingData.result;
+    const pruefung = kiPendingData.pruefung || {};
+    const schueler = kiPendingData.schueler || {};
+    const bytes = buildKorrekturDocx(result, pruefung, schueler);
+    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const safe = function(s) { return String(s || '').replace(/[^a-zA-Z0-9äöüÄÖÜ _-]/g, '').trim() || 'Korrektur'; };
+    const fname = 'Korrektur_' + safe(schueler.name) + '_' + safe(pruefung.name) + '.docx';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function() { URL.revokeObjectURL(url); }, 1500);
+    showToast('Word-Dokument erstellt.', 'success');
+  } catch(e) { showToast('Word-Export fehlgeschlagen: ' + e.message, 'error'); }
 }
 
 async function kiAlleKorrigieren() {
