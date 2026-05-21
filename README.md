@@ -94,6 +94,8 @@ Setze folgende **Environment Variables** in Vercel (Settings → Environment Var
 |-----------------------|------------------------------------------------------|
 | `ANTHROPIC_API_KEY`   | Anthropic API-Key (sk-ant-...)                       |
 | `ALLOWED_ORIGINS`     | App-URL, z.B. `https://pruefai.ch`                  |
+| `KV_REST_API_URL`     | Upstash-Redis-URL für den QR-Foto-Relay (via Vercel-Storage) |
+| `KV_REST_API_TOKEN`   | Upstash-Redis-Token für den QR-Foto-Relay            |
 | `SKIP_LICENSE`        | `false` (Lizenz immer prüfen, empfohlen für Prod.)   |
 | `TRIAL_SECRET`        | Zufälliger 32+-Zeichen-String für signierte Trials   |
 | `STRIPE_SECRET_KEY`   | Stripe Secret Key (optional, für Lizenzverkauf)      |
@@ -131,7 +133,7 @@ pruefai-app/
 ├── api/                    # Vercel Serverless Functions
 │   ├── claude.js           # KI-Korrektur-Proxy (mit Lizenzprüfung)
 │   ├── config.js           # Schulname aus Env-Variable
-│   ├── relay.js            # QR-Code-Foto-Relay (in-memory, TTL 10 min)
+│   ├── relay.js            # QR-Code-Foto-Relay (Upstash Redis, TTL 10 min)
 │   ├── validate-license.js # Lizenzvalidierung via Stripe
 │   ├── stripe-checkout.js  # Stripe Checkout-Session
 │   ├── stripe-webhook.js   # Stripe Webhook (Lizenzschlüssel per E-Mail)
