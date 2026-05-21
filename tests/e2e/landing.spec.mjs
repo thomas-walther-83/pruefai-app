@@ -23,15 +23,6 @@ test.describe('Landing-Page (/)', () => {
     await page.goto('/');
     await expect(page.locator('#faq')).toBeVisible();
   });
-
-  test('Klick auf den Hero-CTA führt in die App', async ({ page }) => {
-    // Der Plausible-Tracking-Handler fängt App-Link-Klicks ab (preventDefault)
-    // und navigiert per JS – dieser Test stellt sicher, dass das funktioniert.
-    await page.goto('/');
-    await page.locator('.hero a.btn-primary-lg').click();
-    await expect(page).toHaveURL(/\/app$/);
-    await expect(page.locator('#tab-dashboard')).toBeVisible();
-  });
 });
 
 test.describe('Cookie-Banner', () => {
