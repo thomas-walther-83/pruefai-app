@@ -651,6 +651,24 @@
       <div class="form-group"><label class="form-label">Fach</label><select id="pruefung-fach-id" class="form-control"><option value="">– optional –</option></select></div>
       <div class="form-group"><label class="form-label">Max. Punkte *</label><input type="number" id="pruefung-max-punkte" class="form-control" value="100" min="1" /></div>
     </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">Notenformel</label>
+        <select id="pruefung-notenformel" class="form-control">
+          <option value="linear">Linear (1 + 5 × Punkte/Max)</option>
+          <option value="knick60">Bestehensgrenze 60 % = Note 4.0</option>
+          <option value="knick50">Bestehensgrenze 50 % = Note 4.0</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notenrundung</label>
+        <select id="pruefung-notenrundung" class="form-control">
+          <option value="0.5">0.5er-Schritte</option>
+          <option value="0.25">0.25er-Schritte</option>
+          <option value="0.1">0.1er-Schritte</option>
+        </select>
+      </div>
+    </div>
     <div class="form-group">
       <label class="form-label">Klassen</label>
       <div id="pruefung-klassen-checkboxes" style="display:flex;flex-wrap:wrap;gap:.5rem;padding:.5rem;border:1px solid var(--border);border-radius:6px;max-height:120px;overflow-y:auto">
@@ -720,7 +738,7 @@
     </div>
     <div class="modal__footer">
       <button class="btn btn-secondary" onclick="closeModal('ki-ergebnis-modal')">Schliessen</button>
-      <button class="btn btn-success" onclick="saveKiErgebnis()">&#10003; Note übernehmen</button>
+      <button class="btn btn-success" onclick="saveKiErgebnis()">&#10003; Bestätigen &amp; abschliessen</button>
     </div>
   </div>
 </div>
@@ -1510,6 +1528,9 @@ async function openModal(id) {
     document.getElementById('pruefung-max-punkte').value = '100';
     document.getElementById('pruefung-anweisungen').value = '';
     document.getElementById('pruefung-modal-title').textContent = 'Neue Prüfung';
+    const nd = ladeNotenDefault();
+    document.getElementById('pruefung-notenformel').value = nd.formel;
+    document.getElementById('pruefung-notenrundung').value = String(nd.rundung);
     await loadFaecherIntoSelect('pruefung-fach-id');
     await loadKlassenCheckboxes();
     await loadRubricsIntoSelect('pruefung-rubric-id');
@@ -1704,6 +1725,9 @@ async function editPruefung(id) {
   document.getElementById('pruefung-max-punkte').value = p.max_punkte;
   document.getElementById('pruefung-anweisungen').value = p.anweisungen || '';
   document.getElementById('pruefung-rubric-id').value = p.rubric_id || '';
+  const nd = ladeNotenDefault();
+  document.getElementById('pruefung-notenformel').value = p.notenformel || nd.formel;
+  document.getElementById('pruefung-notenrundung').value = String(p.notenrundung || nd.rundung);
   document.getElementById('pruefung-modal-title').textContent = 'Prüfung bearbeiten';
   document.getElementById('pruefung-modal').classList.remove('hidden');
 }
@@ -1716,11 +1740,13 @@ async function savePruefung() {
   const maxPunkte = parseFloat(document.getElementById('pruefung-max-punkte').value) || 100;
   const anweisungen = document.getElementById('pruefung-anweisungen').value.trim() || null;
   const rubricId = document.getElementById('pruefung-rubric-id').value || null;
+  const notenformel = document.getElementById('pruefung-notenformel').value || 'linear';
+  const notenrundung = parseFloat(document.getElementById('pruefung-notenrundung').value) || 0.5;
   if (!name) { showToast('Name ist ein Pflichtfeld.', 'error'); return; }
   const checked = Array.from(document.querySelectorAll('#pruefung-klassen-checkboxes input[type=checkbox]:checked')).map(function(cb) { return cb.value; });
   try {
     let pruefungId = id;
-    const payload = { name, datum, fach_id: fachId, max_punkte: maxPunkte, anweisungen, rubric_id: rubricId };
+    const payload = { name, datum, fach_id: fachId, max_punkte: maxPunkte, anweisungen, rubric_id: rubricId, notenformel: notenformel, notenrundung: notenrundung };
     if (id) {
       await sb.update('pruefungen', id, payload);
     } else {
@@ -1732,6 +1758,8 @@ async function savePruefung() {
       for (const ex of existing) await sb.delete('pruefung_klassen', ex.id);
       for (const kid of checked) await sb.insert('pruefung_klassen', { pruefung_id: pruefungId, klasse_id: kid });
     }
+    localStorage.setItem('lernortai_notenformel_default', notenformel);
+    localStorage.setItem('lernortai_notenrundung_default', String(notenrundung));
     closeModal('pruefung-modal'); showToast('Prüfung gespeichert.', 'success'); loadPruefungen();
   } catch(e) { showToast(e.message, 'error'); }
 }
@@ -1899,6 +1927,7 @@ async function loadKorrekturEintraege() {
           '<td><span class="badge ' + statusBadge(status) + '">' + escHtml(status) + '</span></td><td>' + note + '</td><td>' +
           '<button class="btn btn-sm btn-secondary" onclick="openUploadForSchueler(\'' + safePruefungId + '\', \'' + safeSchuelerId + '\', \'' + safeName + '\')">&#128248; Upload</button> ' +
           (e ? '<button class="btn btn-sm btn-primary" onclick="kiKorrigieren(\'' + e.id + '\')">&#129302; KI</button> ' +
+               (e.ergebnis ? '<button class="btn btn-sm btn-secondary" onclick="reviewKorrektur(\'' + e.id + '\')">&#128221; Prüfen</button> ' : '') +
                '<button class="btn btn-sm btn-secondary" onclick="noteManuelleingabe(\'' + e.id + '\')">&#9998; Note</button>'
             : '<span style="color:var(--text-muted);font-size:.8rem">Eintrag wird beim Upload erstellt</span>') + '</td></tr>';
       }).join('') + '</tbody></table></div></div>';
@@ -2237,7 +2266,7 @@ async function ladeKiMaterialBlocks(pruefungId) {
   return kiMaterialCache;
 }
 
-async function kiKorrigieren(eintragsId) {
+async function kiKorrigieren(eintragsId, silent) {
   try {
     const eintraege = await sb.select('eintraege', 'id=eq.' + eintragsId);
     const eintrag = eintraege[0]; if (!eintrag) return;
@@ -2338,44 +2367,180 @@ async function kiKorrigieren(eintragsId) {
     let result;
     try { const m = raw.match(/\{[\s\S]*\}/); result = JSON.parse(m ? m[0] : raw); result.ki_qualitaet_unsicher = false; }
     catch(pe) { throw new Error('KI-Antwort konnte nicht geparst werden: ' + raw); }
-    kiPendingData = { eintragsId, result };
-    showKiErgebnis(result, schueler && schueler.name || 'Schüler', pruefung && pruefung.max_punkte || 100);
+    // KI-Ergebnis sofort als 'korrigiert' sichern – so geht es bei Stapel-
+    // Korrektur und beim Schliessen ohne Bestätigung nicht verloren.
+    try {
+      await sb.update('eintraege', eintragsId, { status: 'korrigiert', note: parseFloat(result.note) || null, punkte: (result.punkte != null ? result.punkte : null), ergebnis: result, kommentar: result.kommentar || null, ki_bewertet_am: new Date().toISOString() });
+    } catch(se) { /* Sicherung fehlgeschlagen – Modal trotzdem anzeigen */ }
+    kiPendingData = { eintragsId: eintragsId, result: result, pruefung: pruefung, schueler: schueler };
+    if (!silent) showKiErgebnis();
   } catch(e) { showToast('KI-Fehler: ' + e.message, 'error'); }
 }
 
-function showKiErgebnis(result, name, maxPunkte) {
-  const n = result.note || 0;
-  document.getElementById('ki-ergebnis-content').innerHTML =
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">' +
-    '<div><strong>' + escHtml(name) + '</strong><div style="font-size:.8rem;color:var(--text-muted)">' + (result.punkte || '–') + ' / ' + maxPunkte + ' Punkte</div></div>' +
-    '<div class="stat-card" style="text-align:center;padding:.75rem 1.5rem"><div class="stat-card__num ' + noteClass(n) + '">' + n.toFixed(1) + '</div>' +
-    (result.ki_qualitaet_unsicher ? '<div class="badge badge-unsicher" style="margin-top:.25rem">&#9888;&#65039; Grenzfall</div>' : '') +
-    '<div class="stat-card__lbl">Note</div></div></div>' +
-    '<div class="alert ' + (n >= 4.0 ? 'alert-success' : 'alert-danger') + '" style="margin-bottom:1rem">' + (n >= 4.0 ? '&#10003; Bestanden' : '&#10007; Nicht bestanden') + '</div>' +
-    (result.kommentar ? '<p style="margin-bottom:1rem;font-size:.875rem"><strong>Kommentar:</strong> ' + escHtml(result.kommentar) + '</p>' : '') +
-    ((result.aufgaben || []).length ? '<div class="table-wrap"><table><thead><tr><th>Aufgabe</th><th>Max.</th><th>Erreicht</th><th>Feedback</th></tr></thead><tbody>' +
-      result.aufgaben.map(function(a) { return '<tr><td>' + escHtml(a.bezeichnung || '') + '</td><td>' + (a.max || '') + '</td><td>' + (a.erreicht || '') + '</td><td><small>' + escHtml(a.feedback || '') + '</small></td></tr>'; }).join('') +
-      '</tbody></table></div>' : '');
-  // Show quality check option for borderline grades (Pro feature)
+function ladeNotenDefault() {
+  return {
+    formel: localStorage.getItem('lernortai_notenformel_default') || 'linear',
+    rundung: parseFloat(localStorage.getItem('lernortai_notenrundung_default')) || 0.5,
+  };
+}
+
+function rundeNote(note, schritt) {
+  const s = Number(schritt) || 0.5;
+  let n = Math.round(note / s) * s;
+  n = Math.max(1.0, Math.min(6.0, n));
+  return Math.round(n * 100) / 100;
+}
+
+// Note aus Punkten – Formel pro Prüfung wählbar.
+function noteAusPunkte(erreicht, maxPunkte, formel, rundung) {
+  const max = Number(maxPunkte) || 0;
+  if (max <= 0) return null;
+  let r = Number(erreicht) / max;
+  if (isNaN(r)) r = 0;
+  r = Math.max(0, Math.min(1, r));
+  let note;
+  if (formel === 'knick60' || formel === 'knick50') {
+    const g = formel === 'knick50' ? 0.5 : 0.6;
+    note = r <= g ? 1 + 3 * (r / g) : 4 + 2 * ((r - g) / (1 - g));
+  } else {
+    note = 1 + 5 * r;
+  }
+  return rundeNote(note, rundung);
+}
+
+const NOTENFORMEL_LABELS = { linear: 'Linear', knick60: 'Grenze 60 %', knick50: 'Grenze 50 %' };
+
+// Bearbeitbare Bestätigungs-Ansicht: Punkte und Feedback pro Aufgabe sind
+// überschreibbar, die Note wird live neu berechnet, der Lehrer bestätigt.
+function showKiErgebnis() {
+  if (!kiPendingData) return;
+  const result = kiPendingData.result;
+  const pruefung = kiPendingData.pruefung || {};
+  const schueler = kiPendingData.schueler || {};
+  const aufgaben = result.aufgaben || [];
+  const nd = ladeNotenDefault();
+  const formel = pruefung.notenformel || nd.formel;
+  const rundung = pruefung.notenrundung || nd.rundung;
+  const maxTotal = aufgaben.reduce(function(s, a) { return s + (Number(a.max) || 0); }, 0) || Number(pruefung.max_punkte) || 0;
+
+  let html = '<div style="margin-bottom:.75rem"><strong>' + escHtml(schueler.name || 'Schüler') + '</strong>' +
+    (pruefung.name ? ' <span style="color:var(--text-muted);font-size:.8rem">· ' + escHtml(pruefung.name) + '</span>' : '') +
+    (result.ki_qualitaet_unsicher ? ' <span class="badge badge-unsicher">&#9888;&#65039; Grenzfall</span>' : '') + '</div>';
+
+  if (aufgaben.length) {
+    html += '<div class="table-wrap"><table><thead><tr><th>Aufgabe</th><th style="width:54px">Max.</th><th style="width:96px">Punkte</th><th>Feedback</th></tr></thead><tbody>';
+    aufgaben.forEach(function(a, i) {
+      html += '<tr><td>' + escHtml(a.bezeichnung || ('Aufgabe ' + (i + 1))) + '</td>' +
+        '<td>' + (a.max != null ? a.max : '–') + '</td>' +
+        '<td><input type="number" class="form-control ki-erreicht" data-i="' + i + '" value="' + (a.erreicht != null ? a.erreicht : 0) + '" min="0" step="any" style="padding:.25rem .4rem" oninput="kiErgebnisRecalc()" /></td>' +
+        '<td><textarea class="form-control ki-feedback" data-i="' + i + '" rows="2" style="padding:.3rem .4rem;font-size:.8rem">' + escHtml(a.feedback || '') + '</textarea></td></tr>';
+    });
+    html += '</tbody></table></div>';
+    html += '<div style="display:flex;gap:1.25rem;align-items:flex-end;flex-wrap:wrap;margin-top:.75rem">' +
+      '<div><div style="font-size:.75rem;color:var(--text-muted)">Punkte total</div>' +
+      '<div style="font-size:1.15rem;font-weight:700"><span id="ki-total-erreicht">0</span> / ' + maxTotal + '</div></div>' +
+      '<div><div style="font-size:.75rem;color:var(--text-muted)">Note · ' + (NOTENFORMEL_LABELS[formel] || formel) + ' · Rundung ' + rundung + '</div>' +
+      '<input type="number" id="ki-note-input" class="form-control" step="any" min="1" max="6" value="' + (result.note != null ? result.note : '') + '" style="width:120px;font-size:1.15rem;font-weight:700" /></div>' +
+      '<div id="ki-pass-badge"></div></div>';
+  } else {
+    html += '<div class="form-group"><label class="form-label">Note (1.0–6.0)</label>' +
+      '<input type="number" id="ki-note-input" class="form-control" step="any" min="1" max="6" value="' + (result.note != null ? result.note : '') + '" style="width:120px" /></div>';
+  }
+
+  html += '<div class="form-group" style="margin-top:.75rem"><label class="form-label">Gesamtkommentar</label>' +
+    '<textarea id="ki-kommentar-input" class="form-control" rows="3">' + escHtml(result.kommentar || '') + '</textarea></div>';
+
+  document.getElementById('ki-ergebnis-content').innerHTML = html;
+  document.getElementById('ki-ergebnis-modal').classList.remove('hidden');
+  kiErgebnisRecalc();
+
+  // Qualitätscheck-Hinweis bei Grenzfall (nach der Neuberechnung)
+  const nNow = Number(result.note) || 0;
   const qualWrap = document.getElementById('ki-qualitaets-wrap');
   const qualResult = document.getElementById('ki-qualitaets-result');
   qualResult.classList.add('hidden');
   qualResult.innerHTML = '';
-  if (n >= 3.5 && n <= 4.5) {
-    qualWrap.classList.remove('hidden');
-  } else {
-    qualWrap.classList.add('hidden');
-  }
-  document.getElementById('ki-ergebnis-modal').classList.remove('hidden');
+  if (nNow >= 3.5 && nNow <= 4.5) { qualWrap.classList.remove('hidden'); } else { qualWrap.classList.add('hidden'); }
 }
 
+// Liest die bearbeiteten Punkte, berechnet Summe und Note neu.
+function kiErgebnisRecalc() {
+  if (!kiPendingData) return;
+  const result = kiPendingData.result;
+  const pruefung = kiPendingData.pruefung || {};
+  const aufgaben = result.aufgaben || [];
+  const inputs = document.querySelectorAll('#ki-ergebnis-content .ki-erreicht');
+  if (!inputs.length) return;
+  let total = 0;
+  inputs.forEach(function(inp) {
+    const i = parseInt(inp.dataset.i, 10);
+    let v = parseFloat(inp.value);
+    if (isNaN(v)) v = 0;
+    if (aufgaben[i]) aufgaben[i].erreicht = v;
+    total += v;
+  });
+  const maxTotal = aufgaben.reduce(function(s, a) { return s + (Number(a.max) || 0); }, 0) || Number(pruefung.max_punkte) || 0;
+  const nd = ladeNotenDefault();
+  const note = noteAusPunkte(total, maxTotal, pruefung.notenformel || nd.formel, pruefung.notenrundung || nd.rundung);
+  result.punkte = Math.round(total * 100) / 100;
+  if (note != null) result.note = note;
+  const totalEl = document.getElementById('ki-total-erreicht');
+  if (totalEl) totalEl.textContent = result.punkte;
+  const noteInp = document.getElementById('ki-note-input');
+  if (noteInp && note != null) noteInp.value = note;
+  const badge = document.getElementById('ki-pass-badge');
+  if (badge && note != null) {
+    badge.innerHTML = note >= 4.0
+      ? '<span style="display:inline-block;background:var(--success);color:#fff;border-radius:6px;padding:.35rem .7rem;font-weight:600">&#10003; Bestanden</span>'
+      : '<span style="display:inline-block;background:var(--danger);color:#fff;border-radius:6px;padding:.35rem .7rem;font-weight:600">&#10007; Nicht bestanden</span>';
+  }
+}
+
+// Bestätigt die geprüfte Korrektur und schliesst den Eintrag ab.
 async function saveKiErgebnis() {
   if (!kiPendingData) return;
   const eintragsId = kiPendingData.eintragsId;
   const result = kiPendingData.result;
+  kiErgebnisRecalc();
+  document.querySelectorAll('#ki-ergebnis-content .ki-feedback').forEach(function(ta) {
+    const i = parseInt(ta.dataset.i, 10);
+    if (result.aufgaben && result.aufgaben[i]) result.aufgaben[i].feedback = ta.value;
+  });
+  const kommentarEl = document.getElementById('ki-kommentar-input');
+  if (kommentarEl) result.kommentar = kommentarEl.value.trim();
+  const noteEl = document.getElementById('ki-note-input');
+  const note = noteEl ? parseFloat(noteEl.value) : NaN;
+  if (isNaN(note) || note < 1.0 || note > 6.0) { showToast('Bitte eine gültige Note (1.0–6.0) bestätigen.', 'error'); return; }
+  result.note = note;
   try {
-    await sb.update('eintraege', eintragsId, { status: 'korrigiert', note: parseFloat(result.note) || null, punkte: result.punkte || null, ergebnis: result, kommentar: result.kommentar || null, ki_bewertet_am: new Date().toISOString() });
-    kiPendingData = null; closeModal('ki-ergebnis-modal'); showToast('KI-Note gespeichert.', 'success'); loadKorrekturEintraege(); loadDashboard();
+    await sb.update('eintraege', eintragsId, {
+      status: 'abgeschlossen',
+      note: note,
+      note_manuell: note,
+      punkte: (result.punkte != null ? result.punkte : null),
+      ergebnis: result,
+      kommentar: result.kommentar || null,
+    });
+    kiPendingData = null;
+    closeModal('ki-ergebnis-modal');
+    showToast('Korrektur bestätigt und abgeschlossen.', 'success');
+    loadKorrekturEintraege();
+    loadDashboard();
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
+// Öffnet eine bereits korrigierte Prüfung erneut zur Prüfung/Bestätigung.
+async function reviewKorrektur(eintragsId) {
+  try {
+    const eintraege = await sb.select('eintraege', 'id=eq.' + eintragsId);
+    const eintrag = eintraege[0];
+    if (!eintrag || !eintrag.ergebnis) { showToast('Kein KI-Ergebnis vorhanden.', 'error'); return; }
+    const [pruefungen, schuelerRows] = await Promise.all([
+      sb.select('pruefungen', 'id=eq.' + eintrag.pruefung_id),
+      sb.select('schueler', 'id=eq.' + eintrag.schueler_id)
+    ]);
+    kiPendingData = { eintragsId: eintragsId, result: eintrag.ergebnis, pruefung: pruefungen[0] || {}, schueler: schuelerRows[0] || {} };
+    showKiErgebnis();
   } catch(e) { showToast(e.message, 'error'); }
 }
 
@@ -2406,12 +2571,13 @@ async function kiAlleKorrigieren() {
   if (!confirm(todo.length + ' Prüfungen mit KI korrigieren?')) return;
   let done = 0;
   for (let i = 0; i < todo.length; i++) {
-    const result = await kiKorrigieren(todo[i].id);
+    const result = await kiKorrigieren(todo[i].id, true);
     if (result === 'limit') { showToast('Limit erreicht – ' + done + ' von ' + todo.length + ' Korrekturen abgeschlossen.', 'error'); return; }
     done++;
     showToast('Korrigiert: ' + done + '/' + todo.length, 'info');
   }
-  showToast('Alle Korrekturen abgeschlossen.', 'success');
+  showToast('Alle Korrekturen abgeschlossen. Bitte je Schüler über „Prüfen" bestätigen.', 'success');
+  loadKorrekturEintraege();
 }
 
 // =============================================================
@@ -3107,7 +3273,11 @@ async function runQualitaetsCheck() {
     } else {
       wrap.innerHTML = '<div class="alert alert-warning">&#9888;&#65039; Abweichung erkannt! Vorschlag: <strong>' + qResult.note_vorschlag + '</strong> – ' + escHtml(qResult.begruendung || '') + (qResult.abweichung ? '<br><small>' + escHtml(qResult.abweichung) + '</small>' : '') + '</div>';
       kiPendingData.result.ki_qualitaet_unsicher = true;
-      if (qResult.note_vorschlag) kiPendingData.result.note = qResult.note_vorschlag;
+      if (qResult.note_vorschlag) {
+        kiPendingData.result.note = qResult.note_vorschlag;
+        const noteInp = document.getElementById('ki-note-input');
+        if (noteInp) noteInp.value = qResult.note_vorschlag;
+      }
     }
     wrap.classList.remove('hidden');
     showToast('Qualitätscheck abgeschlossen.', 'success');
