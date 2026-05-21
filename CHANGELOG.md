@@ -8,6 +8,16 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Behoben
+- **KI-Korrektur scheiterte weiterhin bei vielen Prüfungsseiten** („KI-Fehler:
+  load failed"). Die fixe Komprimierung auf 1240 px reichte für ~12 Seiten
+  nicht – die Anfrage überschritt Vercels hartes 4,5-MB-Limit. Neu wird die
+  Auflösung an die Seitenzahl angepasst und die Gesamtgrösse gemessen und bei
+  Bedarf stufenweise weiter verkleinert (Budget 2,4 MB Prüfung + 1,7 MB
+  Material). Das Funktions-Timeout ist nun zusätzlich in `vercel.json`
+  verankert (`maxDuration` 60 s), und `max_tokens` der Korrektur wurde auf
+  4096 erhöht, damit auch umfangreiche Prüfungen nicht abgeschnitten werden.
+
 ### Hinzugefügt
 - **Bearbeitbare Korrektur-Bestätigung**: Nach der KI-Korrektur kann der Lehrer
   die Punkte und das Feedback pro Aufgabe direkt überschreiben. Die Punktsumme
