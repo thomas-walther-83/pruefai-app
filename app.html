@@ -1350,6 +1350,17 @@ async function sbStorageUrl(bucket, filePath) {
   });
 }
 
+// Liefert den gespeicherten Blob direkt aus IndexedDB – ohne Umweg über eine
+// blob:-URL samt fetch(), das unter der CSP (connect-src) scheitern würde.
+async function sbStorageBlob(filePath) {
+  const db = await idbOpen();
+  return new Promise(function(resolve) {
+    const req = db.transaction('_files', 'readonly').objectStore('_files').get(filePath);
+    req.onsuccess = function() { resolve(req.result && req.result.blob ? req.result.blob : null); };
+    req.onerror = function() { resolve(null); };
+  });
+}
+
 // =============================================================
 // EXPORT / IMPORT
 // =============================================================
@@ -1402,7 +1413,9 @@ async function importAllData(file) {
       });
     }
     for (const f of (backup.files || [])) {
-      const blob = await fetch(f.data).then(function(r) { return r.blob(); });
+      // Lokale Dekodierung statt fetch() auf der data:-URL – hält die strikte
+      // CSP (connect-src 'self') ein.
+      const blob = dataUrlToBlob(f.data, f.contentType);
       await new Promise(function(resolve, reject) {
         const tx = db.transaction('_files', 'readwrite');
         tx.objectStore('_files').put({ id: f.id, bucket: f.bucket, contentType: f.contentType, blob: blob });
@@ -2221,10 +2234,8 @@ async function ladeKiMaterialBlocks(pruefungId) {
   async function toBlock(m) {
     try {
       const path = (m.storage_pfad || '').replace(/^lernmaterial\//, '');
-      const url = await sbStorageUrl('lernmaterial', path);
-      if (!url) return null;
-      const res = await fetch(url);
-      let blob = await res.blob();
+      let blob = await sbStorageBlob(path);
+      if (!blob) return null;
       const mime = m.mime_type || blob.type || '';
       if (mime === 'application/pdf') {
         const dataUrl = await blobToDataUrl(blob);
@@ -2274,9 +2285,8 @@ async function ladeSeitenBlocks(seiten) {
   const blobs = [];
   for (let i = 0; i < seiten.length; i++) {
     const sp = (seiten[i].storage_pfad || '').replace(/^pruefungsfotos\//, '');
-    const url = await sbStorageUrl('pruefungsfotos', sp);
-    if (!url) continue;
-    try { const r = await fetch(url); blobs.push(await r.blob()); } catch (e) { /* Seite überspringen */ }
+    const blob = await sbStorageBlob(sp);
+    if (blob) blobs.push(blob);
   }
   const n = blobs.length;
   const dimStufen = n <= 6 ? [1240, 980, 760] : n <= 12 ? [1040, 840, 680] : [820, 660, 540];
