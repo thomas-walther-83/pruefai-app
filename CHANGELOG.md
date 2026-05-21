@@ -9,12 +9,23 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
+- **Lernstoff-Massenupload**: Im Dialog „Material hochladen" lassen sich jetzt
+  mehrere Dateien gleichzeitig auswählen und in einem Durchgang hochladen.
+  Eine Fortschrittsanzeige zählt die Dateien durch; schlägt eine Datei fehl,
+  laufen die übrigen weiter.
 - **Frontend-Smoke-Tests (Playwright)**: 14 End-to-End-Tests in `tests/e2e/`
   decken Landing-Page, Cookie-Banner, App-Shell und das Routing ab. Ein
   schlanker Vercel-Routing-Emulator (`tests/e2e/static-server.mjs`) spielt
   die `vercel.json`-Reihenfolge (redirects → Dateisystem → rewrites) durch,
   sodass Routing-Bugs wie in PR #45 / #50 künftig vor dem Merge auffallen.
   Neuer CI-Job „Frontend-Smoke-Tests" und npm-Skript `test:e2e`.
+
+### Geändert
+- **Lernstoff-Upload vereinfacht**: Das Feld „Bezeichnung" ist jetzt optional –
+  bleibt es leer, wird automatisch der Dateiname übernommen (bei
+  Mehrfach-Uploads ohnehin pro Datei). Der Upload-Dialog weist zudem darauf
+  hin, PowerPoint-Präsentationen als PDF zu exportieren, damit die
+  KI-Korrektur sie auswerten kann.
 
 ### Entfernt
 - **Plausible-Analytics komplett entfernt**: Das Snippet auf der Landing-Page

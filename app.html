@@ -802,21 +802,22 @@
     <div class="modal__title">&#128196; Material hochladen</div>
     <button class="modal__close" onclick="closeModal('lernstoff-modal')">&#10005;</button>
     <div class="form-group">
-      <label class="form-label">Bezeichnung *</label>
-      <input type="text" id="lernstoff-bezeichnung" class="form-control" placeholder="z.B. Musterlösung Semesterprüfung Q1" />
+      <label class="form-label">Bezeichnung</label>
+      <input type="text" id="lernstoff-bezeichnung" class="form-control" placeholder="optional – leer lassen für Dateiname" />
     </div>
     <div class="form-group">
       <label class="form-label">Prüfung zuordnen (optional)</label>
       <select id="lernstoff-pruefung-id" class="form-control"><option value="">– keine Zuordnung –</option></select>
     </div>
     <div class="form-group">
-      <label class="form-label">Datei *</label>
+      <label class="form-label">Datei(en) *</label>
       <div class="upload-zone" onclick="document.getElementById('lernstoff-file-input').click()">
         <div class="upload-zone__icon">&#128196;</div>
         <div id="lernstoff-file-name">PDF, Bild oder Dokument auswählen…</div>
-        <div style="font-size:.75rem;margin-top:.25rem;opacity:.8">PDF, JPG, PNG, DOCX – max. 20 MB</div>
+        <div style="font-size:.75rem;margin-top:.25rem;opacity:.8">Mehrere Dateien möglich · PDF, JPG, PNG, DOCX, TXT – max. 20 MB pro Datei</div>
       </div>
-      <input type="file" id="lernstoff-file-input" accept="image/*,application/pdf,.doc,.docx,.txt" style="display:none" onchange="handleLernstoffFile(event)" />
+      <input type="file" id="lernstoff-file-input" accept="image/*,application/pdf,.doc,.docx,.txt" multiple style="display:none" onchange="handleLernstoffFile(event)" />
+      <p style="font-size:.75rem;color:var(--text-muted);margin-top:.4rem">&#128161; PowerPoint-Präsentationen bitte als PDF exportieren – so kann die KI-Korrektur sie direkt auswerten.</p>
     </div>
     <div id="lernstoff-upload-progress" class="hidden" style="margin-top:.5rem">
       <div class="progress"><div class="progress-bar" id="lernstoff-progress-bar" style="width:0%"></div></div>
@@ -1044,7 +1045,7 @@ let relayToken     = null;
 let relayPollInterval = null;
 let mobilePhotos   = [];
 let kiPendingData  = null;
-let lernstoffFileObj = null;
+let lernstoffFiles = [];
 let csvParsedRows   = [];
 let helpChatHistory = [];
 
@@ -1753,46 +1754,78 @@ async function erstelleEintraege(pruefungId) {
 // LERNSTOFF
 // =============================================================
 function openLernstoffModal() {
-  document.getElementById('lernstoff-bezeichnung').value = '';
+  const bezEl = document.getElementById('lernstoff-bezeichnung');
+  bezEl.value = '';
+  bezEl.disabled = false;
+  bezEl.placeholder = 'optional – leer lassen für Dateiname';
   document.getElementById('lernstoff-file-name').textContent = 'PDF, Bild oder Dokument auswählen…';
+  document.getElementById('lernstoff-file-input').value = '';
   document.getElementById('lernstoff-upload-progress').classList.add('hidden');
   document.getElementById('lernstoff-progress-bar').style.width = '0%';
-  lernstoffFileObj = null;
+  lernstoffFiles = [];
   loadPruefungenIntoSelect('lernstoff-pruefung-id', true);
   document.getElementById('lernstoff-modal').classList.remove('hidden');
 }
 
 function handleLernstoffFile(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  lernstoffFileObj = file;
-  document.getElementById('lernstoff-file-name').textContent = file.name + ' (' + formatBytes(file.size) + ')';
+  const files = Array.prototype.slice.call(e.target.files || []);
+  if (!files.length) return;
+  lernstoffFiles = files;
+  const nameEl = document.getElementById('lernstoff-file-name');
+  const bezEl  = document.getElementById('lernstoff-bezeichnung');
+  if (files.length === 1) {
+    nameEl.textContent = files[0].name + ' (' + formatBytes(files[0].size) + ')';
+    bezEl.disabled = false;
+    bezEl.placeholder = 'optional – leer lassen für Dateiname';
+  } else {
+    const total = files.reduce(function(sum, f) { return sum + f.size; }, 0);
+    nameEl.textContent = files.length + ' Dateien ausgewählt (' + formatBytes(total) + ')';
+    bezEl.value = '';
+    bezEl.disabled = true;
+    bezEl.placeholder = 'Bei mehreren Dateien werden die Dateinamen verwendet';
+  }
 }
 
 async function uploadLernstoff() {
-  const bezeichnung = document.getElementById('lernstoff-bezeichnung').value.trim();
+  const bezeichnungInput = document.getElementById('lernstoff-bezeichnung').value.trim();
   const pruefungId  = document.getElementById('lernstoff-pruefung-id').value || null;
-  if (!bezeichnung) { showToast('Bitte Bezeichnung eingeben.', 'error'); return; }
-  if (!lernstoffFileObj) { showToast('Bitte Datei auswählen.', 'error'); return; }
-  if (lernstoffFileObj.size > 20 * 1024 * 1024) { showToast('Datei zu gross (max. 20 MB).', 'error'); return; }
+  if (!lernstoffFiles.length) { showToast('Bitte mindestens eine Datei auswählen.', 'error'); return; }
+  const tooBig = lernstoffFiles.filter(function(f) { return f.size > 20 * 1024 * 1024; })[0];
+  if (tooBig) { showToast('Datei „' + tooBig.name + '" ist zu gross (max. 20 MB).', 'error'); return; }
+  const progressBar = document.getElementById('lernstoff-progress-bar');
   document.getElementById('lernstoff-upload-progress').classList.remove('hidden');
+  progressBar.style.width = '0%';
   document.getElementById('lernstoff-upload-btn').disabled = true;
+  let done = 0, failed = 0;
   try {
-    const ext = lernstoffFileObj.name.split('.').pop();
-    const filePath = lehrer_id + '/' + Date.now() + '.' + ext;
-    const storedPath = await sbStorageUpload('lernmaterial', filePath, lernstoffFileObj);
-    await sb.insert('lernmaterial', {
-      bezeichnung,
-      pruefung_id:   pruefungId,
-      lehrer_id:     lehrer_id,
-      storage_pfad:  storedPath,
-      dateiname:     lernstoffFileObj.name,
-      mime_type:     lernstoffFileObj.type,
-      groesse_bytes: lernstoffFileObj.size,
-    });
-    document.getElementById('lernstoff-progress-bar').style.width = '100%';
-    showToast('Material hochgeladen.', 'success');
-    setTimeout(function() { closeModal('lernstoff-modal'); loadLernstoff(); }, 800);
+    for (let i = 0; i < lernstoffFiles.length; i++) {
+      const file = lernstoffFiles[i];
+      // Eine manuelle Bezeichnung greift nur bei genau einer Datei eindeutig;
+      // bei mehreren Dateien dient der Dateiname als Bezeichnung.
+      const bezeichnung = (lernstoffFiles.length === 1 && bezeichnungInput) ? bezeichnungInput : file.name;
+      try {
+        const ext = file.name.split('.').pop();
+        const filePath = lehrer_id + '/' + Date.now() + '-' + i + '.' + ext;
+        const storedPath = await sbStorageUpload('lernmaterial', filePath, file);
+        await sb.insert('lernmaterial', {
+          bezeichnung:   bezeichnung,
+          pruefung_id:   pruefungId,
+          lehrer_id:     lehrer_id,
+          storage_pfad:  storedPath,
+          dateiname:     file.name,
+          mime_type:     file.type,
+          groesse_bytes: file.size,
+        });
+        done++;
+      } catch(err) { failed++; }
+      progressBar.style.width = Math.round((i + 1) / lernstoffFiles.length * 100) + '%';
+    }
+    if (failed) {
+      showToast(done + ' von ' + lernstoffFiles.length + ' hochgeladen – ' + failed + ' fehlgeschlagen.', 'error');
+    } else {
+      showToast(done === 1 ? 'Material hochgeladen.' : done + ' Materialien hochgeladen.', 'success');
+    }
+    if (done) setTimeout(function() { closeModal('lernstoff-modal'); loadLernstoff(); }, 800);
   } catch(e) { showToast('Upload-Fehler: ' + e.message, 'error'); }
   finally { document.getElementById('lernstoff-upload-btn').disabled = false; }
 }
