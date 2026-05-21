@@ -8,6 +8,14 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+- **Prüfungsseiten verwalten**: Der „Upload"-Dialog zeigt jetzt die bereits
+  hochgeladenen Blätter als Vorschau. Einzelne Seiten lassen sich löschen,
+  weitere ergänzen; neue Seiten werden korrekt hinter den bestehenden
+  nummeriert. In der Korrektur-Übersicht zeigt eine neue Spalte „Seiten" die
+  Seitenzahl pro Schüler, und der KI-Knopf ist deaktiviert, solange keine
+  Seiten vorhanden sind.
+
 ### Behoben
 - **KI-Korrektur scheiterte grundsätzlich mit „Load failed"** (eigentliche
   Ursache von Bug #6). Die Prüfungsbilder liegen in IndexedDB und wurden über

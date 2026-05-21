@@ -1065,6 +1065,7 @@ const HELP_CHAT_SYSTEM_PROMPT = 'Du bist der Hilfe-Chatbot für Pruefai. Antwort
 let cfg = { schoolName: 'Pruefai', schoolType: '' };
 let lehrer_id      = null;
 let uploadPages    = [];
+let uploadExistingPages = [];
 let uploadSchuelerName = '';
 let relayToken     = null;
 let relayPollInterval = null;
@@ -1358,6 +1359,15 @@ async function sbStorageBlob(filePath) {
     const req = db.transaction('_files', 'readonly').objectStore('_files').get(filePath);
     req.onsuccess = function() { resolve(req.result && req.result.blob ? req.result.blob : null); };
     req.onerror = function() { resolve(null); };
+  });
+}
+
+async function sbStorageDelete(filePath) {
+  const db = await idbOpen();
+  return new Promise(function(resolve) {
+    const req = db.transaction('_files', 'readwrite').objectStore('_files').delete(filePath);
+    req.onsuccess = function() { resolve(true); };
+    req.onerror = function() { resolve(false); };
   });
 }
 
@@ -1920,15 +1930,18 @@ async function loadKorrekturEintraege() {
   const el = document.getElementById('korrektur-eintraege-list');
   if (!pruefungId || !klasseId) { el.innerHTML = '<div class="alert alert-info">Bitte Prüfung und Klasse wählen.</div>'; return; }
   try {
-    const [schueler, eintraege] = await Promise.all([
+    const [schueler, eintraege, alleSeiten] = await Promise.all([
       sb.select('schueler', 'klasse_id=eq.' + klasseId),
-      sb.select('eintraege', 'pruefung_id=eq.' + pruefungId)
+      sb.select('eintraege', 'pruefung_id=eq.' + pruefungId),
+      sb.select('seiten_uploads')
     ]);
     const eMap = {};
     eintraege.forEach(function(e) { eMap[e.schueler_id] = e; });
+    const seitenCount = {};
+    (alleSeiten || []).forEach(function(su) { seitenCount[su.eintrag_id] = (seitenCount[su.eintrag_id] || 0) + 1; });
     if (!schueler.length) { el.innerHTML = '<div class="alert alert-warning">Keine Schüler in dieser Klasse.</div>'; return; }
     el.innerHTML = '<div class="card"><div class="card__title">&#128221; Einträge (' + schueler.length + ' Schüler)</div>' +
-      '<div class="table-wrap"><table><thead><tr><th>Schüler</th><th>Status</th><th>Note</th><th>Aktionen</th></tr></thead><tbody>' +
+      '<div class="table-wrap"><table><thead><tr><th>Schüler</th><th>Status</th><th>Seiten</th><th>Note</th><th>Aktionen</th></tr></thead><tbody>' +
       schueler.map(function(s) {
         const e = eMap[s.id];
         const safePruefungId = String(pruefungId || '').replace(/[^a-zA-Z0-9_-]/g, '');
@@ -1936,10 +1949,13 @@ async function loadKorrekturEintraege() {
         const safeName = escHtml(s.name).replace(/'/g, "\\'");
         const status = e ? e.status : 'kein Eintrag';
         const note = e && (e.note_manuell || e.note) ? noteHtml(e.note_manuell || e.note) : '–';
+        const anzSeiten = e ? (seitenCount[e.id] || 0) : 0;
+        const keineSeiten = anzSeiten === 0;
         return '<tr><td><strong>' + escHtml(s.name) + '</strong>' + (s.nummer ? '<br><small>' + escHtml(s.nummer) + '</small>' : '') + '</td>' +
-          '<td><span class="badge ' + statusBadge(status) + '">' + escHtml(status) + '</span></td><td>' + note + '</td><td>' +
+          '<td><span class="badge ' + statusBadge(status) + '">' + escHtml(status) + '</span></td>' +
+          '<td>' + anzSeiten + '</td><td>' + note + '</td><td>' +
           '<button class="btn btn-sm btn-secondary" onclick="openUploadForSchueler(\'' + safePruefungId + '\', \'' + safeSchuelerId + '\', \'' + safeName + '\')">&#128248; Upload</button> ' +
-          (e ? '<button class="btn btn-sm btn-primary" onclick="kiKorrigieren(\'' + e.id + '\')">&#129302; KI</button> ' +
+          (e ? '<button class="btn btn-sm btn-primary" onclick="kiKorrigieren(\'' + e.id + '\')"' + (keineSeiten ? ' disabled title="Zuerst Seiten hochladen"' : '') + '>&#129302; KI</button> ' +
                (e.ergebnis ? '<button class="btn btn-sm btn-secondary" onclick="reviewKorrektur(\'' + e.id + '\')">&#128221; Prüfen</button> ' : '') +
                '<button class="btn btn-sm btn-secondary" onclick="noteManuelleingabe(\'' + e.id + '\')">&#9998; Note</button>'
             : '<span style="color:var(--text-muted);font-size:.8rem">Eintrag wird beim Upload erstellt</span>') + '</td></tr>';
@@ -1950,14 +1966,30 @@ async function loadKorrekturEintraege() {
 // =============================================================
 // UPLOAD (Prüfungsfotos)
 // =============================================================
-function openUploadModal(eintragsId, name) {
+async function openUploadModal(eintragsId, name) {
   uploadPages = [];
+  uploadExistingPages = [];
   uploadSchuelerName = name || '';
   document.getElementById('upload-eintrag-id').value = eintragsId;
   document.getElementById('upload-modal-title').textContent = 'Prüfung hochladen: ' + name;
   document.getElementById('pages-preview').innerHTML = '';
   document.getElementById('upload-progress').classList.add('hidden');
   document.getElementById('upload-modal').classList.remove('hidden');
+  // Bereits hochgeladene Blätter laden, damit sie angezeigt/gelöscht werden können.
+  try {
+    const rows = await sb.select('seiten_uploads', 'eintrag_id=eq.' + eintragsId + '&order=seitennummer.asc');
+    for (let i = 0; i < rows.length; i++) {
+      const storagePath = (rows[i].storage_pfad || '').replace(/^pruefungsfotos\//, '');
+      const blob = await sbStorageBlob(storagePath);
+      uploadExistingPages.push({
+        id: rows[i].id,
+        seitennummer: rows[i].seitennummer,
+        storagePath: storagePath,
+        url: blob ? URL.createObjectURL(blob) : '',
+      });
+    }
+  } catch (e) { /* bestehende Seiten optional */ }
+  renderPagesPreview();
 }
 
 async function openUploadForSchueler(pruefungId, schuelerId, name) {
@@ -2019,31 +2051,63 @@ async function compressImage(file, maxDim, quality) {
 }
 
 function renderPagesPreview() {
-  document.getElementById('pages-preview').innerHTML = uploadPages.map(function(pg, i) {
+  const existing = uploadExistingPages.map(function(pg, i) {
     return '<div class="page-thumb">' +
-    '<img src="' + pg.dataUrl + '" alt="Seite ' + pg.seitenNr + '" />' +
-    '<div class="page-thumb__num">Seite ' + pg.seitenNr + '</div>' +
-    '<button class="page-thumb__del" onclick="removePage(' + i + ')">&#10005;</button></div>';
+      '<img src="' + pg.url + '" alt="Seite ' + pg.seitennummer + '" />' +
+      '<div class="page-thumb__num">Seite ' + pg.seitennummer + '</div>' +
+      '<button class="page-thumb__del" onclick="deleteExistingPage(' + i + ')">&#10005;</button></div>';
   }).join('');
+  const neu = uploadPages.map(function(pg, i) {
+    return '<div class="page-thumb">' +
+      '<img src="' + pg.dataUrl + '" alt="neue Seite" />' +
+      '<div class="page-thumb__num">Seite ' + (uploadExistingPages.length + i + 1) + ' (neu)</div>' +
+      '<button class="page-thumb__del" onclick="removePage(' + i + ')">&#10005;</button></div>';
+  }).join('');
+  document.getElementById('pages-preview').innerHTML = existing + neu;
 }
 
 function removePage(i) { uploadPages.splice(i, 1); uploadPages.forEach(function(pg, j) { pg.seitenNr = j + 1; }); renderPagesPreview(); }
 
+async function deleteExistingPage(i) {
+  const pg = uploadExistingPages[i];
+  if (!pg) return;
+  if (!confirm('Diese Seite wirklich löschen?')) return;
+  try {
+    await sb.delete('seiten_uploads', pg.id);
+    if (pg.storagePath) await sbStorageDelete(pg.storagePath);
+    uploadExistingPages.splice(i, 1);
+    renderPagesPreview();
+    const eintragsId = document.getElementById('upload-eintrag-id').value;
+    if (!uploadExistingPages.length && !uploadPages.length) {
+      await sb.update('eintraege', eintragsId, { status: 'offen' });
+    }
+    showToast('Seite gelöscht.', 'success');
+  } catch(e) { showToast(e.message, 'error'); }
+}
+
 async function uploadSeiten() {
-  if (!uploadPages.length) { showToast('Bitte Seiten hinzufügen.', 'error'); return; }
   const eintragsId = document.getElementById('upload-eintrag-id').value;
+  if (!uploadPages.length) {
+    // Nichts Neues – evtl. wurden nur bestehende Seiten gelöscht: Dialog schliessen.
+    if (uploadExistingPages.length) { closeModal('upload-modal'); loadKorrekturEintraege(); return; }
+    showToast('Bitte Seiten hinzufügen.', 'error'); return;
+  }
   const progBar = document.getElementById('upload-progress-bar');
   const progTxt = document.getElementById('upload-progress-text');
   document.getElementById('upload-progress').classList.remove('hidden');
   document.getElementById('upload-btn').disabled = true;
   try {
+    // Neue Seiten hinter den bestehenden weiternummerieren.
+    let startNr = 1;
+    uploadExistingPages.forEach(function(p) { if ((p.seitennummer || 0) >= startNr) startNr = p.seitennummer + 1; });
     for (let i = 0; i < uploadPages.length; i++) {
       const pg = uploadPages[i];
+      const nr = startNr + i;
       progBar.style.width = Math.round((i / uploadPages.length) * 100) + '%';
       progTxt.textContent = 'Lade Seite ' + (i + 1) + ' von ' + uploadPages.length + ' hoch…';
-      const filePath = lehrer_id + '/' + eintragsId + '/' + pg.seitenNr + '_' + Date.now() + '.jpg';
+      const filePath = lehrer_id + '/' + eintragsId + '/' + nr + '_' + Date.now() + '.jpg';
       const storedPath = await sbStorageUpload('pruefungsfotos', filePath, pg.file);
-      await sb.insert('seiten_uploads', { eintrag_id: eintragsId, seitennummer: pg.seitenNr, storage_pfad: storedPath, dateiname: 'seite_' + pg.seitenNr + '.jpg', mime_type: pg.file.type || 'image/jpeg', groesse_bytes: pg.file.size });
+      await sb.insert('seiten_uploads', { eintrag_id: eintragsId, seitennummer: nr, storage_pfad: storedPath, dateiname: 'seite_' + nr + '.jpg', mime_type: pg.file.type || 'image/jpeg', groesse_bytes: pg.file.size });
     }
     await sb.update('eintraege', eintragsId, { status: 'hochgeladen' });
     progBar.style.width = '100%'; progTxt.textContent = 'Upload abgeschlossen!';
