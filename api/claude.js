@@ -98,6 +98,12 @@ async function incrementUsage(stripeKey, customerId, current, resetDate) {
   });
 }
 
+// Vercel: KI-Bildkorrektur mit mehreren Prüfungsseiten dauert oft 20–40 s –
+// der Default-Timeout würde die Verbindung abbrechen ("load failed" im Client).
+export const maxDuration = 60;
+// Prüfungsseiten als Base64 sprengen den niedrigen Default-Body-Limit.
+export const config = { api: { bodyParser: { sizeLimit: '4.5mb' } } };
+
 export default async function handler(req, res) {
   const origin = req.headers.origin || '';
 
