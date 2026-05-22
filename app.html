@@ -4014,12 +4014,22 @@ async function loadAnalytik() {
       const avg = withNote.length ? (withNote.reduce(function(s, e) { return s + parseFloat(e.note_manuell || e.note); }, 0) / withNote.length) : null;
       return { name: p.name, datum: p.datum, avg: avg, count: withNote.length, total: relevant.length };
     });
-    // Error catalog: aggregate AI feedback keywords
+    // Error catalog: aggregate AI feedback keywords (Begründung/Verbesserung
+    // je Aufgabe und Teilaufgabe; feedback nur für alte Korrekturen).
     const allFeedbacks = [];
+    function sammleFeedback(o) {
+      if (!o) return;
+      if (o.verbesserung) allFeedbacks.push(o.verbesserung);
+      if (o.begruendung) allFeedbacks.push(o.begruendung);
+      if (o.feedback) allFeedbacks.push(o.feedback);
+    }
     eintraege.forEach(function(e) {
       if (!sIds.has(e.schueler_id)) return;
       if (!e.ergebnis || !e.ergebnis.aufgaben) return;
-      e.ergebnis.aufgaben.forEach(function(a) { if (a.feedback) allFeedbacks.push(a.feedback); });
+      e.ergebnis.aufgaben.forEach(function(a) {
+        sammleFeedback(a);
+        if (Array.isArray(a.teilaufgaben)) a.teilaufgaben.forEach(sammleFeedback);
+      });
     });
     const errorKeywords = extractErrorKeywords(allFeedbacks);
     el.innerHTML = renderAnalytikContent(trendData, errorKeywords, schueler, eintraege, relevantPruefungen);
