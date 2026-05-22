@@ -1,6 +1,6 @@
 {
-  "name": "Pruefai",
-  "short_name": "Pruefai",
+  "name": "PruefAI",
+  "short_name": "PruefAI",
   "description": "KI-gestützte Prüfungskorrektur für Lehrpersonen",
   "start_url": "/app",
   "display": "standalone",

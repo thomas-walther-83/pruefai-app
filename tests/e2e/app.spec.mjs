@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('App (/app)', () => {
   test('lädt die App-Shell mit Tab-Navigation', async ({ page }) => {
     await page.goto('/app');
-    await expect(page.locator('.header__logo')).toContainText('Pruefai');
+    await expect(page.locator('.header__logo')).toContainText('PruefAI');
     await expect(page.locator('#tab-dashboard')).toBeVisible();
     await expect(page.locator('#tab-korrektur')).toBeVisible();
     // Dashboard ist die Standard-Ansicht.

@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#1a56db" />
-  <meta name="description" content="Pruefai – KI-gestützte Prüfungskorrektur für Lehrpersonen" />
+  <meta name="description" content="PruefAI – KI-gestützte Prüfungskorrektur für Lehrpersonen" />
   <!-- Die App selbst wird nicht indexiert; SEO läuft über die Landing-Page auf / -->
   <meta name="robots" content="noindex, nofollow" />
   <link rel="canonical" href="https://pruefai.ch/app" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <title>Pruefai</title>
+  <title>PruefAI</title>
   <link rel="manifest" href="./manifest.json" />
   <!-- jsPDF -->
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha384-JcnsjUPPylna1s1fvi1u12X5qjY5OL56iySh75FdtrwhO/SWXgMjoVqcKyIIWOLk" crossorigin="anonymous"></script>
@@ -280,7 +280,7 @@
 <!-- Mobile Upload Page (shown when ?mode=mobile) -->
 <div id="mobile-app">
   <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem">
-    <div style="font-size:1.4rem;font-weight:700;color:var(--primary)">&#9999;&#65039; Pruefai</div>
+    <div style="font-size:1.4rem;font-weight:700;color:var(--primary)">&#9999;&#65039; PruefAI</div>
     <div style="font-size:.8rem;color:var(--text-muted)">Foto-Upload</div>
   </div>
   <div class="card">
@@ -304,7 +304,7 @@
 <div id="app">
   <header class="header">
     <div>
-      <div class="header__logo">&#9999;&#65039; Pruefai</div>
+      <div class="header__logo">&#9999;&#65039; PruefAI</div>
       <div class="header__sub" id="header-school">Meine Schule</div>
     </div>
     <div class="header__actions">
@@ -562,7 +562,7 @@
       <div class="card">
         <div class="card__title">&#129302; KI-Chatbot</div>
         <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.75rem">
-          Stellen Sie Fragen zur Nutzung von Pruefai. Der Chatbot gibt allgemeine Hilfestellung (kein Rechtsrat). KI-Chat-Anfragen zählen als KI-Nutzung.
+          Stellen Sie Fragen zur Nutzung von PruefAI. Der Chatbot gibt allgemeine Hilfestellung (kein Rechtsrat). KI-Chat-Anfragen zählen als KI-Nutzung.
         </p>
         <div id="help-chat-log" class="help-chat-box"></div>
         <div style="display:flex;gap:.6rem;align-items:flex-end;margin-top:.75rem;flex-wrap:wrap">
@@ -839,7 +839,7 @@
 <!-- E-Mail-Capture Modal -->
 <div id="email-capture-modal" class="modal-overlay hidden">
   <div class="modal" style="max-width:440px">
-    <div class="modal__title">✏️ Willkommen bei Pruefai!</div>
+    <div class="modal__title">✏️ Willkommen bei PruefAI!</div>
     <p style="color:var(--text-muted);margin-bottom:1.25rem;font-size:.9rem">
       Geben Sie Ihre E-Mail ein, um <strong>3 kostenlose KI-Korrekturen</strong> freizuschalten. Keine Kreditkarte nötig.
     </p>
@@ -1038,8 +1038,8 @@ const FREE_TRIAL_LIMIT = 3;
 const HELP_CHAT_MAX_MESSAGE_LENGTH = 2000; // max. Nutzerzeichen pro Chat-Nachricht
 const HELP_CHAT_HISTORY_LIMIT = 10; // Anzahl letzter Nachrichten als Kontext
 const HELP_CHAT_MAX_TOKENS = 700; // Obergrenze für KI-Antwortlänge
-const HELP_CHAT_SYSTEM_PROMPT = 'Du bist der Hilfe-Chatbot für Pruefai. Antworte auf Deutsch, präzise, freundlich und praxisnah. Gib nur produktspezifische Hilfestellung zur Bedienung von Pruefai. Bei rechtlichen Fragen verweise auf AGB/Datenschutz/AVV. Gib keinen Rechtsrat und erfinde keine Funktionen.';
-let cfg = { schoolName: 'Pruefai', schoolType: '' };
+const HELP_CHAT_SYSTEM_PROMPT = 'Du bist der Hilfe-Chatbot für PruefAI. Antworte auf Deutsch, präzise, freundlich und praxisnah. Gib nur produktspezifische Hilfestellung zur Bedienung von PruefAI. Bei rechtlichen Fragen verweise auf AGB/Datenschutz/AVV. Gib keinen Rechtsrat und erfinde keine Funktionen.';
+let cfg = { schoolName: 'PruefAI', schoolType: '' };
 let lehrer_id      = null;
 let uploadPages    = [];
 let uploadExistingPages = [];
@@ -1158,7 +1158,7 @@ if ('serviceWorker' in navigator) {
 }
 
 function applyConfig() {
-  document.getElementById('header-school').textContent = cfg.schoolName || 'Pruefai';
+  document.getElementById('header-school').textContent = cfg.schoolName || 'PruefAI';
   updateKlassenSchoolTypeUI();
   const klassenView = document.getElementById('view-klassen');
   if (klassenView && klassenView.classList.contains('active')) loadKlassen();
@@ -3169,7 +3169,7 @@ async function kiAlleKorrigieren() {
 // =============================================================
 function initHelpView() {
   if (!helpChatHistory.length) {
-    helpChatHistory.push({ role: 'assistant', text: 'Hallo! Ich helfe Ihnen bei Fragen zu Pruefai (z.B. Klassen, Prüfungen, Upload, Korrektur, Export, Lizenz).' });
+    helpChatHistory.push({ role: 'assistant', text: 'Hallo! Ich helfe Ihnen bei Fragen zu PruefAI (z.B. Klassen, Prüfungen, Upload, Korrektur, Export, Lizenz).' });
   }
   renderHelpChat();
 }
@@ -3392,7 +3392,7 @@ async function exportNotenPDF() {
     const eMap = {};
     eintraege.forEach(function(e) { eMap[e.schueler_id] = e; });
     const p = pRows[0]; const k = kRows[0];
-    doc.setFontSize(16); doc.text('Pruefai – Notenliste', 14, 20);
+    doc.setFontSize(16); doc.text('PruefAI – Notenliste', 14, 20);
     doc.setFontSize(11);
     doc.text('Prüfung: ' + (p && p.name || ''), 14, 30);
     doc.text('Klasse: ' + (k && k.name || '') + '  |  Datum: ' + (p && p.datum ? formatDate(p.datum) : '–'), 14, 37);
@@ -3465,7 +3465,7 @@ async function openSettingsModal() {
 }
 
 async function saveSettings() {
-  cfg.schoolName = document.getElementById('settings-school-name').value.trim() || 'Pruefai';
+  cfg.schoolName = document.getElementById('settings-school-name').value.trim() || 'PruefAI';
   cfg.schoolType = document.getElementById('settings-school-type').value;
   localStorage.setItem(LS.CONFIG, JSON.stringify(cfg));
   applyConfig();
