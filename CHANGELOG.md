@@ -9,6 +9,13 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
+- **Feinere, nachvollziehbare Korrektur-Berichte**: Die KI gliedert jede
+  Prüfung jetzt in Aufgaben **und Teilaufgaben** auf. Pro (Teil-)Aufgabe wird
+  klar gezeigt, **wofür es Punkte gibt** (Begründung) und **was für mehr Punkte
+  nötig gewesen wäre** (Verbesserung). Der Ergebnis-Dialog stellt das
+  strukturiert und bearbeitbar dar; der Word-Export gibt es als übersichtliche
+  Tabelle (Aufgabe/Teilaufgabe · Punkte · Begründung · Verbesserung) aus.
+  Bestehende Korrekturen ohne Teilaufgaben werden weiterhin korrekt angezeigt.
 - **Word-Export der Korrektur (.docx)**: Im KI-Ergebnis-Dialog erzeugt der
   Knopf „Word herunterladen" pro Schüler ein sauber gegliedertes Word-Dokument
   (Prüfung, Schüler, Ergebnis, Bewertung pro Aufgabe, Gesamtkommentar). Der

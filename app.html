@@ -2418,7 +2418,14 @@ async function kiKorrigieren(eintragsId, silent) {
     const materialHinweis = matInfo.hasMaterial
       ? 'Dir liegen Referenzunterlagen bei. Gewichte sie in dieser Reihenfolge:\n1. MUSTERLÖSUNG – massgeblich für die richtigen Antworten und die Punkteverteilung.\n2. UNTERRICHTSMATERIAL – der behandelte Lehrstoff, an dem sich die Bewertung orientiert.\n3. Allgemeinwissen – nur ergänzend, wenn 1 und 2 nichts hergeben.\n'
       : '';
-    const systemPrompt = 'Du bist ein erfahrener Lehrer an einer ' + schoolTypeLabel + '.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\n' + materialHinweis + (kiProfilInstruction ? kiProfilInstruction + '\n' : '') + (rubricInstruction ? rubricInstruction + '\n' : '') + 'Antworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "...", "max": <Zahl>, "erreicht": <Zahl>, "feedback": "..."}]}';
+    const berichtHinweis = 'Erstelle eine fein gegliederte, für Schülerinnen und Schüler nachvollziehbare Korrektur:\n' +
+      '- Liste jede Aufgabe der Prüfung einzeln im Feld "aufgaben" auf.\n' +
+      '- Unterteile jede Aufgabe in ihre Teilaufgaben (a, b, c, …) im Feld "teilaufgaben", sofern vorhanden.\n' +
+      '- Gib pro (Teil-)Aufgabe in "begruendung" konkret an, wofür die erreichten (Teil-)Punkte vergeben wurden.\n' +
+      '- Gib in "verbesserung" konkret an, was für die volle Punktzahl gefehlt hat bzw. nötig gewesen wäre; bei voller Punktzahl: "Volle Punktzahl erreicht."\n' +
+      '- Hat eine Aufgabe keine sinnvollen Teilaufgaben, lass "teilaufgaben" weg und fülle "begruendung" und "verbesserung" direkt auf Aufgabenebene.\n' +
+      '- "erreicht" und "max" einer Aufgabe sind die Summe ihrer Teilaufgaben.\n';
+    const systemPrompt = 'Du bist ein erfahrener Lehrer an einer ' + schoolTypeLabel + '.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\n' + materialHinweis + (kiProfilInstruction ? kiProfilInstruction + '\n' : '') + (rubricInstruction ? rubricInstruction + '\n' : '') + berichtHinweis + 'Antworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "<string>", "max": <Zahl>, "erreicht": <Zahl>, "begruendung": "<string>", "verbesserung": "<string>", "teilaufgaben": [{"bezeichnung": "<string>", "max": <Zahl>, "erreicht": <Zahl>, "begruendung": "<string>", "verbesserung": "<string>"}]}]}';
     const examLabel = { type: 'text', text: '=== ZU KORRIGIERENDE PRÜFUNG' + (schueler && schueler.name ? ' VON ' + schueler.name : '') + ' ===' };
     const examText = { type: 'text', text: 'Prüfung: ' + (pruefung && pruefung.name || '') + '\nSchüler: ' + (schueler && schueler.name || '') + '\nMax. Punkte: ' + (pruefung && pruefung.max_punkte || 100) + (pruefung && pruefung.anweisungen ? '\nAufgabenstellung:\n' + pruefung.anweisungen : '') + '\n\nBitte korrigiere diese Prüfung als JSON.' };
     const userContent = matInfo.prefixBlocks.concat([examLabel], imageBlocks, [examText]);
@@ -2504,8 +2511,20 @@ function noteAusPunkte(erreicht, maxPunkte, formel, rundung) {
 
 const NOTENFORMEL_LABELS = { linear: 'Linear', knick60: 'Grenze 60 %', knick50: 'Grenze 50 %' };
 
-// Bearbeitbare Bestätigungs-Ansicht: Punkte und Feedback pro Aufgabe sind
-// überschreibbar, die Note wird live neu berechnet, der Lehrer bestätigt.
+// Punkte-Summen einer Aufgabe – zählt Teilaufgaben, falls vorhanden.
+function aufgabeMaxSumme(a) {
+  if (a && Array.isArray(a.teilaufgaben) && a.teilaufgaben.length)
+    return a.teilaufgaben.reduce(function(s, t) { return s + (Number(t.max) || 0); }, 0);
+  return Number(a && a.max) || 0;
+}
+function aufgabeErreichtSumme(a) {
+  if (a && Array.isArray(a.teilaufgaben) && a.teilaufgaben.length)
+    return a.teilaufgaben.reduce(function(s, t) { return s + (Number(t.erreicht) || 0); }, 0);
+  return Number(a && a.erreicht) || 0;
+}
+
+// Bearbeitbare Bestätigungs-Ansicht: Punkte und Begründungen pro Aufgabe und
+// Teilaufgabe sind überschreibbar, die Note wird live neu berechnet.
 function showKiErgebnis() {
   if (!kiPendingData) return;
   const result = kiPendingData.result;
@@ -2515,23 +2534,41 @@ function showKiErgebnis() {
   const nd = ladeNotenDefault();
   const formel = pruefung.notenformel || nd.formel;
   const rundung = pruefung.notenrundung || nd.rundung;
-  const maxTotal = aufgaben.reduce(function(s, a) { return s + (Number(a.max) || 0); }, 0) || Number(pruefung.max_punkte) || 0;
+  const maxTotal = aufgaben.reduce(function(s, a) { return s + aufgabeMaxSumme(a); }, 0) || Number(pruefung.max_punkte) || 0;
 
   let html = '<div style="margin-bottom:.75rem"><strong>' + escHtml(schueler.name || 'Schüler') + '</strong>' +
     (pruefung.name ? ' <span style="color:var(--text-muted);font-size:.8rem">· ' + escHtml(pruefung.name) + '</span>' : '') +
     (result.ki_qualitaet_unsicher ? ' <span class="badge badge-unsicher">&#9888;&#65039; Grenzfall</span>' : '') + '</div>';
 
+  function blockHtml(unit, ai, ti, hatTeil, aufgabe) {
+    const begr = unit.begruendung != null ? unit.begruendung : (!hatTeil && aufgabe ? (aufgabe.feedback || '') : '');
+    let h = '<div style="' + (hatTeil ? 'border-left:3px solid var(--border);padding-left:.6rem;margin-bottom:.55rem' : 'margin-bottom:.2rem') + '">';
+    if (hatTeil) h += '<div style="font-size:.85rem;font-weight:600;margin-bottom:.35rem">' + escHtml(unit.bezeichnung || ('Teilaufgabe ' + (ti + 1))) + '</div>';
+    h += '<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">' +
+      '<label style="font-size:.8rem;color:var(--text-muted)">Punkte</label>' +
+      '<input type="number" class="form-control ki-pkt" data-a="' + ai + '" data-t="' + ti + '" value="' + (unit.erreicht != null ? unit.erreicht : 0) + '" min="0" step="any" style="width:84px;padding:.3rem .4rem" oninput="kiErgebnisRecalc()" />' +
+      '<span style="color:var(--text-muted)">/ ' + (unit.max != null ? unit.max : '–') + '</span></div>' +
+      '<label style="font-size:.72rem;color:var(--text-muted)">Wofür es Punkte gibt</label>' +
+      '<textarea class="form-control ki-begr" data-a="' + ai + '" data-t="' + ti + '" rows="2" placeholder="Begründung der erreichten Punkte">' + escHtml(begr) + '</textarea>' +
+      '<label style="font-size:.72rem;color:var(--text-muted);margin-top:.35rem;display:block">Für mehr Punkte nötig</label>' +
+      '<textarea class="form-control ki-verb" data-a="' + ai + '" data-t="' + ti + '" rows="2" placeholder="Was für die volle Punktzahl gefehlt hat">' + escHtml(unit.verbesserung || '') + '</textarea>' +
+      '</div>';
+    return h;
+  }
+
   if (aufgaben.length) {
-    aufgaben.forEach(function(a, i) {
+    aufgaben.forEach(function(a, ai) {
+      const hatTeil = Array.isArray(a.teilaufgaben) && a.teilaufgaben.length > 0;
       html += '<div style="border:1px solid var(--border);border-radius:8px;padding:.7rem .8rem;margin-bottom:.6rem">' +
-        '<div style="font-weight:600;margin-bottom:.45rem">' + escHtml(a.bezeichnung || ('Aufgabe ' + (i + 1))) + '</div>' +
-        '<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.45rem">' +
-        '<label style="font-size:.8rem;color:var(--text-muted)">Punkte</label>' +
-        '<input type="number" class="form-control ki-erreicht" data-i="' + i + '" value="' + (a.erreicht != null ? a.erreicht : 0) + '" min="0" step="any" style="width:90px;padding:.3rem .4rem" oninput="kiErgebnisRecalc()" />' +
-        '<span style="color:var(--text-muted)">/ ' + (a.max != null ? a.max : '–') + '</span>' +
-        '</div>' +
-        '<textarea class="form-control ki-feedback" data-i="' + i + '" rows="3" placeholder="Feedback zu dieser Aufgabe">' + escHtml(a.feedback || '') + '</textarea>' +
+        '<div style="font-weight:600;margin-bottom:.5rem">' + escHtml(a.bezeichnung || ('Aufgabe ' + (ai + 1))) +
+        (hatTeil ? ' <span style="font-weight:400;color:var(--text-muted);font-size:.8rem">· <span class="ki-aufg-summe" data-a="' + ai + '">0</span> / ' + aufgabeMaxSumme(a) + ' Pkt</span>' : '') +
         '</div>';
+      if (hatTeil) {
+        a.teilaufgaben.forEach(function(t, ti) { html += blockHtml(t, ai, ti, true, a); });
+      } else {
+        html += blockHtml(a, ai, -1, false, a);
+      }
+      html += '</div>';
     });
     html += '<div style="display:flex;gap:1.25rem;align-items:flex-end;flex-wrap:wrap;margin-top:.75rem">' +
       '<div><div style="font-size:.75rem;color:var(--text-muted)">Punkte total</div>' +
@@ -2566,17 +2603,28 @@ function kiErgebnisRecalc() {
   const result = kiPendingData.result;
   const pruefung = kiPendingData.pruefung || {};
   const aufgaben = result.aufgaben || [];
-  const inputs = document.querySelectorAll('#ki-ergebnis-content .ki-erreicht');
+  const inputs = document.querySelectorAll('#ki-ergebnis-content .ki-pkt');
   if (!inputs.length) return;
   let total = 0;
   inputs.forEach(function(inp) {
-    const i = parseInt(inp.dataset.i, 10);
+    const ai = parseInt(inp.dataset.a, 10);
+    const ti = parseInt(inp.dataset.t, 10);
     let v = parseFloat(inp.value);
     if (isNaN(v)) v = 0;
-    if (aufgaben[i]) aufgaben[i].erreicht = v;
+    const a = aufgaben[ai];
+    if (!a) return;
+    if (ti >= 0 && Array.isArray(a.teilaufgaben) && a.teilaufgaben[ti]) a.teilaufgaben[ti].erreicht = v;
+    else a.erreicht = v;
     total += v;
   });
-  const maxTotal = aufgaben.reduce(function(s, a) { return s + (Number(a.max) || 0); }, 0) || Number(pruefung.max_punkte) || 0;
+  aufgaben.forEach(function(a, ai) {
+    if (Array.isArray(a.teilaufgaben) && a.teilaufgaben.length) {
+      a.erreicht = aufgabeErreichtSumme(a);
+      const sEl = document.querySelector('#ki-ergebnis-content .ki-aufg-summe[data-a="' + ai + '"]');
+      if (sEl) sEl.textContent = Math.round(a.erreicht * 100) / 100;
+    }
+  });
+  const maxTotal = aufgaben.reduce(function(s, a) { return s + aufgabeMaxSumme(a); }, 0) || Number(pruefung.max_punkte) || 0;
   const nd = ladeNotenDefault();
   const note = noteAusPunkte(total, maxTotal, pruefung.notenformel || nd.formel, pruefung.notenrundung || nd.rundung);
   result.punkte = Math.round(total * 100) / 100;
@@ -2597,11 +2645,20 @@ function kiErgebnisRecalc() {
 function kiErgebnisAktuelleWerte() {
   if (!kiPendingData) return;
   const result = kiPendingData.result;
+  const aufgaben = result.aufgaben || [];
   kiErgebnisRecalc();
-  document.querySelectorAll('#ki-ergebnis-content .ki-feedback').forEach(function(ta) {
-    const i = parseInt(ta.dataset.i, 10);
-    if (result.aufgaben && result.aufgaben[i]) result.aufgaben[i].feedback = ta.value;
-  });
+  function setFeld(sel, feld) {
+    document.querySelectorAll('#ki-ergebnis-content ' + sel).forEach(function(ta) {
+      const ai = parseInt(ta.dataset.a, 10);
+      const ti = parseInt(ta.dataset.t, 10);
+      const a = aufgaben[ai];
+      if (!a) return;
+      if (ti >= 0 && Array.isArray(a.teilaufgaben) && a.teilaufgaben[ti]) a.teilaufgaben[ti][feld] = ta.value;
+      else a[feld] = ta.value;
+    });
+  }
+  setFeld('.ki-begr', 'begruendung');
+  setFeld('.ki-verb', 'verbesserung');
   const kommentarEl = document.getElementById('ki-kommentar-input');
   if (kommentarEl) result.kommentar = kommentarEl.value.trim();
   const noteEl = document.getElementById('ki-note-input');
@@ -2723,11 +2780,28 @@ function docxP(text, opts) {
   return '<w:p><w:pPr>' + ppr + '</w:pPr><w:r><w:rPr>' + rpr + '</w:rPr>' + runText + '</w:r></w:p>';
 }
 
+// Eine Tabellenzelle. innerXml: ein oder mehrere <w:p>. fill: Hintergrund RRGGBB.
+function docxCell(widthDxa, innerXml, fill) {
+  return '<w:tc><w:tcPr><w:tcW w:w="' + widthDxa + '" w:type="dxa"/>' +
+    (fill ? '<w:shd w:val="clear" w:color="auto" w:fill="' + fill + '"/>' : '') +
+    '<w:tcMar><w:top w:w="40" w:type="dxa"/><w:bottom w:w="40" w:type="dxa"/>' +
+    '<w:left w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tcMar></w:tcPr>' +
+    (innerXml || docxP('', { size: 20, spaceAfter: 0 })) + '</w:tc>';
+}
+function docxTable(rowsXml) {
+  return '<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblLayout w:type="fixed"/>' +
+    '<w:tblBorders>' +
+    ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(function(s) {
+      return '<w:' + s + ' w:val="single" w:sz="4" w:space="0" w:color="D0D5DD"/>';
+    }).join('') +
+    '</w:tblBorders></w:tblPr>' + rowsXml + '</w:tbl>';
+}
+
 function buildKorrekturDocx(result, pruefung, schueler) {
   const aufgaben = result.aufgaben || [];
   const note = result.note != null ? result.note : '–';
   const bestanden = Number(result.note) >= 4.0;
-  const maxTotal = aufgaben.reduce(function(s, a) { return s + (Number(a.max) || 0); }, 0) || Number(pruefung.max_punkte) || 0;
+  const maxTotal = aufgaben.reduce(function(s, a) { return s + aufgabeMaxSumme(a); }, 0) || Number(pruefung.max_punkte) || 0;
   const datum = (pruefung && pruefung.datum) ? pruefung.datum : new Date().toISOString().slice(0, 10);
 
   let body = '';
@@ -2739,17 +2813,48 @@ function buildKorrekturDocx(result, pruefung, schueler) {
   body += docxP('Punkte: ' + (result.punkte != null ? result.punkte : '–') + ' / ' + maxTotal, { size: 24, spaceAfter: 0 });
   body += docxP('Note: ' + note + '   (' + (bestanden ? 'Bestanden' : 'Nicht bestanden') + ')', { bold: true, size: 26, color: bestanden ? '1A7F37' : 'B42318', spaceAfter: 240 });
   if (aufgaben.length) {
-    body += docxP('Bewertung pro Aufgabe', { bold: true, size: 30, before: 120, spaceAfter: 120 });
-    aufgaben.forEach(function(a, i) {
-      body += docxP(a.bezeichnung || ('Aufgabe ' + (i + 1)), { bold: true, size: 24, before: 120, spaceAfter: 20 });
-      body += docxP('Punkte: ' + (a.erreicht != null ? a.erreicht : 0) + ' / ' + (a.max != null ? a.max : '–'), { size: 22, spaceAfter: 20 });
-      body += docxP(a.feedback || '–', { size: 22, spaceAfter: 80 });
+    body += docxP('Bewertung pro Aufgabe und Teilaufgabe', { bold: true, size: 30, before: 120, spaceAfter: 120 });
+    const W = [2500, 1000, 3100, 3038];
+    const cellP = function(text, opts) { return docxP(text, Object.assign({ size: 20, spaceAfter: 0 }, opts || {})); };
+    let rowsXml = '<w:tr>' +
+      docxCell(W[0], cellP('Aufgabe', { bold: true }), 'F2F4F7') +
+      docxCell(W[1], cellP('Punkte', { bold: true }), 'F2F4F7') +
+      docxCell(W[2], cellP('Wofür es Punkte gibt', { bold: true }), 'F2F4F7') +
+      docxCell(W[3], cellP('Für mehr Punkte nötig', { bold: true }), 'F2F4F7') +
+      '</w:tr>';
+    aufgaben.forEach(function(a, ai) {
+      const hatTeil = Array.isArray(a.teilaufgaben) && a.teilaufgaben.length > 0;
+      if (hatTeil) {
+        rowsXml += '<w:tr>' +
+          docxCell(W[0], cellP(a.bezeichnung || ('Aufgabe ' + (ai + 1)), { bold: true }), 'F9FAFB') +
+          docxCell(W[1], cellP(aufgabeErreichtSumme(a) + ' / ' + aufgabeMaxSumme(a), { bold: true }), 'F9FAFB') +
+          docxCell(W[2], cellP(''), 'F9FAFB') +
+          docxCell(W[3], cellP(''), 'F9FAFB') +
+          '</w:tr>';
+        a.teilaufgaben.forEach(function(t, ti) {
+          rowsXml += '<w:tr>' +
+            docxCell(W[0], cellP(t.bezeichnung || ('Teilaufgabe ' + (ti + 1)))) +
+            docxCell(W[1], cellP((t.erreicht != null ? t.erreicht : 0) + ' / ' + (t.max != null ? t.max : '–'))) +
+            docxCell(W[2], cellP(t.begruendung || '–')) +
+            docxCell(W[3], cellP(t.verbesserung || '–')) +
+            '</w:tr>';
+        });
+      } else {
+        rowsXml += '<w:tr>' +
+          docxCell(W[0], cellP(a.bezeichnung || ('Aufgabe ' + (ai + 1)), { bold: true })) +
+          docxCell(W[1], cellP((a.erreicht != null ? a.erreicht : 0) + ' / ' + (a.max != null ? a.max : '–'))) +
+          docxCell(W[2], cellP(a.begruendung || a.feedback || '–')) +
+          docxCell(W[3], cellP(a.verbesserung || '–')) +
+          '</w:tr>';
+      }
     });
+    body += docxTable(rowsXml);
   }
   if (result.kommentar) {
     body += docxP('Gesamtkommentar', { bold: true, size: 30, before: 200, spaceAfter: 80 });
     body += docxP(result.kommentar, { size: 22 });
   }
+  body += docxP('', { spaceAfter: 0 });
 
   const documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
     '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>' + body +
