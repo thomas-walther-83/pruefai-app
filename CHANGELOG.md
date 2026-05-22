@@ -9,6 +9,9 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
+- **Filter & Sortierung in den Verwaltungslisten**: Klassen, Schüler, Fächer
+  und Prüfungen haben jetzt eine einheitliche Werkzeugleiste mit Suchfeld und
+  Sortier-Auswahl. Die Prüfungsliste lässt sich zusätzlich nach Fach filtern.
 - **Strukturierte Unterlagen pro Prüfung**: Vorlagenprüfung, Musterlösung und
   weitere Unterlagen werden jetzt direkt im Prüfungs-Dialog verwaltet – mit
   Checkliste, die zeigt, was vorhanden ist und was noch fehlt

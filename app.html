@@ -221,6 +221,11 @@
     .fab { display: none; position: fixed; bottom: calc(4rem + env(safe-area-inset-bottom) + .75rem); right: 1rem; z-index: 89; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: var(--primary); color: #fff; border: none; font-size: 1.5rem; box-shadow: 0 4px 16px rgba(26,86,219,.4); align-items: center; justify-content: center; cursor: pointer; transition: transform .15s, box-shadow .15s; }
     .fab:hover { transform: scale(1.07); box-shadow: 0 6px 20px rgba(26,86,219,.5); }
 
+    /* Listen-Werkzeugleiste (Suche + Sortierung) */
+    .list-toolbar { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+    .list-toolbar .list-search { flex: 1; min-width: 180px; max-width: 320px; }
+    .list-toolbar select { width: auto; }
+
     /* Hilfe / KI-Chat */
     .help-chat-box { border: 1px solid var(--border); border-radius: var(--radius); background: #fff; max-height: 340px; overflow-y: auto; padding: .75rem; display: flex; flex-direction: column; gap: .6rem; }
     .help-chat-msg { max-width: 90%; padding: .55rem .7rem; border-radius: 10px; font-size: .875rem; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
@@ -364,6 +369,15 @@
         </div>
         <button class="btn btn-primary" id="add-klasse-btn" onclick="openModal('klasse-modal')" title="Neue Klasse anlegen">+ Neue Klasse</button>
       </div>
+      <div class="list-toolbar">
+        <input type="search" class="form-control list-search" id="klassen-suche" placeholder="Klasse suchen…" oninput="loadKlassen()" />
+        <select class="form-control" id="klassen-sort" onchange="loadKlassen()" title="Sortierung">
+          <option value="name|text|asc">Name A–Z</option>
+          <option value="name|text|desc">Name Z–A</option>
+          <option value="schuljahr|text|desc">Schuljahr (neuste zuerst)</option>
+          <option value="schuljahr|text|asc">Schuljahr (älteste zuerst)</option>
+        </select>
+      </div>
       <div class="card"><div class="table-wrap"><table>
         <thead><tr><th>Klasse</th><th id="klassen-th-beruf">Beruf</th><th id="klassen-th-lehrjahr">Lehrjahr</th><th>Schuljahr</th><th>Schüler</th><th>Aktionen</th></tr></thead>
         <tbody id="klassen-tbody"><tr><td colspan="6" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Klassen erfasst.</td></tr></tbody>
@@ -385,6 +399,14 @@
           <button class="btn btn-primary" onclick="openModal('schueler-modal')" title="Neuen Schüler erfassen">+ Neuer Schüler</button>
         </div>
       </div>
+      <div class="list-toolbar">
+        <input type="search" class="form-control list-search" id="schueler-suche" placeholder="Schüler suchen…" oninput="loadSchueler()" />
+        <select class="form-control" id="schueler-sort" onchange="loadSchueler()" title="Sortierung">
+          <option value="name|text|asc">Name A–Z</option>
+          <option value="name|text|desc">Name Z–A</option>
+          <option value="nummer|text|asc">Nummer aufsteigend</option>
+        </select>
+      </div>
       <div class="card"><div class="table-wrap"><table>
         <thead><tr><th>Name</th><th>Nummer</th><th>Klasse</th><th>Aktionen</th></tr></thead>
         <tbody id="schueler-tbody"><tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Schüler erfasst.</td></tr></tbody>
@@ -400,6 +422,14 @@
         </div>
         <button class="btn btn-primary" onclick="openModal('fach-modal')" title="Neues Fach hinzufügen">+ Neues Fach</button>
       </div>
+      <div class="list-toolbar">
+        <input type="search" class="form-control list-search" id="faecher-suche" placeholder="Fach suchen…" oninput="loadFaecher()" />
+        <select class="form-control" id="faecher-sort" onchange="loadFaecher()" title="Sortierung">
+          <option value="name|text|asc">Name A–Z</option>
+          <option value="name|text|desc">Name Z–A</option>
+          <option value="kuerzel|text|asc">Kürzel A–Z</option>
+        </select>
+      </div>
       <div class="card"><div class="table-wrap"><table>
         <thead><tr><th>Fach</th><th>Kürzel</th><th>KI-Profil</th><th>Aktionen</th></tr></thead>
         <tbody id="faecher-tbody"><tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Fächer erfasst.</td></tr></tbody>
@@ -414,6 +444,19 @@
           <p class="section-subtitle">Erstellen Sie Prüfungen und verknüpfen Sie sie mit Klassen und Fächern.</p>
         </div>
         <button class="btn btn-primary" onclick="openModal('pruefung-modal')" title="Neue Prüfung mit Parametern erfassen">+ Neue Prüfung</button>
+      </div>
+      <div class="list-toolbar">
+        <input type="search" class="form-control list-search" id="pruefungen-suche" placeholder="Prüfung suchen…" oninput="loadPruefungen()" />
+        <select class="form-control" id="pruefungen-fach-filter" onchange="loadPruefungen()" title="Nach Fach filtern">
+          <option value="">Alle Fächer</option>
+        </select>
+        <select class="form-control" id="pruefungen-sort" onchange="loadPruefungen()" title="Sortierung">
+          <option value="datum|text|desc">Datum (neuste zuerst)</option>
+          <option value="datum|text|asc">Datum (älteste zuerst)</option>
+          <option value="name|text|asc">Name A–Z</option>
+          <option value="name|text|desc">Name Z–A</option>
+          <option value="max_punkte|num|desc">Max. Punkte (hoch → tief)</option>
+        </select>
       </div>
       <div class="card"><div class="table-wrap"><table>
         <thead><tr><th>Name</th><th>Datum</th><th>Fach</th><th>Max. Punkte</th><th>Klassen</th><th>Unterlagen</th><th>Aktionen</th></tr></thead>
@@ -1429,6 +1472,38 @@ async function loadDashboard() {
 }
 
 // =============================================================
+// LISTEN-FILTER & -SORTIERUNG (einheitlich für alle Verwaltungslisten)
+// =============================================================
+function listeFiltern(rows, sucheId, felder) {
+  const el = document.getElementById(sucheId);
+  const q = (el ? el.value : '').trim().toLowerCase();
+  if (!q) return rows;
+  return rows.filter(function(r) {
+    return felder.some(function(f) {
+      return String(r[f] == null ? '' : r[f]).toLowerCase().indexOf(q) !== -1;
+    });
+  });
+}
+function listeSortieren(rows, sortId) {
+  const el = document.getElementById(sortId);
+  const val = el ? el.value : '';
+  if (!val) return rows;
+  const parts = val.split('|');
+  const feld = parts[0], typ = parts[1] || 'text', dir = parts[2] || 'asc';
+  const out = rows.slice();
+  out.sort(function(a, b) {
+    let cmp;
+    if (typ === 'num') {
+      cmp = (Number(a[feld]) || 0) - (Number(b[feld]) || 0);
+    } else {
+      cmp = String(a[feld] == null ? '' : a[feld]).localeCompare(String(b[feld] == null ? '' : b[feld]), 'de', { sensitivity: 'base', numeric: true });
+    }
+    return dir === 'desc' ? -cmp : cmp;
+  });
+  return out;
+}
+
+// =============================================================
 // KLASSEN
 // =============================================================
 async function loadKlassen() {
@@ -1436,12 +1511,19 @@ async function loadKlassen() {
     updateKlassenSchoolTypeUI();
     const [rows, schueler] = await Promise.all([sb.select('klassen'), sb.select('schueler')]);
     const isBerufsschule = isBerufsschuleType();
+    const cols = isBerufsschule ? 6 : 4;
     const tbody = document.getElementById('klassen-tbody');
     if (!rows.length) {
-      tbody.innerHTML = '<tr><td colspan="' + (isBerufsschule ? '6' : '4') + '" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Klassen erfasst.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="' + cols + '" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Klassen erfasst.</td></tr>';
       return;
     }
-    tbody.innerHTML = rows.map(function(k) {
+    let view = listeFiltern(rows, 'klassen-suche', ['name', 'beruf', 'schuljahr']);
+    view = listeSortieren(view, 'klassen-sort');
+    if (!view.length) {
+      tbody.innerHTML = '<tr><td colspan="' + cols + '" style="color:var(--text-muted);text-align:center;padding:2rem">Keine Treffer.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = view.map(function(k) {
       const cnt = schueler.filter(function(s) { return s.klasse_id === k.id; }).length;
       const lehrjahrText = k.lehrjahr ? (k.lehrjahr + '. Lehrjahr') : '–';
       return '<tr><td><strong>' + escHtml(k.name) + '</strong></td>' +
@@ -1551,7 +1633,10 @@ async function loadSchueler() {
     klassen.forEach(function(k) { km[k.id] = k.name; });
     const tbody = document.getElementById('schueler-tbody');
     if (!rows.length) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Keine Schüler gefunden.</td></tr>'; return; }
-    tbody.innerHTML = rows.map(function(s) {
+    let view = listeFiltern(rows, 'schueler-suche', ['name', 'nummer']);
+    view = listeSortieren(view, 'schueler-sort');
+    if (!view.length) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Keine Treffer.</td></tr>'; return; }
+    tbody.innerHTML = view.map(function(s) {
       return '<tr><td><strong>' + escHtml(s.name) + '</strong></td><td>' + escHtml(s.nummer || '–') + '</td><td>' + escHtml(km[s.klasse_id] || '–') + '</td><td>' +
       '<button class="btn btn-sm btn-secondary" onclick="editSchueler(\'' + s.id + '\')">&#9998;</button> ' +
       '<button class="btn btn-sm btn-danger" onclick="deleteSchueler(\'' + s.id + '\')">&#128465;</button></td></tr>';
@@ -1598,8 +1683,11 @@ async function loadFaecher() {
     const rows = await sb.select('faecher');
     const tbody = document.getElementById('faecher-tbody');
     if (!rows.length) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Fächer erfasst.</td></tr>'; return; }
+    let view = listeFiltern(rows, 'faecher-suche', ['name', 'kuerzel']);
+    view = listeSortieren(view, 'faecher-sort');
+    if (!view.length) { tbody.innerHTML = '<tr><td colspan="4" style="color:var(--text-muted);text-align:center;padding:2rem">Keine Treffer.</td></tr>'; return; }
     const profilLabels = { mathematik: 'Mathematik', sprache: 'Sprache', naturwissenschaften: 'Naturwiss.', ict: 'ICT', wirtschaft: 'Wirtschaft' };
-    tbody.innerHTML = rows.map(function(f) {
+    tbody.innerHTML = view.map(function(f) {
       const profilCell = f.ki_profil ? '<span class="badge badge-blue">' + escHtml(profilLabels[f.ki_profil] || f.ki_profil) + '</span>' : '<span style="color:var(--text-muted);font-size:.8rem">Standard</span>';
       return '<tr><td><strong>' + escHtml(f.name) + '</strong></td><td><span class="badge badge-blue">' + escHtml(f.kuerzel) + '</span></td><td>' + profilCell + '</td><td>' +
       '<button class="btn btn-sm btn-secondary" onclick="editFach(\'' + f.id + '\')">&#9998;</button> ' +
@@ -1673,7 +1761,21 @@ async function loadPruefungen() {
     });
     const tbody = document.getElementById('pruefungen-tbody');
     if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text-muted);text-align:center;padding:2rem">Noch keine Prüfungen erfasst.</td></tr>'; return; }
-    tbody.innerHTML = rows.map(function(p) {
+    const fachFilterEl = document.getElementById('pruefungen-fach-filter');
+    if (fachFilterEl) {
+      const cur = fachFilterEl.value;
+      fachFilterEl.innerHTML = '<option value="">Alle Fächer</option>' + faecher.map(function(f) {
+        return '<option value="' + f.id + '">' + escHtml(f.name) + '</option>';
+      }).join('');
+      fachFilterEl.value = cur;
+    }
+    let view = rows;
+    const fachFilter = fachFilterEl ? fachFilterEl.value : '';
+    if (fachFilter) view = view.filter(function(p) { return p.fach_id === fachFilter; });
+    view = listeFiltern(view, 'pruefungen-suche', ['name']);
+    view = listeSortieren(view, 'pruefungen-sort');
+    if (!view.length) { tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text-muted);text-align:center;padding:2rem">Keine Treffer.</td></tr>'; return; }
+    tbody.innerHTML = view.map(function(p) {
       const fach = p.fach_id ? fm[p.fach_id] : null;
       const kNames = pruefungKlassen.filter(function(pk) { return pk.pruefung_id === p.id; }).map(function(pk) { return km[pk.klasse_id] || '?'; }).join(', ');
       return '<tr><td><strong>' + escHtml(p.name) + '</strong></td><td>' + (p.datum ? formatDate(p.datum) : '–') + '</td><td>' +
