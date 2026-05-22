@@ -9,6 +9,28 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
+- **Filter & Sortierung in den Verwaltungslisten**: Klassen, Schüler, Fächer
+  und Prüfungen haben jetzt eine einheitliche Werkzeugleiste mit Suchfeld und
+  Sortier-Auswahl. Die Prüfungsliste lässt sich zusätzlich nach Fach filtern.
+- **Strukturierte Unterlagen pro Prüfung**: Vorlagenprüfung, Musterlösung und
+  weitere Unterlagen werden jetzt direkt im Prüfungs-Dialog verwaltet – mit
+  Checkliste, die zeigt, was vorhanden ist und was noch fehlt
+  (Vorlagenprüfung = Pflicht, Musterlösung = empfohlen, Material = optional).
+  In der Prüfungsliste zeigt eine neue Spalte „Unterlagen" den Stand auf einen
+  Blick. Das eigenständige Menü „Lernstoff" entfällt dafür.
+- **Punkteschema aus der Vorlagenprüfung**: Der Knopf „Punkteschema
+  analysieren" lässt die KI die hochgeladene leere Prüfung lesen und Aufgaben,
+  Teilaufgaben, Maximalpunkte und – falls erkennbar – die Punktevergabe-Logik
+  extrahieren. Die Max-Punkte werden automatisch übernommen; fehlt eine
+  Vorlagenprüfung, weist die App darauf hin. Das Schema fliesst auch als
+  verbindliche Vorgabe in die KI-Korrektur ein.
+- **Feinere, nachvollziehbare Korrektur-Berichte**: Die KI gliedert jede
+  Prüfung jetzt in Aufgaben **und Teilaufgaben** auf. Pro (Teil-)Aufgabe wird
+  klar gezeigt, **wofür es Punkte gibt** (Begründung) und **was für mehr Punkte
+  nötig gewesen wäre** (Verbesserung). Der Ergebnis-Dialog stellt das
+  strukturiert und bearbeitbar dar; der Word-Export gibt es als übersichtliche
+  Tabelle (Aufgabe/Teilaufgabe · Punkte · Begründung · Verbesserung) aus.
+  Bestehende Korrekturen ohne Teilaufgaben werden weiterhin korrekt angezeigt.
 - **Word-Export der Korrektur (.docx)**: Im KI-Ergebnis-Dialog erzeugt der
   Knopf „Word herunterladen" pro Schüler ein sauber gegliedertes Word-Dokument
   (Prüfung, Schüler, Ergebnis, Bewertung pro Aufgabe, Gesamtkommentar). Der
