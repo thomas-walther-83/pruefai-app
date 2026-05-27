@@ -365,3 +365,88 @@ describe('claude – Revocation-Flag', () => {
     }
   });
 });
+
+// "1 Korrektur = bis zu 12 Seiten" (FAQ): längere Arbeiten zählen anteilig.
+describe('claude – Page-Counting', () => {
+  const VALID_LICENSE_KEY = '12345678-1234-4123-8123-123456789abc';
+  function setupCustomerFetch({ plan, used, anthropicOk }) {
+    let anthropicCalled = false;
+    globalThis.fetch = async (url) => {
+      if (url.includes('customers/search')) {
+        return {
+          ok: true, status: 200,
+          json: async () => ({ data: [{ id: 'cus_test', metadata: {
+            plan, corrections_this_month: String(used),
+            corrections_reset_date: new Date().toISOString().slice(0, 10),
+          } }] }),
+        };
+      }
+      if (url.includes('anthropic.com')) {
+        anthropicCalled = true;
+        return { ok: anthropicOk !== false, status: 200, json: async () => ({ content: [{ type: 'text', text: 'ok' }] }) };
+      }
+      return { ok: true, status: 200, json: async () => ({}) };
+    };
+    return () => anthropicCalled;
+  }
+
+  it('8 Seiten zählen als 1 Einheit (Standardfall)', async () => {
+    const originalSkip = process.env.SKIP_LICENSE;
+    delete process.env.SKIP_LICENSE;
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
+    const wasCalled = setupCustomerFetch({ plan: 'starter', used: 49 }); // Limit 50
+    try {
+      const res = mockRes();
+      await handler(mockReq({
+        headers: { 'x-license-key': VALID_LICENSE_KEY },
+        body: { messages: SAMPLE_MESSAGES, feature: 'correction', pages: 8 },
+      }), res);
+      assert.equal(res.statusCode, 200, '8 Seiten = 1 Einheit, 49+1 ≤ 50 muss durchgehen');
+      assert.ok(wasCalled(), 'Anthropic muss aufgerufen werden');
+    } finally {
+      if (originalSkip !== undefined) process.env.SKIP_LICENSE = originalSkip;
+      delete process.env.STRIPE_SECRET_KEY;
+    }
+  });
+
+  it('25 Seiten zählen als 3 Einheiten und überschreiten Restlimit -> 429', async () => {
+    const originalSkip = process.env.SKIP_LICENSE;
+    delete process.env.SKIP_LICENSE;
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
+    const wasCalled = setupCustomerFetch({ plan: 'starter', used: 48 }); // Limit 50
+    try {
+      const res = mockRes();
+      await handler(mockReq({
+        headers: { 'x-license-key': VALID_LICENSE_KEY },
+        body: { messages: SAMPLE_MESSAGES, feature: 'correction', pages: 25 },
+      }), res);
+      assert.equal(res.statusCode, 429, '25 Seiten = 3 Einheiten, 48+3=51 > 50 muss 429 sein');
+      assert.equal(wasCalled(), false, 'Anthropic darf bei überschrittenem Limit nicht angerufen werden');
+    } finally {
+      if (originalSkip !== undefined) process.env.SKIP_LICENSE = originalSkip;
+      delete process.env.STRIPE_SECRET_KEY;
+    }
+  });
+
+  it('24 Seiten zählen als 2 Einheiten und passen ins Restkontingent', async () => {
+    const originalSkip = process.env.SKIP_LICENSE;
+    delete process.env.SKIP_LICENSE;
+    process.env.ANTHROPIC_API_KEY = 'sk-ant-test';
+    process.env.STRIPE_SECRET_KEY = 'sk_test_dummy';
+    const wasCalled = setupCustomerFetch({ plan: 'pro', used: 100 }); // Limit 300
+    try {
+      const res = mockRes();
+      await handler(mockReq({
+        headers: { 'x-license-key': VALID_LICENSE_KEY },
+        body: { messages: SAMPLE_MESSAGES, feature: 'correction', pages: 24 },
+      }), res);
+      assert.equal(res.statusCode, 200);
+      assert.ok(wasCalled());
+    } finally {
+      if (originalSkip !== undefined) process.env.SKIP_LICENSE = originalSkip;
+      delete process.env.STRIPE_SECRET_KEY;
+    }
+  });
+});

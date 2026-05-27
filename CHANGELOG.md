@@ -9,6 +9,12 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ## [Unveröffentlicht]
 
 ### Hinzugefügt
+- **Faire 12-Seiten-Regel im Verbrauch**: Eine Korrektur ist nun eine
+  Schülerarbeit mit bis zu 12 Seiten. Längere Arbeiten zählen anteilig
+  (ceil(Seiten/12)) – im Server (`/api/claude`) für Lizenz- und Trial-Pfad,
+  in der App mit Bestätigungsdialog vor dem KI-Lauf bei mehr als einer
+  Einheit und einem Toast mit Seitenzahl/Einheiten. Die Regel ist auch in
+  der FAQ dokumentiert.
 - **Filter & Sortierung in den Verwaltungslisten**: Klassen, Schüler, Fächer
   und Prüfungen haben jetzt eine einheitliche Werkzeugleiste mit Suchfeld und
   Sortier-Auswahl. Die Prüfungsliste lässt sich zusätzlich nach Fach filtern.

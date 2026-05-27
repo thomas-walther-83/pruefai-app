@@ -7,6 +7,10 @@ const SCHUL_CODE_RE = /^SCHULE-[0-9A-F]{12}$/;
 const FREE_TRIAL_LIMIT = 3;
 const RATE_LIMIT_MAX = 20; // max unlicensed requests per IP per hour
 const RATE_LIMIT_WINDOW_MS = 3_600_000;
+// Faire Verbrauchsregel: eine Korrektur = bis zu 12 Seiten. Längere
+// Schülerarbeiten zählen anteilig (ceil(pages/12)). Gilt nur für
+// `correction` / `correction_pro` – andere Features zählen immer 1.
+const PAGES_PER_UNIT = 12;
 
 // Server-authoritative plan → feature mapping. The frontend MUST send a
 // `feature` field; otherwise we treat the request as `correction` (basic).
@@ -83,9 +87,10 @@ async function findCustomerByMeta(stripeKey, metaKey, metaValue) {
   return data.data && data.data.length > 0 ? data.data[0] : null;
 }
 
-async function incrementUsage(stripeKey, customerId, current, resetDate) {
+async function incrementUsage(stripeKey, customerId, current, resetDate, units) {
+  const inc = Math.max(1, Number(units) || 1);
   const params = new URLSearchParams({
-    'metadata[corrections_this_month]': String(current + 1),
+    'metadata[corrections_this_month]': String(current + inc),
     'metadata[corrections_reset_date]': resetDate,
   });
   await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
@@ -126,13 +131,20 @@ export default async function handler(req, res) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not configured on server.' });
 
-  const { model, max_tokens, system, messages, licenseKey: bodyLicenseKey, feature: rawFeature } = req.body;
+  const { model, max_tokens, system, messages, licenseKey: bodyLicenseKey, feature: rawFeature, pages: rawPages } = req.body;
   if (!messages) return res.status(400).json({ error: 'Missing required field: messages' });
 
   const feature = typeof rawFeature === 'string' && rawFeature ? rawFeature : 'correction';
   if (!VALID_FEATURES.has(feature)) {
     return res.status(400).json({ error: 'Ungültiges feature.' });
   }
+
+  // Verbrauchseinheiten ermitteln: korrigieren zählt anteilig nach Seiten
+  // (siehe FAQ "Was zählt als eine Korrektur?"). Andere Features = 1 Einheit.
+  const pagesNum = Number(rawPages);
+  const pages = Number.isFinite(pagesNum) && pagesNum > 0 ? Math.floor(pagesNum) : 1;
+  const isCorrection = feature === 'correction' || feature === 'correction_pro';
+  const units = isCorrection ? Math.max(1, Math.ceil(pages / PAGES_PER_UNIT)) : 1;
 
   // License enforcement is ON by default. Set SKIP_LICENSE=true only for local dev/staging.
   if (process.env.SKIP_LICENSE !== 'true') {
@@ -210,12 +222,12 @@ export default async function handler(req, res) {
         resetDate = today;
       }
 
-      if (correctionsThisMonth >= limit) {
+      if (correctionsThisMonth + units > limit) {
         return res.status(429).json({ error: 'Monatliches Limit erreicht.', upgradeUrl: '/landing' });
       }
 
-      // Increment usage fire-and-forget
-      incrementUsage(stripeKey, customer.id, correctionsThisMonth, resetDate).catch((err) =>
+      // Increment usage fire-and-forget – um `units` Einheiten erhöhen
+      incrementUsage(stripeKey, customer.id, correctionsThisMonth, resetDate, units).catch((err) =>
         console.error('Failed to increment usage:', err.message)
       );
     } else {
@@ -252,15 +264,15 @@ export default async function handler(req, res) {
           trialUsed = parsed.used || 0;
         }
 
-        if (trialUsed >= FREE_TRIAL_LIMIT) {
+        if (trialUsed + units > FREE_TRIAL_LIMIT) {
           return res.status(402).json({
             error: 'Gratis-Kontingent aufgebraucht. Bitte Plan wählen.',
             upgradeUrl: '/landing',
           });
         }
 
-        // Issue updated token with incremented count
-        const newToken = makeTrialToken(trialSecret, ip, trialUsed + 1, currentMonth);
+        // Issue updated token with incremented count (um `units` Einheiten)
+        const newToken = makeTrialToken(trialSecret, ip, trialUsed + units, currentMonth);
         res.setHeader('X-Trial-Token', newToken);
       }
       // Without TRIAL_SECRET the IP rate limit above is the only protection.
