@@ -9,6 +9,8 @@ HTML-Datei aktualisieren.
 | Sub-Auftragsbearbeiter | `subprocessors.md` | [/subprocessors](https://pruefai.ch/subprocessors) |
 | Bearbeitungsverzeichnis (nDSG Art. 12 / DSGVO Art. 30) | `bearbeitungsverzeichnis.md` | [/bearbeitungsverzeichnis](https://pruefai.ch/bearbeitungsverzeichnis) |
 | Datenschutz-Folgenabschätzung KI | `dsfa-ki-verarbeitung.md` | [/dsfa](https://pruefai.ch/dsfa) |
+| DPA-Status-Checkliste | `dpa-checklist.md` | – nur intern – |
+| Meldeplan Datenschutzverletzung | `meldeplan.md` | – nur intern – (Kurzfassung in der DSE) |
 
 Verwandte, öffentlich vorhandene Dokumente:
 
