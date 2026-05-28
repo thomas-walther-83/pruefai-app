@@ -1,6 +1,6 @@
 # Sub-Auftragsbearbeiter PruefAI
 
-Stand: 2025-05-28 · Quelle für die öffentliche Seite [/subprocessors](https://pruefai.ch/subprocessors).
+Stand: 2026-05-28 · Quelle für die öffentliche Seite [/subprocessors](https://pruefai.ch/subprocessors).
 
 ## Verantwortliche/r
 

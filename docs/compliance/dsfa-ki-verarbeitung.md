@@ -1,6 +1,6 @@
 # Datenschutz-Folgenabschätzung – KI-Korrektur
 
-Nach Art. 22 nDSG / Art. 35 DSGVO · Stand 2025-05-28 · Quelle für die öffentliche Seite [/dsfa](https://pruefai.ch/dsfa).
+Nach Art. 22 nDSG / Art. 35 DSGVO · Stand 2026-05-28 · Quelle für die öffentliche Seite [/dsfa](https://pruefai.ch/dsfa).
 
 ## 1. Anlass und Zweck
 
@@ -40,7 +40,7 @@ PruefAI verarbeitet handschriftliche Prüfungen von Schülerinnen und Schülern 
 | Datenleck bei Sub-Bearbeiter | niedrig | mittel | DPAs, SCCs + Swiss-U.S. DPF; Standard-Terms ohne Persistenz; kurze Verarbeitungszeit |
 | Unbefugter Zugriff lokaler Browser-Speicher | niedrig | niedrig | Geräte-Sicherheit Sache des Nutzers; kein zentrales Backend |
 | Reproduzierbarkeit der KI-Antworten (Trainingsdaten-Leck) | niedrig | niedrig | Anthropic kein Training, keine Persistenz |
-| Fehlende elterliche Einwilligung Minderjähriger | mittel | mittel | Lehrperson trägt Rechtsgrundlage (kant. Schulrecht / Einwilligung); explizite Bestätigung in der App beim ersten Schüler-Anlegen |
+| Fehlende oder unklare Rechtsgrundlage für die Schülerdaten-Bearbeitung | niedrig | mittel | Normale Notenerfassung ist durch kant. Schulrecht / Schul-Auftrag legitimiert (analog zu Excel / Schul-LIS); separate Eltern-Einwilligung üblicherweise nicht nötig. Informationspflicht über Schul-DSE. Explizite Bestätigung in der App beim ersten Schüler-Anlegen |
 | Lizenz-Missbrauch | niedrig | niedrig | Stripe-Validierung, Revocation-Flag |
 
 ## 5. Massnahmen
@@ -64,4 +64,4 @@ Nach Massnahmen-Umsetzung niedrig. Primär theoretisch (Datenleck beim KI-Anbiet
 
 Bearbeitung ist verhältnismässig und unter den getroffenen Massnahmen zulässig. Mindestens jährliche Überprüfung bzw. bei wesentlichen Änderungen (anderer KI-Anbieter, neue Datenkategorien, neue Sub-Bearbeiter).
 
-Letzte Überprüfung: 2025-05-28.
+Letzte Überprüfung: 2026-05-28.
