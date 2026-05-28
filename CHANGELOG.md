@@ -8,6 +8,21 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Geändert / Datenschutz
+- **Pseudonymisierung an die KI**: Der Schülername wird nicht mehr als
+  Klartext im KI-Prompt an Anthropic übertragen. Anthropic erhält nur die
+  Prüfungsbilder selbst, ohne identifizierende Metadaten. Der Bericht im
+  Ergebnis-Dialog und im Word-Export setzt den Namen lokal im Browser wieder
+  ein.
+- **Datenschutz-Tipp im Upload-Dialog**: Hinweis, einen oben aufs Blatt
+  geschriebenen Namen vor dem Foto abzudecken.
+- **Datenschutzerklärung erweitert**: Upstash (temporärer Foto-Relay vom
+  Handy, 10 Min TTL) und Resend (transaktionale E-Mails) als
+  Sub-Auftragsbearbeiter ergänzt; Drittland-Grundlage präzisiert (SCCs +
+  Swiss-U.S. Data Privacy Framework).
+- **FAQ korrigiert**: Die Aussage „anonymisierte Prüfungsbilder" wurde durch
+  eine ehrliche Beschreibung der Pseudonymisierung ersetzt.
+
 ### Hinzugefügt
 - **Faire 12-Seiten-Regel im Verbrauch**: Eine Korrektur ist nun eine
   Schülerarbeit mit bis zu 12 Seiten. Längere Arbeiten zählen anteilig

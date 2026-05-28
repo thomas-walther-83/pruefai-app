@@ -715,6 +715,7 @@
     <div class="modal__title" id="upload-modal-title">Prüfung hochladen</div>
     <button class="modal__close" onclick="closeModal('upload-modal')">&#10005;</button>
     <input type="hidden" id="upload-eintrag-id" />
+    <div class="alert alert-info" style="margin:0 0 .6rem;font-size:.8rem">&#128274; <strong>Datenschutz-Tipp:</strong> Decken Sie einen oben aufs Blatt geschriebenen Namen vor dem Foto ab (Post-it, Knick). Der Schülername wird in PruefAI ohnehin lokal verwaltet und nicht ans KI-Modell übertragen.</div>
     <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
       <div class="upload-zone__icon">&#128248;</div>
       <div>Fotos / Scans hier ablegen oder klicken</div>
@@ -2647,7 +2648,10 @@ async function kiKorrigieren(eintragsId, silent) {
       '- Hat eine Aufgabe keine sinnvollen Teilaufgaben, lass "teilaufgaben" weg und fülle "begruendung" und "verbesserung" direkt auf Aufgabenebene.\n' +
       '- "erreicht" und "max" einer Aufgabe sind die Summe ihrer Teilaufgaben.\n';
     const systemPrompt = 'Du bist ein erfahrener Lehrer an einer ' + schoolTypeLabel + '.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\n' + materialHinweis + (kiProfilInstruction ? kiProfilInstruction + '\n' : '') + (rubricInstruction ? rubricInstruction + '\n' : '') + berichtHinweis + 'Antworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "<string>", "max": <Zahl>, "erreicht": <Zahl>, "begruendung": "<string>", "verbesserung": "<string>", "teilaufgaben": [{"bezeichnung": "<string>", "max": <Zahl>, "erreicht": <Zahl>, "begruendung": "<string>", "verbesserung": "<string>"}]}]}';
-    const examLabel = { type: 'text', text: '=== ZU KORRIGIERENDE PRÜFUNG' + (schueler && schueler.name ? ' VON ' + schueler.name : '') + ' ===' };
+    // Pseudonymisierung: der Schülername bleibt lokal im Browser. An die KI
+    // gehen nur die Prüfungsbilder selbst – Anthropic erfährt nicht, zu
+    // welcher Person die Arbeit gehört (siehe Datenschutzerklärung).
+    const examLabel = { type: 'text', text: '=== ZU KORRIGIERENDE PRÜFUNG ===' };
     let schemaText = '';
     if (pruefung && pruefung.punkteschema && Array.isArray(pruefung.punkteschema.aufgaben) && pruefung.punkteschema.aufgaben.length) {
       schemaText = '\nOffizielles Punkteschema (verbindlich für Aufgabenstruktur und Maximalpunkte):\n' +
@@ -2659,7 +2663,7 @@ async function kiKorrigieren(eintragsId, silent) {
         }).join('\n') +
         (pruefung.punkteschema.punktelogik ? '\nPunktevergabe-Logik: ' + pruefung.punkteschema.punktelogik : '') + '\n';
     }
-    const examText = { type: 'text', text: 'Prüfung: ' + (pruefung && pruefung.name || '') + '\nSchüler: ' + (schueler && schueler.name || '') + '\nMax. Punkte: ' + (pruefung && pruefung.max_punkte || 100) + schemaText + (pruefung && pruefung.anweisungen ? '\nAufgabenstellung:\n' + pruefung.anweisungen : '') + '\n\nBitte korrigiere diese Prüfung als JSON.' };
+    const examText = { type: 'text', text: 'Prüfung: ' + (pruefung && pruefung.name || '') + '\nMax. Punkte: ' + (pruefung && pruefung.max_punkte || 100) + schemaText + (pruefung && pruefung.anweisungen ? '\nAufgabenstellung:\n' + pruefung.anweisungen : '') + '\n\nBitte korrigiere diese Prüfung als JSON.' };
     const userContent = matInfo.prefixBlocks.concat([examLabel], imageBlocks, [examText]);
     const licenseKey = localStorage.getItem('lernortai_license_key') || '';
     const schulCode = localStorage.getItem('lernortai_schul_code') || '';
