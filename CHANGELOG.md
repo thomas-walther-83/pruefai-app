@@ -8,6 +8,18 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Korrigiert / Datenschutz
+- **Jahreszahlen aktualisiert**: Footer-Copyright (© 2025 → © 2026),
+  „Stand Januar 2025" → „Stand Mai 2026", DSFA- und
+  Bearbeitungsverzeichnis-Überprüfungsdatum auf 2026-05-28.
+- **Story-Schluss konsistent**: „Samstagnachmittag" → „Sonntagabend"
+  (passt zum durchgängigen Zeit-zurück-Faden Hero/Value-Card/CTA).
+- **Rechtsgrundlage-Bestätigung präzisiert**: App-Modal, DSFA und
+  Bearbeitungsverzeichnis stellen klar, dass die normale Notenerfassung
+  durch das kantonale Schulrecht / den Schul-Auftrag legitimiert ist
+  (analog zu Excel oder Schul-LIS) und eine separate Einwilligung der
+  Erziehungsberechtigten üblicherweise nicht erforderlich ist.
+
 ### Hinzugefügt / Datenschutz (P1)
 - **Drei öffentliche Compliance-Seiten** verlinkt aus Datenschutzerklärung
   und Footer:

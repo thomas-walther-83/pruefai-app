@@ -1,6 +1,6 @@
 # Bearbeitungsverzeichnis PruefAI
 
-Nach Art. 12 nDSG / Art. 30 DSGVO · Stand 2025-05-28 · Quelle für die öffentliche Seite [/bearbeitungsverzeichnis](https://pruefai.ch/bearbeitungsverzeichnis).
+Nach Art. 12 nDSG / Art. 30 DSGVO · Stand 2026-05-28 · Quelle für die öffentliche Seite [/bearbeitungsverzeichnis](https://pruefai.ch/bearbeitungsverzeichnis).
 
 ## Verantwortliche/r
 
@@ -80,4 +80,4 @@ Verletzung der Datensicherheit → unverzüglich Meldung an EDÖB (Art. 24 nDSG)
 
 ## Aktualisierungen
 
-Aktualisierung bei jeder wesentlichen Änderung. Letzte Überprüfung: 2025-05-28.
+Aktualisierung bei jeder wesentlichen Änderung. Letzte Überprüfung: 2026-05-28.
