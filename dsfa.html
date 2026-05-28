@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Datenschutz-Folgenabschätzung KI-Korrektur – PruefAI</title>
+  <meta name="description" content="Datenschutz-Folgenabschätzung (DSFA) für die KI-gestützte Korrektur in PruefAI nach Art. 22 nDSG / Art. 35 DSGVO – Stand 2025." />
+  <link rel="canonical" href="https://pruefai.ch/dsfa" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --primary: #1a56db; --primary-dark: #1245b7; --text: #111827; --text-muted: #6b7280; --border: #e5e7eb; --bg: #f9fafb; --card: #ffffff; --success: #16a34a; --warning: #d97706; --danger: #dc2626; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; color: var(--text); background: var(--bg); line-height: 1.7; }
+    a { color: var(--primary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    nav { background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+    .nav-inner { max-width: 900px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; padding: .875rem 1.5rem; }
+    .nav-logo { font-size: 1.25rem; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: .5rem; }
+    .nav-links { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-links a { color: var(--text-muted); font-size: .9rem; }
+    .page-header { background: linear-gradient(135deg, #1a56db 0%, #0d3494 100%); color: #fff; padding: 3rem 1.5rem 2.5rem; text-align: center; }
+    .page-header h1 { font-size: clamp(1.6rem, 4vw, 2.25rem); font-weight: 800; }
+    .page-header p { margin-top: .75rem; opacity: .85; font-size: .95rem; }
+    .content { max-width: 880px; margin: 2.5rem auto 4rem; padding: 0 1.5rem; }
+    .content h2 { font-size: 1.25rem; font-weight: 700; margin: 2rem 0 .6rem; padding-bottom: .4rem; border-bottom: 2px solid var(--primary); color: var(--primary); }
+    .content h3 { font-size: 1rem; font-weight: 700; margin: 1.4rem 0 .4rem; color: var(--text); }
+    .content p { margin-bottom: .8rem; }
+    .content ul, .content ol { margin: .5rem 0 .8rem 1.4rem; }
+    .content li { margin-bottom: .35rem; }
+    .meta { color: var(--text-muted); font-size: .85rem; margin-bottom: 2rem; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0 1.2rem; font-size: .88rem; }
+    th { background: var(--primary); color: #fff; padding: .55rem .8rem; text-align: left; font-weight: 600; }
+    td { padding: .5rem .8rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:nth-child(even) td { background: #f3f4f6; }
+    .risk-low { background: #d1fae5; color: #065f46; padding: .1rem .4rem; border-radius: 4px; font-weight: 600; font-size: .8rem; }
+    .risk-mid { background: #fef3c7; color: #92400e; padding: .1rem .4rem; border-radius: 4px; font-weight: 600; font-size: .8rem; }
+    .verdict-box { background: #d1fae5; border-left: 4px solid var(--success); padding: 1.25rem 1.5rem; margin: 2rem 0; border-radius: 6px; }
+    .verdict-box strong { color: #065f46; }
+    footer { background: #1f2937; color: #9ca3af; padding: 2rem 1.5rem; text-align: center; font-size: .85rem; }
+    footer a { color: #9ca3af; }
+    footer a:hover { color: #fff; }
+    .footer-links { display: flex; flex-wrap: wrap; gap: 1.25rem; justify-content: center; margin-bottom: .75rem; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <a class="nav-logo" href="/app">✏️ PruefAI</a>
+    <div class="nav-links">
+      <a href="/">Preise</a>
+      <a href="/app">App starten</a>
+    </div>
+  </div>
+</nav>
+
+<div class="page-header">
+  <h1>Datenschutz-Folgenabschätzung</h1>
+  <p>KI-gestützte Korrektur handschriftlicher Prüfungen – nach Art. 22 nDSG / Art. 35 DSGVO – Stand 2025</p>
+</div>
+
+<div class="content">
+  <p class="meta"><strong>Verantwortliche/r:</strong> Thomas Walther, PruefAI, Schweiz &nbsp;·&nbsp; <strong>Kontakt:</strong> <a href="mailto:info@pruefai.ch">info@pruefai.ch</a></p>
+
+  <h2>1. Anlass und Zweck</h2>
+  <p>PruefAI verarbeitet handschriftliche Prüfungen von Schülerinnen und Schülern (überwiegend Minderjährige) mit Hilfe eines KI-Modells (Anthropic Claude). Da hier sowohl Daten besonders schutzbedürftiger Personen als auch ein KI-System mit potenziell weitreichender Auswirkung auf die Beurteilung der Betroffenen im Spiel sind, wird eine Folgenabschätzung als gute Praxis durchgeführt – auch wenn die Schwelle des Art. 22 nDSG (rein automatisierte Einzelentscheidung) bewusst <em>nicht</em> erreicht wird.</p>
+
+  <h2>2. Beschreibung der Bearbeitung</h2>
+  <h3>2.1 Datenfluss</h3>
+  <ol>
+    <li>Die Lehrperson fotografiert/scannt eine handschriftliche Prüfung; die Bilder werden im Browser (IndexedDB) lokal gespeichert.</li>
+    <li>Auf Knopfdruck werden die <strong>Bilder ohne Schülername</strong> (Pseudonymisierung) zusammen mit neutralen Prüfungsmetadaten (Prüfungsname, Maximalpunktzahl, Aufgabenstellung) an Claude (Anthropic, USA) übermittelt.</li>
+    <li>Claude liefert ein strukturiertes JSON-Ergebnis (Punkte, Note, Begründung, Verbesserungsvorschlag pro Aufgabe).</li>
+    <li>Das Ergebnis wird im Browser lokal gespeichert. Die <strong>Lehrperson überprüft, korrigiert und bestätigt</strong> die Bewertung; sie kann jede Punkt-/Notenangabe ändern.</li>
+    <li>Die finale Note wird ausschliesslich lokal abgelegt. Bei Anthropic werden die Bilder gemäss Standard-API-Bedingungen nicht persistiert und nicht für das Training verwendet.</li>
+  </ol>
+
+  <h3>2.2 Beteiligte Akteure</h3>
+  <ul>
+    <li><strong>Verantwortliche/r für die Schülerdaten:</strong> Lehrperson / Schule</li>
+    <li><strong>Auftragsbearbeiterin:</strong> PruefAI (Thomas Walther, CH)</li>
+    <li><strong>Sub-Auftragsbearbeiterin (KI):</strong> Anthropic PBC, USA</li>
+    <li><strong>Betroffene Personen:</strong> Schülerinnen und Schüler (überwiegend minderjährig), Lehrperson</li>
+  </ul>
+
+  <h2>3. Notwendigkeit und Verhältnismässigkeit</h2>
+  <p>Die KI-gestützte Korrektur ermöglicht eine ~80%ige Zeitersparnis bei der Prüfungskorrektur und erhöht damit die Qualität der pädagogischen Arbeit (mehr Zeit für individuelle Förderung, weniger Korrektur-Druck). Die Bearbeitung ist verhältnismässig, weil:</p>
+  <ul>
+    <li>Es werden nur die für die Aufgabe nötigen Daten übermittelt (Bilder, Prüfungsmetadaten).</li>
+    <li>Schülernamen werden vor der Übermittlung entfernt (Pseudonymisierung).</li>
+    <li>Die Daten verbleiben nicht beim KI-Dienst (kein Training, keine Persistenz).</li>
+    <li>Die Lehrperson behält das letzte Wort – es liegt keine rein automatisierte Einzelentscheidung vor.</li>
+    <li>Es gibt keinen vergleichbaren Schweizer Anbieter, der das Schweizer Notensystem (1.0–6.0, 0.5er-Schritte, Bestehensgrenze 4.0) korrekt umsetzt und gleichzeitig keine zentrale Schülerdaten-DB führt.</li>
+  </ul>
+
+  <h2>4. Risikoanalyse</h2>
+  <table>
+    <thead>
+      <tr><th>Risiko</th><th>Wahrscheinlichkeit</th><th>Schwere</th><th>Massnahmen</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Re-Identifikation aus Bildinhalt (Handschrift, ggf. Name oben auf dem Blatt)</td>
+        <td><span class="risk-low">niedrig</span></td>
+        <td><span class="risk-mid">mittel</span></td>
+        <td>Pseudonymisierung der Metadaten; explizite Empfehlung an Lehrpersonen, den Namen abzudecken (Onboarding-Hinweis in der App); Anthropic verarbeitet ohne Re-Identifikations-Interesse und ohne Persistenz</td>
+      </tr>
+      <tr>
+        <td>Falsche Bewertung durch die KI</td>
+        <td><span class="risk-mid">mittel</span></td>
+        <td><span class="risk-mid">mittel</span></td>
+        <td>Mensch-im-Loop: Lehrperson überprüft jede Bewertung und gibt sie frei; finale Note ist immer die der Lehrperson; pro Aufgabe Begründung + Verbesserungsvorschlag der KI für nachvollziehbare Korrektur</td>
+      </tr>
+      <tr>
+        <td>Datenleck bei Anthropic oder einem anderen Sub-Bearbeiter</td>
+        <td><span class="risk-low">niedrig</span></td>
+        <td><span class="risk-mid">mittel</span></td>
+        <td>Pflicht-DPA mit allen Sub-Bearbeitern; SCCs + Swiss-U.S. DPF; Anthropic Standard-Terms (keine Persistenz, kein Training); kurzzeitige Übertragung (Sekunden)</td>
+      </tr>
+      <tr>
+        <td>Unbefugter Zugriff auf den lokalen Browser-Speicher</td>
+        <td><span class="risk-low">niedrig</span></td>
+        <td><span class="risk-low">niedrig</span></td>
+        <td>Lokale Speicherung im Lehrer-Browser ist eine Frage der Geräte-Sicherheit (Passwort, Bildschirmsperre); kein zentrales Backend reduziert das Skalenrisiko massiv</td>
+      </tr>
+      <tr>
+        <td>Reproduzierbarkeit der KI-Antworten (Reidentifikation über Trainingsdaten)</td>
+        <td><span class="risk-low">niedrig</span></td>
+        <td><span class="risk-low">niedrig</span></td>
+        <td>Anthropic verwendet API-Daten standardmässig nicht zum Training; Bilder werden nicht persistiert</td>
+      </tr>
+      <tr>
+        <td>Fehlende elterliche Einwilligung für minderjährige Schüler</td>
+        <td><span class="risk-mid">mittel</span></td>
+        <td><span class="risk-mid">mittel</span></td>
+        <td>Die Verantwortung für die Rechtsgrundlage (kantonales Schulrecht, Auftrag der Schule, Einwilligung) liegt bei der Lehrperson/Schule. PruefAI verlangt beim ersten Anlegen eines Schülerdatensatzes eine explizite Bestätigung dieser Rechtsgrundlage durch die Lehrperson.</td>
+      </tr>
+      <tr>
+        <td>Lizenz-Missbrauch / Account-Sharing</td>
+        <td><span class="risk-low">niedrig</span></td>
+        <td><span class="risk-low">niedrig</span></td>
+        <td>Lizenz-Validierung gegen Stripe, Revocation-Flag</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>5. Massnahmen im Überblick</h2>
+  <ul>
+    <li><strong>Pseudonymisierung</strong> der Schülernamen vor jeder KI-Übermittlung</li>
+    <li><strong>Lokale Speicherung</strong> aller identifizierenden Schülerdaten (IndexedDB) statt zentrales Backend</li>
+    <li><strong>Mensch-im-Loop</strong>: die finale Bewertung erfolgt durch die Lehrperson</li>
+    <li><strong>Datenminimierung</strong>: nur Bilder und Prüfungsmetadaten an die KI; keine Klassenlisten, keine Namen</li>
+    <li><strong>Sub-Bearbeiter-Verträge</strong>: DPAs mit Anthropic, Stripe, Vercel, Upstash, Resend; Standardvertragsklauseln + Swiss-U.S. DPF</li>
+    <li><strong>Bild-Komprimierung vor Übertragung</strong> reduziert die Detailtiefe (z. B. erkennbarkeit feiner Handschriftmerkmale) auf das Korrektur-Notwendige</li>
+    <li><strong>QR-Foto-Relay</strong> mit TTL 10 Minuten, dann automatische Löschung</li>
+    <li><strong>Onboarding-Bestätigung</strong> in der App: Lehrperson bestätigt einmalig, dass sie über eine Rechtsgrundlage zur Bearbeitung von Schülerdaten verfügt</li>
+    <li><strong>Empfehlung</strong>, handschriftliche Namen oben auf der Prüfung vor dem Foto abzudecken – als Datenschutz-Tipp im Upload-Dialog sichtbar</li>
+    <li><strong>Transparente Kommunikation</strong>: ehrliche Beschreibung in FAQ und Datenschutzerklärung, dass das Bild übertragen wird (nicht „Daten bleiben im Browser" pauschal)</li>
+  </ul>
+
+  <h2>6. Restrisiko</h2>
+  <p>Nach Umsetzung der oben genannten Massnahmen verbleibt ein <span class="risk-low">niedriges</span> Restrisiko. Es ist primär theoretischer Natur (z. B. ein Datenleck beim KI-Anbieter trotz SCCs und Standard-Terms ohne Persistenz). Die Wahrscheinlichkeit ist gering, und im seltenen Eintrittsfall ist die Schwere überschaubar, da keine Klarnamen übermittelt werden und die Daten nicht persistiert sind.</p>
+
+  <div class="verdict-box">
+    <p><strong>Fazit:</strong> Die Bearbeitung ist verhältnismässig und unter den getroffenen Massnahmen zulässig. Sie wird regelmässig überprüft (mindestens jährlich oder bei wesentlichen Änderungen am Datenfluss / am eingesetzten KI-Modell).</p>
+  </div>
+
+  <h2>7. Aktualisierungen</h2>
+  <p>Diese DSFA wird aktualisiert, wenn sich die Bearbeitung wesentlich ändert (neue Sub-Bearbeiter, anderer Modell-Anbieter, neue Datenkategorien). Datum der letzten Überprüfung: 2025-05-28.</p>
+
+  <p style="margin-top:2rem;font-size:.85rem;color:var(--text-muted)">Siehe auch: <a href="./datenschutz.html">Datenschutzerklärung</a> · <a href="./subprocessors.html">Sub-Auftragsbearbeiter</a> · <a href="./bearbeitungsverzeichnis.html">Bearbeitungsverzeichnis</a> · <a href="./avv.html">AVV</a></p>
+</div>
+
+<footer>
+  <div class="footer-links">
+    <a href="/app">App starten</a>
+    <a href="/">Preise</a>
+    <a href="./datenschutz.html">Datenschutz</a>
+    <a href="./subprocessors.html">Sub-Auftragsbearbeiter</a>
+    <a href="./agb.html">AGB</a>
+    <a href="./avv.html">AVV</a>
+    <a href="mailto:info@pruefai.ch">Kontakt</a>
+  </div>
+  <div>&copy; 2025 PruefAI – Thomas Walther, Schweiz &nbsp;·&nbsp; <a href="mailto:info@pruefai.ch">info@pruefai.ch</a></div>
+</footer>
+
+</body>
+</html>

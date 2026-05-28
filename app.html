@@ -837,6 +837,27 @@
 <!-- Schulcode-Feld in Settings -->
 <!-- (inserted inline via JS into the existing settings modal) -->
 
+<!-- Rechtsgrundlage-Bestätigung (einmalig, bei erster Schüler-/Korrekturansicht) -->
+<div id="rechtsgrundlage-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:540px">
+    <div class="modal__title">&#128274; Datenschutz – Ihre Verantwortung als Lehrperson</div>
+    <p style="color:var(--text-muted);margin-bottom:1rem;font-size:.9rem;line-height:1.6">PruefAI verarbeitet Schülerdaten <strong>in Ihrem Auftrag</strong>. Als Lehrperson bzw. Schule sind Sie rechtlich für die Grundlage dieser Verarbeitung verantwortlich. Bitte bestätigen Sie einmalig:</p>
+    <label style="display:flex;align-items:flex-start;gap:.6rem;margin-bottom:.7rem;font-size:.875rem;cursor:pointer">
+      <input type="checkbox" id="rechtsgrundlage-check-1" style="margin-top:.25rem;flex-shrink:0" onchange="updateRechtsgrundlageButton()" />
+      <span>Ich verfüge über eine gültige Rechtsgrundlage zur Bearbeitung der Schülerdaten (z.&nbsp;B. Schul-Auftrag, kantonales Schulrecht oder Einwilligung der Erziehungsberechtigten).</span>
+    </label>
+    <label style="display:flex;align-items:flex-start;gap:.6rem;margin-bottom:1rem;font-size:.875rem;cursor:pointer">
+      <input type="checkbox" id="rechtsgrundlage-check-2" style="margin-top:.25rem;flex-shrink:0" onchange="updateRechtsgrundlageButton()" />
+      <span>Ich kenne die Empfehlung, einen handschriftlichen Schülernamen oben auf dem Prüfungsblatt vor dem Foto abzudecken. (PruefAI sendet den Namen ohnehin nicht an die KI – Pseudonymisierung.)</span>
+    </label>
+    <p style="font-size:.78rem;color:var(--text-muted);margin-bottom:1rem">Diese Bestätigung wird lokal in Ihrem Browser gespeichert. Details siehe <a href="/datenschutz.html" target="_blank" rel="noopener">Datenschutzerklärung</a>, <a href="/avv.html" target="_blank" rel="noopener">AVV</a> und <a href="/subprocessors.html" target="_blank" rel="noopener">Sub-Auftragsbearbeiter</a>.</p>
+    <div class="modal__footer">
+      <button class="btn btn-secondary" onclick="closeRechtsgrundlageModal()">Später</button>
+      <button class="btn btn-primary" id="rechtsgrundlage-confirm-btn" onclick="confirmRechtsgrundlage()" disabled>Bestätigen</button>
+    </div>
+  </div>
+</div>
+
 <!-- E-Mail-Capture Modal -->
 <div id="email-capture-modal" class="modal-overlay hidden">
   <div class="modal" style="max-width:440px">
@@ -1438,6 +1459,38 @@ function showView(name) {
   if (name === 'rubrics')    { if (!requirePro('Bewertungsraster')) { showView('dashboard'); return; } loadRubrics(); }
   if (name === 'analytik')   { if (!requirePro('Analytik')) { showView('dashboard'); return; } loadKlassenIntoSelect('analytik-klasse-select'); }
   if (name === 'hilfe')      { initHelpView(); }
+  // Beim ersten Wechsel zu schueler/korrektur die Rechtsgrundlage-Bestätigung
+  // anzeigen (einmalig pro Browser, danach via LocalStorage-Flag unterdrückt).
+  if (name === 'schueler' || name === 'korrektur') showRechtsgrundlageModalIfNeeded();
+}
+
+function checkRechtsgrundlageBestaetigt() {
+  return localStorage.getItem('lernortai_rechtsgrundlage_bestaetigt') === '1';
+}
+function showRechtsgrundlageModalIfNeeded() {
+  if (checkRechtsgrundlageBestaetigt()) return;
+  const c1 = document.getElementById('rechtsgrundlage-check-1');
+  const c2 = document.getElementById('rechtsgrundlage-check-2');
+  const btn = document.getElementById('rechtsgrundlage-confirm-btn');
+  if (c1) c1.checked = false;
+  if (c2) c2.checked = false;
+  if (btn) btn.disabled = true;
+  const m = document.getElementById('rechtsgrundlage-modal');
+  if (m) m.classList.remove('hidden');
+}
+function updateRechtsgrundlageButton() {
+  const c1 = document.getElementById('rechtsgrundlage-check-1');
+  const c2 = document.getElementById('rechtsgrundlage-check-2');
+  const btn = document.getElementById('rechtsgrundlage-confirm-btn');
+  if (btn) btn.disabled = !(c1 && c1.checked && c2 && c2.checked);
+}
+function confirmRechtsgrundlage() {
+  localStorage.setItem('lernortai_rechtsgrundlage_bestaetigt', '1');
+  document.getElementById('rechtsgrundlage-modal').classList.add('hidden');
+  showToast('Vielen Dank. Bestätigung gespeichert.', 'success');
+}
+function closeRechtsgrundlageModal() {
+  document.getElementById('rechtsgrundlage-modal').classList.add('hidden');
 }
 
 function showMobileMenu() { document.getElementById('mobile-menu-modal').classList.remove('hidden'); }

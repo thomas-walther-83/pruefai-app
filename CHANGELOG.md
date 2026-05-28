@@ -8,6 +8,23 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt / Datenschutz (P1)
+- **Drei öffentliche Compliance-Seiten** verlinkt aus Datenschutzerklärung
+  und Footer:
+  - `/subprocessors` – vollständige Sub-Auftragsbearbeiter-Übersicht mit
+    Standort, Funktion und Drittland-Grundlage (Anthropic, Stripe, Vercel,
+    Upstash, Resend).
+  - `/bearbeitungsverzeichnis` – nach Art. 12 nDSG / Art. 30 DSGVO mit den
+    vier Bearbeitungstätigkeiten (KI-Korrektur, Abo, E-Mails, Hosting).
+  - `/dsfa` – Datenschutz-Folgenabschätzung für die KI-Korrektur mit
+    Risikoanalyse, Massnahmen und Restrisiko-Beurteilung.
+  - Markdown-Quellen in `docs/compliance/`.
+- **App-seitige Rechtsgrundlage-Bestätigung**: Bei erstem Besuch der
+  Schüler- oder Korrektur-Ansicht erscheint einmalig ein Dialog. Die
+  Lehrperson bestätigt, dass eine gültige Rechtsgrundlage (Schul-Auftrag /
+  Einwilligung) besteht und sie die Empfehlung kennt, Schülernamen vor
+  dem Foto abzudecken. Bestätigung wird lokal gespeichert.
+
 ### Geändert / Datenschutz
 - **Pseudonymisierung an die KI**: Der Schülername wird nicht mehr als
   Klartext im KI-Prompt an Anthropic übertragen. Anthropic erhält nur die
