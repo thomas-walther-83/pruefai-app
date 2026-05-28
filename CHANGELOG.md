@@ -8,6 +8,18 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Geändert / KI-Korrektur
+- **Sorgfaltsregeln im KI-Prompt verschärft**: Die KI ist explizit angewiesen,
+  keine Vermutungen anzustellen, Unklarheiten und unleserliche Stellen offen
+  zuzugeben und für solche Stellen das neue Feld `unsicher: true` zu setzen.
+- **Sichtbare ⚠-Markierung im Ergebnis-Dialog**: Banner oben mit Anzahl
+  unsicherer Stellen; betroffene (Teil-)Aufgaben werden gelb hinterlegt und
+  mit „KI unsicher – bitte manuell prüfen" gekennzeichnet.
+- **Word-Export**: Hinweistext mit Gesamtzahl unsicherer Stellen; betroffene
+  Tabellenzeilen mit gelbem Hintergrund und „⚠ unsicher"-Markierung. Die
+  Lehrperson erkennt die Stellen sofort.
+- SW-Cache auf `pruefai-v20`.
+
 ### Hinzugefügt / Datenschutz (P1)
 - **Interne Compliance-Dokumente** im Repo (Quellen):
   - `docs/compliance/dpa-checklist.md` – Status der DPAs/AVVs mit allen
