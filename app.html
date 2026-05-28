@@ -308,6 +308,7 @@
       <div class="header__sub" id="header-school">Meine Schule</div>
     </div>
     <div class="header__actions">
+      <button class="btn btn-icon" id="fs-status-btn" onclick="onFsStatusClick()" title="Datenablage" style="display:none;font-size:.95rem">&#128193;</button>
       <button class="btn btn-icon" onclick="openSettingsModal()" title="Einstellungen">&#9881;&#65039;</button>
       <a id="free-trial-badge" href="/" title="Plan wählen" style="display:none;font-size:.75rem;font-weight:600;background:var(--warning-light);color:var(--warning);border:1px solid #fcd34d;border-radius:20px;padding:.25rem .65rem;white-space:nowrap;text-decoration:none">🎓 <span id="free-trial-remaining"></span> gratis</a>
       <div class="usage-bar-wrap" id="usage-bar-wrap">
@@ -800,6 +801,10 @@
     </div>
     <div class="form-group"><label class="form-label">Ihr Name (optional)</label><input type="text" id="settings-lehrer-name" class="form-control" placeholder="Vor- und Nachname" /></div>
     <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
+      <div class="form-label" style="margin-bottom:.75rem">&#128193; Lokaler Ordner für Ihre Daten</div>
+      <div id="fs-settings-body" style="font-size:.875rem;color:var(--text-muted);line-height:1.55"></div>
+    </div>
+    <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
       <div class="form-label" style="margin-bottom:.75rem">&#128260; Datensicherung (für Geräteübertragung)</div>
       <div style="display:flex;gap:.5rem;flex-wrap:wrap">
         <button class="btn btn-secondary" onclick="exportAllData()" title="Alle lokalen Daten in eine Datei exportieren">&#8659; Exportieren</button>
@@ -836,6 +841,14 @@
 
 <!-- Schulcode-Feld in Settings -->
 <!-- (inserted inline via JS into the existing settings modal) -->
+
+<!-- Onboarding: lokalen Ordner wählen (File System Access API) -->
+<div id="fs-onboarding-modal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:560px">
+    <div class="modal__title">&#128193; Daten lokal in einem Ordner ablegen</div>
+    <div id="fs-onboarding-body" style="font-size:.9rem;line-height:1.6"></div>
+  </div>
+</div>
 
 <!-- Rechtsgrundlage-Bestätigung (einmalig, bei erster Schüler-/Korrekturansicht) -->
 <div id="rechtsgrundlage-modal" class="modal-overlay hidden">
@@ -1169,9 +1182,25 @@ document.addEventListener('DOMContentLoaded', async function() {
   lehrer_id = getOrCreateLehrerId();
   applyConfig();
   updateFreeTrialBadge();
+  // Lokaler Ordner: vorhandene Berechtigung still wieder herstellen, sonst
+  // Onboarding (erst nach Email-Capture, damit es nicht erschlägt).
+  try {
+    const restored = await fsRestoreFolderSilent();
+    if (restored) {
+      try {
+        const r = await fsHydrateFromFolder();
+        if (r.stores > 0 || r.files > 0) console.log('FS-Hydrierung:', r);
+      } catch (e) { /* ignore */ }
+    }
+    updateFsStatusBadge();
+  } catch (e) { /* ignore */ }
   await loadDashboard();
   maybeShowEmailCapture();
   loadUsageBar();
+  // Onboarding für lokalen Ordner einmalig anzeigen (nach Email-Capture).
+  if (!localStorage.getItem('lernortai_fs_onboarded') && !fsConnected()) {
+    setTimeout(showFsOnboarding, 800);
+  }
 });
 
 // Service Worker registrieren
@@ -1293,7 +1322,7 @@ const sb = {
       }, data);
       return new Promise(function(resolve, reject) {
         const req = db.transaction(table, 'readwrite').objectStore(table).add(record);
-        req.onsuccess = function() { resolve([record]); };
+        req.onsuccess = function() { fsScheduleWrite(table); resolve([record]); };
         req.onerror = function() { reject(req.error); };
       });
     });
@@ -1309,7 +1338,7 @@ const sb = {
           if (!existing) { reject(new Error('Datensatz nicht gefunden: ' + id)); return; }
           const updated = Object.assign({}, existing, data, { updated_at: new Date().toISOString() });
           const putReq = store.put(updated);
-          putReq.onsuccess = function() { resolve([updated]); };
+          putReq.onsuccess = function() { fsScheduleWrite(table); resolve([updated]); };
           putReq.onerror = function() { reject(putReq.error); };
         };
         getReq.onerror = function() { reject(getReq.error); };
@@ -1320,7 +1349,7 @@ const sb = {
     return idbOpen().then(function(db) {
       return new Promise(function(resolve, reject) {
         const req = db.transaction(table, 'readwrite').objectStore(table).delete(id);
-        req.onsuccess = function() { resolve([]); };
+        req.onsuccess = function() { fsScheduleWrite(table); resolve([]); };
         req.onerror = function() { reject(req.error); };
       });
     });
@@ -1329,12 +1358,15 @@ const sb = {
 
 async function sbStorageUpload(bucket, filePath, file) {
   const db = await idbOpen();
-  return new Promise(function(resolve, reject) {
+  await new Promise(function(resolve, reject) {
     const tx = db.transaction('_files', 'readwrite');
     const req = tx.objectStore('_files').put({ id: filePath, bucket: bucket, blob: file, contentType: file.type || 'application/octet-stream' });
-    req.onsuccess = function() { resolve(bucket + '/' + filePath); };
+    req.onsuccess = function() { resolve(true); };
     req.onerror = function() { reject(req.error); };
   });
+  // Spiegelung in den lokalen Ordner (best-effort, blockiert den Upload nicht)
+  try { await fsWriteBlob(filePath, file); } catch (e) { /* ignore */ }
+  return bucket + '/' + filePath;
 }
 
 async function sbStorageUrl(bucket, filePath) {
@@ -1362,11 +1394,388 @@ async function sbStorageBlob(filePath) {
 
 async function sbStorageDelete(filePath) {
   const db = await idbOpen();
-  return new Promise(function(resolve) {
+  const ok = await new Promise(function(resolve) {
     const req = db.transaction('_files', 'readwrite').objectStore('_files').delete(filePath);
     req.onsuccess = function() { resolve(true); };
     req.onerror = function() { resolve(false); };
   });
+  try { await fsDeleteBlob(filePath); } catch (e) { /* ignore */ }
+  return ok;
+}
+
+// =============================================================
+// LOKALER ORDNER (File System Access API) – optionales Backend
+// Spiegelt IndexedDB-Daten und hochgeladene Dateien in einen vom Nutzer
+// gewählten Ordner. Nur in Chromium-basierten Browsern (Chrome/Edge/Opera)
+// verfügbar; Safari/Firefox fallen still auf reine IDB-Speicherung zurück.
+// =============================================================
+const FS_SUPPORTED = (typeof window !== 'undefined') && ('showDirectoryPicker' in window);
+const FS_DATA_DIR = 'data';
+const FS_FILES_DIR = 'files';
+const FS_HANDLE_DB = 'pruefai-fs-handles';
+const FS_HANDLE_STORE = 'handles';
+const FS_HANDLE_KEY = 'root';
+const FS_DEBOUNCE_MS = 500;
+let _fsRoot = null;
+let _fsName = null;
+const _fsTimers = {};
+
+function fsConnected() { return !!_fsRoot; }
+function fsFolderName() { return _fsName || ''; }
+
+async function fsHandleStorageDb() {
+  return new Promise(function(resolve, reject) {
+    const req = indexedDB.open(FS_HANDLE_DB, 1);
+    req.onupgradeneeded = function(e) {
+      if (!e.target.result.objectStoreNames.contains(FS_HANDLE_STORE)) {
+        e.target.result.createObjectStore(FS_HANDLE_STORE);
+      }
+    };
+    req.onsuccess = function() { resolve(req.result); };
+    req.onerror = function() { reject(req.error); };
+  });
+}
+async function fsLoadStoredHandle() {
+  try {
+    const db = await fsHandleStorageDb();
+    return await new Promise(function(resolve) {
+      const tx = db.transaction(FS_HANDLE_STORE, 'readonly');
+      const r = tx.objectStore(FS_HANDLE_STORE).get(FS_HANDLE_KEY);
+      r.onsuccess = function() { resolve(r.result || null); };
+      r.onerror = function() { resolve(null); };
+    });
+  } catch (e) { return null; }
+}
+async function fsStoreHandle(handle) {
+  const db = await fsHandleStorageDb();
+  return new Promise(function(resolve, reject) {
+    const tx = db.transaction(FS_HANDLE_STORE, 'readwrite');
+    const r = tx.objectStore(FS_HANDLE_STORE).put(handle, FS_HANDLE_KEY);
+    r.onsuccess = function() { resolve(true); };
+    r.onerror = function() { reject(r.error); };
+  });
+}
+async function fsClearStoredHandle() {
+  try {
+    const db = await fsHandleStorageDb();
+    await new Promise(function(resolve) {
+      const tx = db.transaction(FS_HANDLE_STORE, 'readwrite');
+      const r = tx.objectStore(FS_HANDLE_STORE).delete(FS_HANDLE_KEY);
+      r.onsuccess = function() { resolve(true); };
+      r.onerror = function() { resolve(false); };
+    });
+  } catch (e) { /* ignore */ }
+}
+async function fsPickFolder() {
+  if (!FS_SUPPORTED) throw new Error('Browser unterstützt diese Funktion nicht.');
+  const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+  _fsRoot = handle;
+  _fsName = handle.name;
+  await fsStoreHandle(handle);
+  return handle;
+}
+async function fsRestoreFolderSilent() {
+  if (!FS_SUPPORTED) return false;
+  const handle = await fsLoadStoredHandle();
+  if (!handle) return false;
+  try {
+    const status = await handle.queryPermission({ mode: 'readwrite' });
+    if (status === 'granted') {
+      _fsRoot = handle;
+      _fsName = handle.name;
+      return true;
+    }
+  } catch (e) { /* ignore */ }
+  return false;
+}
+async function fsRequestPermissionForStored() {
+  if (!FS_SUPPORTED) return false;
+  let handle = _fsRoot;
+  if (!handle) {
+    handle = await fsLoadStoredHandle();
+    if (!handle) return false;
+  }
+  try {
+    const status = await handle.requestPermission({ mode: 'readwrite' });
+    if (status === 'granted') {
+      _fsRoot = handle;
+      _fsName = handle.name;
+      return true;
+    }
+  } catch (e) { /* ignore */ }
+  return false;
+}
+function fsDisconnect() {
+  _fsRoot = null;
+  _fsName = null;
+  Object.keys(_fsTimers).forEach(function(k) { clearTimeout(_fsTimers[k]); delete _fsTimers[k]; });
+}
+
+async function fsEnsureDir(relPath) {
+  if (!_fsRoot) return null;
+  const parts = relPath.split('/').filter(Boolean);
+  let cur = _fsRoot;
+  for (let i = 0; i < parts.length; i++) {
+    cur = await cur.getDirectoryHandle(parts[i], { create: true });
+  }
+  return cur;
+}
+async function fsWriteJSON(name, rows) {
+  if (!_fsRoot) return;
+  const dir = await fsEnsureDir(FS_DATA_DIR);
+  const fh = await dir.getFileHandle(name + '.json', { create: true });
+  const stream = await fh.createWritable();
+  await stream.write(JSON.stringify(rows, null, 2));
+  await stream.close();
+}
+async function fsReadJSON(name) {
+  if (!_fsRoot) return null;
+  try {
+    const dir = await fsEnsureDir(FS_DATA_DIR);
+    const fh = await dir.getFileHandle(name + '.json');
+    const file = await fh.getFile();
+    const text = await file.text();
+    return JSON.parse(text);
+  } catch (e) { return null; }
+}
+async function fsWriteBlob(relPath, blob) {
+  if (!_fsRoot) return;
+  const parts = relPath.split('/');
+  const filename = parts.pop();
+  const dir = await fsEnsureDir(FS_FILES_DIR + '/' + parts.join('/'));
+  const fh = await dir.getFileHandle(filename, { create: true });
+  const stream = await fh.createWritable();
+  await stream.write(blob);
+  await stream.close();
+}
+async function fsDeleteBlob(relPath) {
+  if (!_fsRoot) return;
+  try {
+    const parts = relPath.split('/');
+    const filename = parts.pop();
+    let dir = _fsRoot;
+    const dirParts = (FS_FILES_DIR + '/' + parts.join('/')).split('/').filter(Boolean);
+    for (let i = 0; i < dirParts.length; i++) {
+      dir = await dir.getDirectoryHandle(dirParts[i]);
+    }
+    await dir.removeEntry(filename);
+  } catch (e) { /* ignore */ }
+}
+
+// Debounced Write: sammelt mehrere Änderungen am gleichen Store und schreibt
+// danach einmal das ganze JSON. Verhindert übermässige Disk-I/O.
+function fsScheduleWrite(storeName) {
+  if (!_fsRoot) return;
+  if (storeName === '_files') return; // Binärdateien laufen separat
+  if (_fsTimers[storeName]) clearTimeout(_fsTimers[storeName]);
+  _fsTimers[storeName] = setTimeout(async function() {
+    try {
+      const rows = await idbAll(storeName);
+      await fsWriteJSON(storeName, rows);
+    } catch (e) { console.warn('FS-Sync für ' + storeName + ' fehlgeschlagen:', e.message); }
+    delete _fsTimers[storeName];
+  }, FS_DEBOUNCE_MS);
+}
+
+// Beim ersten Anlegen des Ordners die bestehenden IDB-Daten dorthin spiegeln.
+async function fsMigrateFromIDB() {
+  if (!_fsRoot) return { stores: 0, files: 0 };
+  let stores = 0, files = 0;
+  for (let i = 0; i < IDB_STORES.length; i++) {
+    const name = IDB_STORES[i];
+    if (name === '_files') continue;
+    try {
+      const rows = await idbAll(name);
+      await fsWriteJSON(name, rows);
+      stores++;
+    } catch (e) { /* ignore */ }
+  }
+  try {
+    const fileRows = await idbAll('_files');
+    for (let i = 0; i < fileRows.length; i++) {
+      const f = fileRows[i];
+      if (f && f.blob && f.id) {
+        try { await fsWriteBlob(f.id, f.blob); files++; } catch (e) {}
+      }
+    }
+  } catch (e) { /* ignore */ }
+  return { stores: stores, files: files };
+}
+
+// Beim Start: JSON-Dateien aus dem Ordner in IDB einspielen (Folder = Wahrheit).
+async function fsHydrateFromFolder() {
+  if (!_fsRoot) return { stores: 0, files: 0 };
+  let stores = 0, files = 0;
+  const db = await idbOpen();
+  for (let i = 0; i < IDB_STORES.length; i++) {
+    const name = IDB_STORES[i];
+    if (name === '_files') continue;
+    const rows = await fsReadJSON(name);
+    if (!rows || !Array.isArray(rows)) continue;
+    await new Promise(function(resolve, reject) {
+      const tx = db.transaction(name, 'readwrite');
+      const store = tx.objectStore(name);
+      const clr = store.clear();
+      clr.onsuccess = function() {
+        for (let j = 0; j < rows.length; j++) store.put(rows[j]);
+      };
+      tx.oncomplete = resolve;
+      tx.onerror = function() { reject(tx.error); };
+    });
+    stores++;
+  }
+  // Binärdateien rekursiv aus dem files/-Unterordner hydratisieren
+  try {
+    const filesDir = await _fsRoot.getDirectoryHandle(FS_FILES_DIR);
+    files = await fsHydrateBlobsRecursive(filesDir, '');
+  } catch (e) { /* files/-Ordner existiert noch nicht – ok */ }
+  return { stores: stores, files: files };
+}
+async function fsHydrateBlobsRecursive(dirHandle, prefix) {
+  let count = 0;
+  const db = await idbOpen();
+  for await (const entry of dirHandle.values()) {
+    if (entry.kind === 'directory') {
+      count += await fsHydrateBlobsRecursive(entry, prefix + entry.name + '/');
+    } else if (entry.kind === 'file') {
+      try {
+        const file = await entry.getFile();
+        const id = prefix + entry.name;
+        await new Promise(function(resolve) {
+          const tx = db.transaction('_files', 'readwrite');
+          const r = tx.objectStore('_files').put({ id: id, blob: file, contentType: file.type || 'application/octet-stream' });
+          r.onsuccess = function() { resolve(true); };
+          r.onerror = function() { resolve(false); };
+        });
+        count++;
+      } catch (e) { /* skip einzelne */ }
+    }
+  }
+  return count;
+}
+
+// FS-UI: Onboarding-Modal, Header-Badge, Settings-Sektion
+function updateFsStatusBadge() {
+  const btn = document.getElementById('fs-status-btn');
+  if (!btn) return;
+  if (fsConnected()) {
+    btn.style.display = 'inline-flex';
+    btn.title = 'Daten werden in Ordner „' + fsFolderName() + '" gespiegelt';
+    btn.innerHTML = '&#128193;';
+  } else if (FS_SUPPORTED) {
+    btn.style.display = 'inline-flex';
+    btn.title = 'Lokaler Ordner nicht verbunden – klicken zum Verbinden';
+    btn.innerHTML = '&#128193;';
+    btn.style.opacity = '0.4';
+  } else {
+    btn.style.display = 'none';
+  }
+  if (fsConnected()) btn.style.opacity = '1';
+}
+async function onFsStatusClick() {
+  if (fsConnected()) {
+    openSettingsModal();
+    return;
+  }
+  // Versuche erst eine Re-Permission, sonst Picker zeigen
+  const ok = await fsRequestPermissionForStored();
+  if (ok) {
+    showToast('Ordner verbunden: ' + fsFolderName(), 'success');
+    updateFsStatusBadge();
+    return;
+  }
+  showFsOnboarding();
+}
+
+function showFsOnboarding() {
+  const body = document.getElementById('fs-onboarding-body');
+  if (!body) return;
+  if (FS_SUPPORTED) {
+    body.innerHTML =
+      '<p>Wählen Sie einen Ordner auf Ihrem Gerät, in dem PruefAI Ihre Daten ablegt:</p>' +
+      '<ul style="margin:.5rem 0 .8rem 1.25rem;font-size:.875rem;line-height:1.6">' +
+        '<li>Klassen, Schüler, Prüfungen, Noten als JSON-Dateien</li>' +
+        '<li>Prüfungsfotos und hochgeladene Unterlagen als reguläre Bilddateien</li>' +
+      '</ul>' +
+      '<p><strong>Vorteil:</strong> Ihre Daten überleben das Löschen des Browser-Caches. Wenn der Ordner in iCloud Drive, Dropbox oder OneDrive liegt, sind Sie automatisch zwischen Geräten synchronisiert.</p>' +
+      '<p style="font-size:.8rem;color:var(--text-muted)">Pro Sitzung müssen Sie den Zugriff einmal bestätigen — danach läuft die Synchronisation im Hintergrund.</p>' +
+      '<div class="modal__footer">' +
+        '<button class="btn btn-secondary" onclick="closeFsOnboarding(true)">Später</button>' +
+        '<button class="btn btn-primary" onclick="fsOnboardingPick()">&#128193; Ordner wählen</button>' +
+      '</div>';
+  } else {
+    body.innerHTML =
+      '<div class="alert alert-warning" style="margin:0 0 .75rem">&#9888;&#65039; Ihr Browser unterstützt die direkte Ordner-Speicherung leider nicht.</div>' +
+      '<p><strong>Empfehlung:</strong> Verwenden Sie für die optimale Datenablage einen <strong>Chromium-basierten Browser</strong> (z.&nbsp;B. <a href="https://www.google.com/chrome/" target="_blank" rel="noopener">Google Chrome</a>, <a href="https://www.microsoft.com/edge" target="_blank" rel="noopener">Microsoft Edge</a> oder Opera). Damit können Sie einen lokalen Ordner wählen und Ihre Daten dort dauerhaft ablegen — auch synchronisiert über iCloud/Dropbox/OneDrive.</p>' +
+      '<p>Im aktuellen Browser bleibt Ihre Datenablage in der browsereigenen Datenbank. Vermeiden Sie das Löschen der Website-Daten und sichern Sie regelmässig über <em>Einstellungen → Datensicherung → Exportieren</em>.</p>' +
+      '<div class="modal__footer">' +
+        '<button class="btn btn-primary" onclick="closeFsOnboarding(true)">Verstanden</button>' +
+      '</div>';
+  }
+  document.getElementById('fs-onboarding-modal').classList.remove('hidden');
+}
+async function fsOnboardingPick() {
+  try {
+    await fsPickFolder();
+    let migrated = null;
+    try {
+      const counts = await Promise.all([sb.select('klassen'), sb.select('schueler'), sb.select('pruefungen')]);
+      const hasExisting = counts.some(function(arr) { return arr.length > 0; });
+      if (hasExisting && confirm('Bestehende Daten (Klassen, Schüler, Prüfungen) in den neuen Ordner kopieren?')) {
+        showToast('Migration läuft …', 'info');
+        migrated = await fsMigrateFromIDB();
+      }
+    } catch (e) { /* migration optional */ }
+    closeFsOnboarding(true);
+    if (migrated) showToast('Ordner verbunden: ' + fsFolderName() + ' (' + migrated.stores + ' Stores, ' + migrated.files + ' Dateien übernommen)', 'success');
+    else showToast('Ordner verbunden: ' + fsFolderName(), 'success');
+    updateFsStatusBadge();
+    if (document.getElementById('fs-settings-body')) renderFsSettings();
+  } catch (e) {
+    if (e && e.name !== 'AbortError') showToast('Konnte Ordner nicht öffnen: ' + e.message, 'error');
+  }
+}
+function closeFsOnboarding(markSeen) {
+  document.getElementById('fs-onboarding-modal').classList.add('hidden');
+  if (markSeen) localStorage.setItem('lernortai_fs_onboarded', '1');
+}
+
+function renderFsSettings() {
+  const el = document.getElementById('fs-settings-body');
+  if (!el) return;
+  if (!FS_SUPPORTED) {
+    el.innerHTML =
+      '<p style="margin:0 0 .35rem">Ihr Browser unterstützt die direkte Ordner-Speicherung nicht. Ihre Daten liegen in der browsereigenen Datenbank.</p>' +
+      '<p style="margin:0;color:var(--text)"><strong>Empfehlung:</strong> Für die optimale Datenablage einen <strong>Chromium-basierten Browser</strong> verwenden (Google Chrome, Microsoft Edge oder Opera). Damit lässt sich ein lokaler Ordner wählen, der sich z.&nbsp;B. via iCloud/Dropbox/OneDrive geräteübergreifend synchronisiert.</p>';
+    return;
+  }
+  if (fsConnected()) {
+    el.innerHTML =
+      '<p style="margin:0 0 .5rem">&#10003; <strong>Verbunden:</strong> ' + escHtml(fsFolderName()) + '</p>' +
+      '<p style="margin:0 0 .6rem">Alle Änderungen werden automatisch in diesen Ordner gespiegelt — als JSON-Dateien (Klassen, Schüler, Prüfungen) und als reguläre Bild-/PDF-Dateien (Prüfungsfotos, Lernunterlagen).</p>' +
+      '<div style="display:flex;gap:.5rem;flex-wrap:wrap">' +
+        '<button class="btn btn-secondary btn-sm" onclick="fsManualResync()">&#128260; Jetzt komplett sichern</button>' +
+        '<button class="btn btn-secondary btn-sm" onclick="fsDisconnectClick()">&#10005; Verbindung lösen</button>' +
+      '</div>';
+  } else {
+    el.innerHTML =
+      '<p style="margin:0 0 .5rem">Noch kein Ordner verbunden. Daten liegen aktuell nur in der browsereigenen Datenbank.</p>' +
+      '<button class="btn btn-primary btn-sm" onclick="showFsOnboarding()">&#128193; Ordner wählen</button>';
+  }
+}
+async function fsManualResync() {
+  if (!fsConnected()) return;
+  showToast('Sichere alle Daten in den Ordner …', 'info');
+  const r = await fsMigrateFromIDB();
+  showToast('Sicherung abgeschlossen (' + r.stores + ' Stores, ' + r.files + ' Dateien).', 'success');
+}
+function fsDisconnectClick() {
+  if (!confirm('Verbindung zum Ordner lösen? Daten bleiben sowohl im Ordner als auch in der Browser-Datenbank.')) return;
+  fsDisconnect();
+  fsClearStoredHandle();
+  showToast('Ordner getrennt.', 'info');
+  updateFsStatusBadge();
+  renderFsSettings();
 }
 
 // =============================================================
@@ -3531,6 +3940,7 @@ async function openSettingsModal() {
     }
   }
   await loadTextbausteineSettings();
+  renderFsSettings();
   document.getElementById('settings-modal').classList.remove('hidden');
 }
 

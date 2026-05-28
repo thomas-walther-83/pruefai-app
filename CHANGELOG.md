@@ -8,6 +8,26 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+- **Lokaler Ordner als persistente Datenablage** (File System Access API):
+  Auf Chromium-basierten Browsern (Chrome / Edge / Opera) kann ein lokaler
+  Ordner gewählt werden, in dem PruefAI alle Daten ablegt — Klassen, Schüler,
+  Prüfungen, Noten als JSON-Dateien, Prüfungsfotos und Lernunterlagen als
+  reguläre Bild-/PDF-Dateien. Spiegelung läuft debounced automatisch nach
+  jeder Änderung. Liegt der Ordner in iCloud Drive / Dropbox / OneDrive,
+  ergibt sich Geräte-übergreifende Synchronisation ohne eigene Cloud.
+- **Onboarding-Modal beim ersten Start**: Wählen-Sie-einen-Ordner-Aufforderung
+  (Chromium) bzw. klarer Hinweis, dass für die optimale Datenablage ein
+  Chromium-basierter Browser empfohlen wird (Safari/Firefox).
+- **Header-Status-Symbol**: zeigt den verbundenen Ordner bzw. lädt zum
+  Verbinden ein. Bei jedem Sitzungsstart wird auf den gespeicherten
+  Ordner-Zugriff still re-permissioniert; bei verweigerter Berechtigung
+  führt ein Klick zum Modal.
+- **Migration**: Beim ersten Verbinden eines Ordners können bestehende
+  IndexedDB-Daten optional in den neuen Ordner übernommen werden.
+- **Settings-Sektion „Lokaler Ordner"**: Status, manuelle Komplett-
+  Synchronisation und Verbindung lösen.
+
 ### Korrigiert / Datenschutz
 - **Jahreszahlen aktualisiert**: Footer-Copyright (© 2025 → © 2026),
   „Stand Januar 2025" → „Stand Mai 2026", DSFA- und
