@@ -122,13 +122,13 @@
 
   <h2>5. Einsatz von Drittdienstleistern</h2>
   <h3>5.1 Anthropic Claude (KI-Verarbeitung)</h3>
-  <p>PruefAI nutzt den KI-Dienst Claude der Anthropic PBC (San Francisco, USA) zur automatisierten Prüfungskorrektur. Bei der Nutzung der KI-Funktion werden Prüfungsbilder und -texte an Anthropic übertragen.</p>
+  <p>PruefAI nutzt den KI-Dienst Claude der Anthropic PBC (San Francisco, USA) zur automatisierten Prüfungskorrektur. Bei der Nutzung der KI-Funktion werden ausschliesslich die Prüfungsbilder an Anthropic übertragen – <strong>ohne Schülernamen oder andere identifizierende Metadaten (Pseudonymisierung)</strong>.</p>
   <ul>
     <li><strong>Anbieter:</strong> Anthropic PBC, 548 Market Street, San Francisco, CA 94105, USA</li>
     <li><strong>Datenschutz:</strong> <a href="https://www.anthropic.com/privacy" target="_blank" rel="noopener">anthropic.com/privacy</a></li>
     <li><strong>Verarbeitungszweck:</strong> KI-gestützte Texterkennung und Bewertung</li>
-    <li><strong>Übertragung in Drittland:</strong> Ja (USA) – mit geeigneten Garantien (SCCs)</li>
-    <li><strong>Hinweis:</strong> Anthropic verwendet API-Daten standardmässig <strong>nicht</strong> zum Training von Modellen.</li>
+    <li><strong>Übertragung in Drittland:</strong> Ja (USA) – auf Basis der EU-Standardvertragsklauseln (SCCs) sowie, sofern der Empfänger zertifiziert ist, des Swiss-U.S. Data Privacy Framework</li>
+    <li><strong>Hinweis:</strong> Anthropic verwendet API-Daten standardmässig <strong>nicht</strong> zum Training von Modellen und speichert sie nicht dauerhaft.</li>
   </ul>
 
   <h3>5.2 Stripe (Zahlungsabwicklung)</h3>
@@ -145,6 +145,24 @@
     <li><strong>Anbieter:</strong> Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, USA</li>
     <li><strong>Rechenzentrum:</strong> Frankfurt am Main, Deutschland (EU)</li>
     <li><strong>Datenschutz:</strong> <a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener">vercel.com/legal/privacy-policy</a></li>
+  </ul>
+
+  <h3>5.4 Upstash (temporärer Foto-Relay vom Handy)</h3>
+  <p>Wenn Sie die Funktion „Mit Handy fotografieren" (QR-Code) nutzen, werden die mit dem Smartphone aufgenommenen Prüfungsbilder kurzzeitig über Upstash Redis an Ihr Hauptgerät weitergereicht. Die Bilder werden nach maximal 10 Minuten automatisch gelöscht. Bei direktem Upload vom Computer wird dieser Dienst nicht verwendet.</p>
+  <ul>
+    <li><strong>Anbieter:</strong> Upstash Inc., 350 N Glenoaks Blvd, Suite 200, Burbank, CA 91502, USA</li>
+    <li><strong>Datenschutz:</strong> <a href="https://upstash.com/trust/privacy.pdf" target="_blank" rel="noopener">upstash.com/trust/privacy</a></li>
+    <li><strong>Verarbeitungszweck:</strong> Temporäre Weitergabe der Prüfungsfotos vom Handy zum PC (TTL 10 Minuten)</li>
+    <li><strong>Übertragung in Drittland:</strong> Ja (USA) – auf Basis der SCCs</li>
+  </ul>
+
+  <h3>5.5 Resend (transaktionale E-Mails)</h3>
+  <p>Für E-Mails an Sie (z. B. Willkommens-E-Mail beim Aktivieren des Gratis-Kontingents, Antworten auf Schul-/Enterprise-Anfragen) nutzen wir den Versanddienst Resend. Dabei werden Ihre E-Mail-Adresse und der Inhalt der E-Mail an Resend übermittelt.</p>
+  <ul>
+    <li><strong>Anbieter:</strong> Resend (Drogon, Inc.), 2261 Market Street #5039, San Francisco, CA 94114, USA</li>
+    <li><strong>Datenschutz:</strong> <a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noopener">resend.com/legal/privacy-policy</a></li>
+    <li><strong>Verarbeitungszweck:</strong> Versand transaktionaler E-Mails (Willkommens-Mail, Antworten auf Anfragen)</li>
+    <li><strong>Übertragung in Drittland:</strong> Ja (USA) – auf Basis der SCCs</li>
   </ul>
 
   <h2>6. Datenspeicherung und -löschung</h2>
