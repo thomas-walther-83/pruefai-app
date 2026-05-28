@@ -2592,7 +2592,20 @@ async function kiKorrigieren(eintragsId, silent) {
       sb.select('schueler', 'id=eq.' + eintrag.schueler_id)
     ]);
     const pruefung = pruefungen[0]; const schueler = schuelerRows[0];
-    showToast('KI-Korrektur läuft…', 'info');
+
+    // Verbrauchseinheiten: eine Korrektur = bis zu 12 Seiten (siehe FAQ).
+    const PAGES_PER_UNIT = 12;
+    const seitenAnzahl = seiten.length;
+    const verbrauchsEinheiten = Math.max(1, Math.ceil(seitenAnzahl / PAGES_PER_UNIT));
+    if (!silent && verbrauchsEinheiten > 1) {
+      const ok = confirm('Diese Prüfung hat ' + seitenAnzahl + ' Seiten und zählt damit als '
+        + verbrauchsEinheiten + ' Korrekturen aus Ihrem Monatskontingent.\n\n'
+        + '(1 Korrektur = bis zu ' + PAGES_PER_UNIT + ' Seiten – siehe FAQ).\n\n'
+        + 'Korrektur jetzt starten?');
+      if (!ok) return;
+    }
+    showToast('KI-Korrektur läuft… (' + seitenAnzahl + ' Seite' + (seitenAnzahl === 1 ? '' : 'n')
+      + (verbrauchsEinheiten > 1 ? ' = ' + verbrauchsEinheiten + ' Korrekturen' : '') + ')', 'info');
 
     // Load fach ki_profil and rubric (Pro features, gracefully optional)
     let kiProfilInstruction = '';
@@ -2671,7 +2684,7 @@ async function kiKorrigieren(eintragsId, silent) {
     const response = await fetch('/api/claude', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 4096, system: systemPrompt, messages: [{ role: 'user', content: userContent }], feature: correctionFeature }),
+      body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 4096, system: systemPrompt, messages: [{ role: 'user', content: userContent }], feature: correctionFeature, pages: seitenAnzahl }),
     });
     // Store updated trial token if returned by server
     const newTrialToken = response.headers.get('x-trial-token');
