@@ -181,7 +181,7 @@
     <li><strong>Logdaten:</strong> Werden nach 7 Tagen automatisch gelöscht.</li>
   </ul>
 
-  <h2>7. Ihre Rechte</h2>
+  <h2 id="rechte">7. Ihre Rechte</h2>
   <p>Sie haben gemäss nDSG und DSGVO folgende Rechte:</p>
   <ul>
     <li><strong>Auskunftsrecht</strong> (Art. 25 nDSG / Art. 15 DSGVO)</li>
@@ -191,7 +191,26 @@
     <li><strong>Recht auf Datenübertragbarkeit</strong> (Art. 20 DSGVO)</li>
     <li><strong>Widerspruchsrecht</strong> (Art. 21 DSGVO)</li>
   </ul>
-  <p>Zur Ausübung Ihrer Rechte wenden Sie sich an: <a href="mailto:info@pruefai.ch">info@pruefai.ch</a></p>
+
+  <h3>7.1 So üben Sie Ihre Rechte aus</h3>
+  <p>Anfragen zur Auskunft, Berichtigung, Löschung oder Übertragung Ihrer Daten senden Sie an <a href="mailto:info@pruefai.ch?subject=Datenschutz-Anfrage">info@pruefai.ch</a>. Wir bearbeiten Anfragen innerhalb von <strong>30 Tagen</strong> nach Eingang.</p>
+
+  <h3>7.2 Was wir auf Anfrage bereitstellen (Auskunft / Übertragbarkeit)</h3>
+  <ul>
+    <li><strong>Lokal in Ihrem Browser:</strong> Klassen, Schüler, Prüfungen, Noten und Korrekturen können Sie jederzeit selbst über <em>Einstellungen → Datensicherung → Exportieren</em> als JSON-Datei sichern. Bei aktiver lokaler Ordner-Speicherung liegen diese Daten zusätzlich als JSON- und Bilddateien direkt im gewählten Ordner.</li>
+    <li><strong>Beim Anbieter (Stripe):</strong> Ihre E-Mail-Adresse, Lizenzschlüssel, Plan, Verbrauchsstand und Rechnungsverlauf. Sie erhalten diese Daten auf Anfrage als strukturierte Datei.</li>
+  </ul>
+
+  <h3>7.3 Wie wir löschen (Recht auf Löschung)</h3>
+  <ul>
+    <li><strong>Lokal in Ihrem Browser:</strong> Sie selbst – über <em>Einstellungen → Datensicherung</em> oder über das Löschen der Website-Daten. Wir haben keinen Zugriff auf Ihre lokalen Daten und können sie weder einsehen noch löschen.</li>
+    <li><strong>Beim Anbieter / bei Stripe:</strong> Auf Ihre Anfrage löschen wir Ihre Kundendaten bei uns und beauftragen Stripe, Ihren Customer-Datensatz zu löschen bzw. zu anonymisieren. Gesetzlich vorgeschriebene Aufbewahrungsfristen (insb. 10 Jahre für Buchungsbelege nach Art. 958f OR) bleiben davon unberührt.</li>
+    <li><strong>Bei Sub-Auftragsbearbeitern:</strong> Anthropic persistiert übermittelte Daten nicht; Upstash löscht Foto-Relay-Daten automatisch nach 10 Minuten; Resend-E-Mails werden auf Anfrage gelöscht.</li>
+  </ul>
+  <p>Wir bestätigen den Abschluss der Löschung schriftlich.</p>
+
+  <h3>7.4 Beschwerden zur Bearbeitung der Anfrage</h3>
+  <p>Sind Sie mit der Bearbeitung nicht einverstanden, können Sie sich an die Aufsichtsbehörde wenden (siehe Abschnitt 8).</p>
 
   <h2>8. Beschwerderecht</h2>
   <p>Sie haben das Recht, sich bei der zuständigen Datenschutzbehörde zu beschweren:</p>
@@ -200,7 +219,8 @@
     <li><strong>EU/EWR:</strong> Zuständige nationale Datenschutzbehörde Ihres Wohnsitzlandes</li>
   </ul>
 
-  <h2>9. Datensicherheit</h2>
+  <h2>9. Datensicherheit und Meldepflicht bei Datenpannen</h2>
+  <p>Im Fall einer Verletzung der Datensicherheit, die ein hohes Risiko für die Persönlichkeit der betroffenen Personen mit sich bringt, informieren wir den EDÖB unverzüglich (in der Regel innerhalb von 72 Stunden nach Kenntnisnahme; Art. 24 nDSG) sowie die betroffenen Personen über den jeweils geeigneten Kanal (E-Mail, App-Banner). Wir folgen dabei einem internen Meldeplan-Runbook, das den Ablauf von Erstreaktion über Risikoeinschätzung bis zur Information regelt.</p>
   <p>PruefAI trifft technische und organisatorische Massnahmen zum Schutz Ihrer Daten, insbesondere:</p>
   <ul>
     <li>Verschlüsselte Übertragung via HTTPS/TLS</li>

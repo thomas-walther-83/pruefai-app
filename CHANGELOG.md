@@ -8,6 +8,22 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt / Datenschutz (P1)
+- **Interne Compliance-Dokumente** im Repo (Quellen):
+  - `docs/compliance/dpa-checklist.md` – Status der DPAs/AVVs mit allen
+    Sub-Auftragsbearbeitern und konkrete nächste Schritte zur Komplettierung.
+  - `docs/compliance/meldeplan.md` – Internes Runbook für Datenschutz-
+    verletzungen (Art. 24 nDSG / 72-Stunden-Frist EDÖB).
+- **Datenschutzerklärung 7.1–7.4**: konkreter E-Mail-Prozess für Auskunft,
+  Datenübertragbarkeit und Löschung mit 30-Tage-Bearbeitungsfrist; klare
+  Beschreibung, was auf Anfrage geliefert / gelöscht wird (lokale Daten
+  beim Kunden, Anbieter-/Stripe-Customer-Daten, Sub-Auftragsbearbeiter).
+- **Datenschutzerklärung Abschnitt 9** ergänzt um Meldepflicht bei
+  Datenpannen samt internem Runbook-Verweis.
+- **AGB aktualisiert**: Pseudonymisierung explizit in §2.3, AVV-Akzeptanz
+  durch AGB-Annahme in §7, Sub-Bearbeiter-Übersicht verlinkt; §5.4 und
+  §8.3 spiegeln die neue lokale Ordner-Speicherung als Sicherungsoption.
+
 ### Hinzugefügt
 - **Lokaler Ordner als persistente Datenablage** (File System Access API):
   Auf Chromium-basierten Browsern (Chrome / Edge / Opera) kann ein lokaler

@@ -76,7 +76,7 @@ Thomas Walther, PruefAI, Schweiz · info@pruefai.ch
 
 ## Meldepflicht
 
-Verletzung der Datensicherheit → unverzüglich Meldung an EDÖB (Art. 24 nDSG) bei hohem Risiko, plus Information betroffener Auftraggeber. Internes Runbook siehe `meldeplan.md` (TODO).
+Verletzung der Datensicherheit → unverzüglich Meldung an EDÖB (Art. 24 nDSG) bei hohem Risiko, plus Information betroffener Auftraggeber. Internes Runbook siehe [`meldeplan.md`](./meldeplan.md).
 
 ## Aktualisierungen
 
