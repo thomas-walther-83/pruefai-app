@@ -58,3 +58,6 @@ playwright/.cache/
 # Supabase CLI (lokale Entwicklung)
 supabase/.branches
 supabase/.temp
+
+# Generierte Projekt-Dokumentation (siehe scripts/generate-project-doc.py)
+PruefAI-Projektdokumentation.docx
