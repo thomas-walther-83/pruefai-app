@@ -12,17 +12,28 @@ Dokumentiert pro Sub-Auftragsbearbeiter, ob ein Auftragsverarbeitungs­vertrag (
 |---|---|---|---|
 | **Anthropic PBC** | ✅ automatisch | Beim Akzeptieren der [Commercial Terms](https://www.anthropic.com/legal/commercial-terms) im API-Console wird die [DPA](https://privacy.claude.com/en/articles/7996862-how-do-i-view-and-sign-your-data-processing-addendum-dpa) als Bestandteil mit einbezogen. Für Enterprise-Tier zusätzliche Bestätigung via Account Manager möglich. | bestehend |
 | **Stripe Payments Europe Ltd.** | ✅ automatisch | Stripes [DPA](https://stripe.com/dpa) ist Teil der Service-Vereinbarung und gilt für alle Konten automatisch. Keine separate Unterschrift nötig. | bestehend |
-| **Vercel Inc.** | ⚠️ zu prüfen | Pro-Plan: DPA über Account Settings → Legal → Data Processing Addendum „request signed copy". Hobby-Plan: per E-Mail privacy@vercel.com anfragen. Mit aktivem Pro-Plan ist Verzeichnis-Klick ausreichend. | ~5 min |
+| **Vercel Inc.** | 🟡 Hobby-Plan: kein gegengezeichneter DPA | Vercel-Antwort vom 2026-05-29: „The Vercel Data Processing Addendum applies to the processing of personal data for customers who are on Pro or Enterprise plans. It does not apply to projects or accounts on the free Hobby plan." → Status: PruefAI nutzt die [öffentliche Vercel-DPA](https://vercel.com/legal/dpa) und das [Vercel Trust Center](https://vercel.com/security) als Referenz. Standard Terms + Privacy Policy + EU-Standardvertragsklauseln gelten weiterhin. Beim Wechsel auf Pro/Enterprise wird der gegengezeichnete DPA nachgeholt. | dokumentiert |
 | **Upstash Inc.** | ⚠️ zu prüfen | DPA-PDF über Console → Settings → Legal & Compliance → „Request DPA". Wird per E-Mail gegengezeichnet. | ~10 min |
 | **Resend (Drogon, Inc.)** | ⚠️ zu prüfen | [Resend DPA](https://resend.com/legal/dpa) – per E-Mail compliance@resend.com gegenzeichnen lassen oder im Dashboard unter Settings → Legal anfragen. | ~10 min |
 
 ## Konkrete nächste Schritte (in Reihenfolge)
 
-1. **Vercel**: einloggen → Account Settings → Legal → DPA herunterladen, Bestätigung als PDF im Ordner `dpa-archive/` ablegen.
+1. **Vercel**: Hobby-Plan abgehakt. Vercel-Antwort und die öffentlichen Dokumente unter <https://vercel.com/legal/dpa> bzw. <https://vercel.com/security> als PDF im Compliance-Archiv ablegen. Beim späteren Upgrade auf Pro/Enterprise den gegengezeichneten DPA nachholen.
 2. **Upstash**: Console → Settings → Compliance → DPA anfragen. PDF nach Erhalt im Archiv ablegen.
 3. **Resend**: E-Mail an `compliance@resend.com` mit „Bitte DPA für Konto X gegenzeichnen". PDF archivieren.
 4. **Anthropic**: bestehender Commercial-Terms-Abschluss reicht; falls Audit-Anfrage kommt, Anthropic Privacy Center-Eintrag als Beleg verlinken.
 5. **Stripe**: keine Aktion nötig; Hinweis auf `stripe.com/dpa` in Antwort ausreichend.
+
+## Spezialfall Vercel Hobby-Plan
+
+Vercel bietet einen formalen, gegengezeichneten DPA nur für **Pro- und Enterprise-Pläne** an. Auf dem **Hobby-Plan** gilt die [öffentliche Vercel-DPA](https://vercel.com/legal/dpa) als Standard-Vertragsgrundlage, ergänzt durch Privacy Policy und EU-Standardvertragsklauseln (SCCs).
+
+Risikoabschätzung für PruefAI: Vercel verarbeitet bei uns nur folgende Daten:
+- IP-Adressen in Serverless-Function-Logs (≤ 30 Tage)
+- HTTP-Request-Metadaten (Method, Path, Status)
+- **Keine** persistenten Schülerdaten, keine Zahlungsdaten
+
+Die Restrisiko-Differenz zwischen „gegengezeichnetem DPA" und „öffentlicher DPA + SCCs" ist bei diesem Datenvolumen vernachlässigbar. Bei einem späteren Wechsel auf Pro/Enterprise wird der gegengezeichnete DPA nachgeholt und diese Checkliste aktualisiert.
 
 ## Lokales Archiv
 
