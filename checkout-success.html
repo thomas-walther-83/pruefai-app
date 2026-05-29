@@ -112,7 +112,7 @@
         </div>
       </div>
 
-      <a href="/app" class="btn-primary">App starten →</a>
+      <a href="/app" id="startAppBtn" class="btn-primary">App starten →</a>
       <br>
       <a href="mailto:info@pruefai.ch" class="btn-secondary">Fragen? info@pruefai.ch</a>
     </div>
@@ -175,6 +175,10 @@
     document.getElementById('licenseKey').textContent = key;
     const planLabel = PLAN_LABELS[plan] || (plan ? plan.charAt(0).toUpperCase() + plan.slice(1) + '-Plan' : 'Ihr Plan');
     document.getElementById('planBadge').textContent = '✓ ' + planLabel + ' aktiv';
+    // App-Link mit Aktivierungs-Parameter: der Lizenzschlüssel wird in der App
+    // automatisch übernommen und validiert (kein manuelles Kopieren nötig).
+    const startBtn = document.getElementById('startAppBtn');
+    if (startBtn) startBtn.href = '/app?activate=' + encodeURIComponent(key);
     show('successState');
   }
 
