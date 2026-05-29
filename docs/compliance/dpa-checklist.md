@@ -14,13 +14,13 @@ Dokumentiert pro Sub-Auftragsbearbeiter, ob ein Auftragsverarbeitungs­vertrag (
 | **Stripe Payments Europe Ltd.** | ✅ automatisch | Stripes [DPA](https://stripe.com/dpa) ist Teil der Service-Vereinbarung und gilt für alle Konten automatisch. Keine separate Unterschrift nötig. | bestehend |
 | **Vercel Inc.** | 🟡 Hobby-Plan: kein gegengezeichneter DPA | Vercel-Antwort vom 2026-05-29: „The Vercel Data Processing Addendum applies to the processing of personal data for customers who are on Pro or Enterprise plans. It does not apply to projects or accounts on the free Hobby plan." → Status: PruefAI nutzt die [öffentliche Vercel-DPA](https://vercel.com/legal/dpa) und das [Vercel Trust Center](https://vercel.com/security) als Referenz. Standard Terms + Privacy Policy + EU-Standardvertragsklauseln gelten weiterhin. Beim Wechsel auf Pro/Enterprise wird der gegengezeichnete DPA nachgeholt. | dokumentiert |
 | **Upstash Inc.** | ✅ unterzeichnet | Standard-DPA (8 Seiten) erhalten am 2026-05-29; verweist auf <https://trust.upstash.com/subprocessors> und die Security-Measures-Anhänge. Archiv-Datei: `Upstash-DPA-2026-05-29.pdf`. | erledigt |
-| **Resend (Drogon, Inc.)** | ⚠️ zu prüfen | [Resend DPA](https://resend.com/legal/dpa) – per E-Mail compliance@resend.com gegenzeichnen lassen oder im Dashboard unter Settings → Legal anfragen. | ~10 min |
+| **Resend (Drogon, Inc.)** | ✅ unterzeichnet | DocuSign-gegengezeichnetes DPA erhalten am 2026-05-29. Archiv-Datei: `Resend-DPA-2026-05-29.pdf`. | erledigt |
 
 ## Konkrete nächste Schritte (in Reihenfolge)
 
 1. **Vercel**: Hobby-Plan abgehakt. Vercel-Antwort und die öffentlichen Dokumente unter <https://vercel.com/legal/dpa> bzw. <https://vercel.com/security> als PDF im Compliance-Archiv ablegen. Beim späteren Upgrade auf Pro/Enterprise den gegengezeichneten DPA nachholen.
 2. **Upstash**: ✅ erhalten am 2026-05-29 (`Upstash-DPA-2026-05-29.pdf`). Im Compliance-Archiv abgelegt.
-3. **Resend**: E-Mail an `compliance@resend.com` mit „Bitte DPA für Konto X gegenzeichnen". PDF archivieren.
+3. **Resend**: ✅ erhalten am 2026-05-29 (`Resend-DPA-2026-05-29.pdf`, DocuSign-signiert). Im Compliance-Archiv abgelegt.
 4. **Anthropic**: bestehender Commercial-Terms-Abschluss reicht; falls Audit-Anfrage kommt, Anthropic Privacy Center-Eintrag als Beleg verlinken.
 5. **Stripe**: keine Aktion nötig; Hinweis auf `stripe.com/dpa` in Antwort ausreichend.
 
