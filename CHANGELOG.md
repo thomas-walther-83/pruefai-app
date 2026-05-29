@@ -8,6 +8,22 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Geändert / Prüfungsdialog (UX)
+- **Direkt-Upload im „Neue Prüfung"-Dialog**: Vorlagenprüfung, Musterlösung und
+  weitere Unterlagen lassen sich jetzt direkt im Dialog hochladen – ohne die
+  Prüfung vorher speichern zu müssen. Die Dateien werden gepuffert und beim
+  „Speichern" angehängt; die verwirrende „zuerst speichern"-Hinweisbox entfällt.
+- **Punkteschema-Analyse vor dem Speichern**: „Punkteschema analysieren" liest
+  die soeben hochgeladene Vorlage direkt und übernimmt Max-Punkte automatisch.
+- **Unterlagen als Hauptweg**: Der Upload-Bereich steht jetzt oben und ist
+  hervorgehoben; der Hinweis macht klar, dass die KI Aufgaben und Punkte aus der
+  Vorlage erkennt (kein manuelles Eintippen nötig).
+- **„Erweitert (optional)" eingeklappt**: Max-Punkte (manuell), Bewertungsraster
+  und zusätzliche KI-Anweisungen sind in einen aufklappbaren Bereich gewandert
+  und mit Kurzerklärungen versehen. Ohne angelegtes Raster erscheint statt eines
+  leeren Dropdowns ein Hinweis mit Link „Raster erstellen".
+- SW-Cache auf `pruefai-v21`, App-Version 1.3.0.
+
 ### Geändert / KI-Korrektur
 - **Sorgfaltsregeln im KI-Prompt verschärft**: Die KI ist explizit angewiesen,
   keine Vermutungen anzustellen, Unklarheiten und unleserliche Stellen offen
