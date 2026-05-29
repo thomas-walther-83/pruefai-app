@@ -8,6 +8,21 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Behoben
+- **Falsche Note in der Einträge-Liste**: Nach der KI-Korrektur zeigte die Liste
+  bei allen Schülern die von der KI selbst gemeldete (unzuverlässige) Note – oft
+  identisch (z. B. 5.5). Die Note wird jetzt direkt beim Sichern aus den erreichten
+  Punkten über die Notenformel der Prüfung berechnet (gleiche Logik wie der
+  Prüfen-Dialog) und stimmt damit sofort, ohne vorherige Bestätigung.
+- **Pro-Features nach Lizenzeingabe nicht aktiv**: Beim Speichern des Lizenz-
+  schlüssels in den Einstellungen wurde der Plan nicht validiert, sodass
+  `lernortai_plan` leer blieb und Pro-Features bis zum Neuladen gesperrt waren.
+  `saveSettings` validiert die Lizenz jetzt sofort und setzt den Plan.
+- **Auto-Aktivierung nach Kauf**: Der „App starten"-Button auf der
+  Checkout-Erfolgsseite übergibt den Lizenzschlüssel jetzt via `?activate=`, sodass
+  der Plan automatisch übernommen wird (kein manuelles Kopieren mehr nötig).
+- SW-Cache auf `pruefai-v22`, App-Version 1.3.1.
+
 ### Geändert / Prüfungsdialog (UX)
 - **Direkt-Upload im „Neue Prüfung"-Dialog**: Vorlagenprüfung, Musterlösung und
   weitere Unterlagen lassen sich jetzt direkt im Dialog hochladen – ohne die

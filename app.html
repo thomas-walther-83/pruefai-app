@@ -3254,8 +3254,13 @@ async function kiKorrigieren(eintragsId, silent) {
     catch(pe) { throw new Error('KI-Antwort konnte nicht geparst werden: ' + raw); }
     // KI-Ergebnis sofort als 'korrigiert' sichern – so geht es bei Stapel-
     // Korrektur und beim Schliessen ohne Bestätigung nicht verloren.
+    // Note/Punkte aus den Punkten berechnen (nicht die unzuverlässige result.note
+    // der KI verwenden), damit die Einträge-Liste sofort die korrekte Note zeigt.
+    const ber = ergebnisNoteAusResult(result, pruefung);
+    if (ber.note != null) result.note = ber.note;
+    if (ber.punkte != null) result.punkte = ber.punkte;
     try {
-      await sb.update('eintraege', eintragsId, { status: 'korrigiert', note: parseFloat(result.note) || null, punkte: (result.punkte != null ? result.punkte : null), ergebnis: result, kommentar: result.kommentar || null, ki_bewertet_am: new Date().toISOString() });
+      await sb.update('eintraege', eintragsId, { status: 'korrigiert', note: (result.note != null ? result.note : null), punkte: (result.punkte != null ? result.punkte : null), ergebnis: result, kommentar: result.kommentar || null, ki_bewertet_am: new Date().toISOString() });
     } catch(se) { /* Sicherung fehlgeschlagen – Modal trotzdem anzeigen */ }
     kiPendingData = { eintragsId: eintragsId, result: result, pruefung: pruefung, schueler: schueler };
     if (!silent) showKiErgebnis();
@@ -3305,6 +3310,25 @@ function aufgabeErreichtSumme(a) {
   if (a && Array.isArray(a.teilaufgaben) && a.teilaufgaben.length)
     return a.teilaufgaben.reduce(function(s, t) { return s + (Number(t.erreicht) || 0); }, 0);
   return Number(a && a.erreicht) || 0;
+}
+
+// Berechnet Note und Punkte aus einem KI-Ergebnis – identisch zur Logik des
+// Prüfen-Dialogs (Punkte-Summe → Notenformel der Prüfung). Die von der KI selbst
+// gemeldete result.note ist unzuverlässig und wird nicht verwendet, sobald eine
+// Aufgabenstruktur vorliegt. So zeigt die Einträge-Liste sofort die richtige Note.
+function ergebnisNoteAusResult(result, pruefung) {
+  const aufgaben = (result && result.aufgaben) || [];
+  const nd = ladeNotenDefault();
+  const formel = (pruefung && pruefung.notenformel) || nd.formel;
+  const rundung = (pruefung && pruefung.notenrundung) || nd.rundung;
+  if (aufgaben.length) {
+    let total = 0, maxTotal = 0;
+    aufgaben.forEach(function(a) { total += aufgabeErreichtSumme(a); maxTotal += aufgabeMaxSumme(a); });
+    if (!maxTotal) maxTotal = Number(pruefung && pruefung.max_punkte) || 0;
+    return { note: noteAusPunkte(total, maxTotal, formel, rundung), punkte: Math.round(total * 100) / 100 };
+  }
+  return { note: (result && result.note != null ? parseFloat(result.note) : null),
+           punkte: (result && result.punkte != null ? result.punkte : null) };
 }
 
 // Bearbeitbare Bestätigungs-Ansicht: Punkte und Begründungen pro Aufgabe und
@@ -4088,6 +4112,11 @@ async function saveSettings() {
   if (sc) localStorage.setItem('lernortai_schul_code', sc);
   else localStorage.removeItem('lernortai_schul_code');
   const hasLicenseNow = !!lk || !!sc;
+  // Lizenz sofort prüfen, damit der Plan (Pro/Max/Schule) ohne Neuladen aktiv ist.
+  // Ohne diesen Schritt bliebe lernortai_plan leer und Pro-Features gesperrt.
+  if (lk) await checkLicenseInfo(lk);
+  else if (sc) await checkLicenseInfo(null, sc);
+  else localStorage.removeItem('lernortai_plan');
   updateFreeTrialBadge();
   loadUsageBar();
   // Show onboarding wizard on first license activation
