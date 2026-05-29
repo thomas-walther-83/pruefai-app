@@ -3102,14 +3102,20 @@ async function kiKorrigieren(eintragsId, silent) {
     const materialHinweis = matInfo.hasMaterial
       ? 'Dir liegen Referenzunterlagen bei. Gewichte sie in dieser Reihenfolge:\n1. VORLAGENPRÜFUNG – die offiziellen Aufgaben und die maximale Punktzahl pro Aufgabe.\n2. MUSTERLÖSUNG – massgeblich für die richtigen Antworten und die Punkteverteilung.\n3. UNTERRICHTSMATERIAL – der behandelte Lehrstoff, an dem sich die Bewertung orientiert.\n4. Allgemeinwissen – nur ergänzend, wenn 1 bis 3 nichts hergeben.\n'
       : '';
+    const sorgfaltHinweis = 'Wichtige Grundregeln zur Sorgfalt und Ehrlichkeit:\n' +
+      '- Vermutungen sind zu unterlassen. Ergänze nichts, was nicht klar im Bild steht.\n' +
+      '- Es ist ausdrücklich in Ordnung zuzugeben, wenn du etwas nicht sicher beurteilen kannst, die Handschrift nicht lesbar ist, das Bild unscharf/abgeschnitten ist oder dir die fachliche Sicherheit fehlt.\n' +
+      '- In solchen Fällen vergibst du KEINE Punkte „auf Verdacht". Setze stattdessen das Feld "unsicher" der betroffenen (Teil-)Aufgabe auf true und beschreibe in "begruendung" konkret, was unklar ist (z.&nbsp;B. „Aufgabe 2b ist nicht lesbar – bitte manuell prüfen", „Lösungsschritt 3 unleserlich", „Bild abgeschnitten").\n' +
+      '- Ziel: Die Lehrperson erkennt alle unsicheren Stellen sofort und prüft sie gründlich.\n';
     const berichtHinweis = 'Erstelle eine fein gegliederte, für Schülerinnen und Schüler nachvollziehbare Korrektur:\n' +
       '- Liste jede Aufgabe der Prüfung einzeln im Feld "aufgaben" auf.\n' +
       '- Unterteile jede Aufgabe in ihre Teilaufgaben (a, b, c, …) im Feld "teilaufgaben", sofern vorhanden.\n' +
       '- Gib pro (Teil-)Aufgabe in "begruendung" konkret an, wofür die erreichten (Teil-)Punkte vergeben wurden.\n' +
       '- Gib in "verbesserung" konkret an, was für die volle Punktzahl gefehlt hat bzw. nötig gewesen wäre; bei voller Punktzahl: "Volle Punktzahl erreicht."\n' +
       '- Hat eine Aufgabe keine sinnvollen Teilaufgaben, lass "teilaufgaben" weg und fülle "begruendung" und "verbesserung" direkt auf Aufgabenebene.\n' +
-      '- "erreicht" und "max" einer Aufgabe sind die Summe ihrer Teilaufgaben.\n';
-    const systemPrompt = 'Du bist ein erfahrener Lehrer an einer ' + schoolTypeLabel + '.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\n' + materialHinweis + (kiProfilInstruction ? kiProfilInstruction + '\n' : '') + (rubricInstruction ? rubricInstruction + '\n' : '') + berichtHinweis + 'Antworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "<string>", "max": <Zahl>, "erreicht": <Zahl>, "begruendung": "<string>", "verbesserung": "<string>", "teilaufgaben": [{"bezeichnung": "<string>", "max": <Zahl>, "erreicht": <Zahl>, "begruendung": "<string>", "verbesserung": "<string>"}]}]}';
+      '- "erreicht" und "max" einer Aufgabe sind die Summe ihrer Teilaufgaben.\n' +
+      '- Markiere jede unklare, nicht lesbare oder fachlich unsichere (Teil-)Aufgabe mit "unsicher": true (Standard ist false).\n';
+    const systemPrompt = 'Du bist ein erfahrener Lehrer an einer ' + schoolTypeLabel + '.\nBewerte nach dem Schweizer Notensystem: 1.0 (ungenügend) bis 6.0 (sehr gut). Bestehensgrenze: 4.0.\nVergib Noten in 0.5er-Schritten.\n' + materialHinweis + (kiProfilInstruction ? kiProfilInstruction + '\n' : '') + (rubricInstruction ? rubricInstruction + '\n' : '') + sorgfaltHinweis + berichtHinweis + 'Antworte immer als valides JSON-Objekt:\n{"note": <1.0-6.0>, "punkte": <Zahl>, "kommentar": "<string>", "aufgaben": [{"bezeichnung": "<string>", "max": <Zahl>, "erreicht": <Zahl>, "begruendung": "<string>", "verbesserung": "<string>", "unsicher": <true|false>, "teilaufgaben": [{"bezeichnung": "<string>", "max": <Zahl>, "erreicht": <Zahl>, "begruendung": "<string>", "verbesserung": "<string>", "unsicher": <true|false>}]}]}';
     // Pseudonymisierung: der Schülername bleibt lokal im Browser. An die KI
     // gehen nur die Prüfungsbilder selbst – Anthropic erfährt nicht, zu
     // welcher Person die Arbeit gehört (siehe Datenschutzerklärung).
@@ -3240,7 +3246,12 @@ function showKiErgebnis() {
 
   function blockHtml(unit, ai, ti, hatTeil, aufgabe) {
     const begr = unit.begruendung != null ? unit.begruendung : (!hatTeil && aufgabe ? (aufgabe.feedback || '') : '');
-    let h = '<div style="' + (hatTeil ? 'border-left:3px solid var(--border);padding-left:.6rem;margin-bottom:.55rem' : 'margin-bottom:.2rem') + '">';
+    const unsicher = unit && unit.unsicher === true;
+    const wrapStyle = hatTeil
+      ? ('border-left:3px solid ' + (unsicher ? 'var(--warning,#d97706)' : 'var(--border)') + ';padding-left:.6rem;margin-bottom:.55rem' + (unsicher ? ';background:#fef3c7;border-radius:6px;padding:.5rem .6rem' : ''))
+      : ('margin-bottom:.2rem' + (unsicher ? ';background:#fef3c7;border-radius:6px;padding:.5rem .6rem' : ''));
+    let h = '<div style="' + wrapStyle + '">';
+    if (unsicher) h += '<div style="font-size:.78rem;font-weight:700;color:#92400e;margin-bottom:.4rem">&#9888;&#65039; KI unsicher – bitte manuell prüfen</div>';
     if (hatTeil) h += '<div style="font-size:.85rem;font-weight:600;margin-bottom:.35rem">' + escHtml(unit.bezeichnung || ('Teilaufgabe ' + (ti + 1))) + '</div>';
     h += '<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">' +
       '<label style="font-size:.8rem;color:var(--text-muted)">Punkte</label>' +
@@ -3254,11 +3265,25 @@ function showKiErgebnis() {
     return h;
   }
 
+  // Zähle unsichere (Teil-)Aufgaben für eine Hinweis-Box oben am Dialog.
+  let unsicherCount = 0;
+  aufgaben.forEach(function(a) {
+    if (a && a.unsicher === true) unsicherCount++;
+    if (Array.isArray(a && a.teilaufgaben)) a.teilaufgaben.forEach(function(t) { if (t && t.unsicher === true) unsicherCount++; });
+  });
+  if (unsicherCount > 0) {
+    html += '<div class="alert alert-warning" style="margin:0 0 .75rem;font-size:.875rem">&#9888;&#65039; <strong>' + unsicherCount + ' Stelle' + (unsicherCount === 1 ? '' : 'n') + '</strong> ' + (unsicherCount === 1 ? 'ist' : 'sind') + ' von der KI als unsicher markiert (z.&nbsp;B. unleserlich, fachlich unklar). Bitte besonders sorgfältig prüfen – unten gelb hinterlegt.</div>';
+  }
+
   if (aufgaben.length) {
     aufgaben.forEach(function(a, ai) {
       const hatTeil = Array.isArray(a.teilaufgaben) && a.teilaufgaben.length > 0;
-      html += '<div style="border:1px solid var(--border);border-radius:8px;padding:.7rem .8rem;margin-bottom:.6rem">' +
+      const aufgabeUnsicher = a && a.unsicher === true;
+      const teilUnsicher = hatTeil && a.teilaufgaben.some(function(t) { return t && t.unsicher === true; });
+      const markUnsicher = aufgabeUnsicher || teilUnsicher;
+      html += '<div style="border:1px solid ' + (markUnsicher ? 'var(--warning,#d97706)' : 'var(--border)') + ';border-radius:8px;padding:.7rem .8rem;margin-bottom:.6rem">' +
         '<div style="font-weight:600;margin-bottom:.5rem">' + escHtml(a.bezeichnung || ('Aufgabe ' + (ai + 1))) +
+        (markUnsicher ? ' <span style="font-weight:600;color:#92400e;font-size:.78rem">&#9888;&#65039; KI unsicher</span>' : '') +
         (hatTeil ? ' <span style="font-weight:400;color:var(--text-muted);font-size:.8rem">· <span class="ki-aufg-summe" data-a="' + ai + '">0</span> / ' + aufgabeMaxSumme(a) + ' Pkt</span>' : '') +
         '</div>';
       if (hatTeil) {
@@ -3512,7 +3537,17 @@ function buildKorrekturDocx(result, pruefung, schueler) {
   body += docxP('Note: ' + note + '   (' + (bestanden ? 'Bestanden' : 'Nicht bestanden') + ')', { bold: true, size: 26, color: bestanden ? '1A7F37' : 'B42318', spaceAfter: 240 });
   if (aufgaben.length) {
     body += docxP('Bewertung pro Aufgabe und Teilaufgabe', { bold: true, size: 30, before: 120, spaceAfter: 120 });
+    // Hinweisbox, wenn die KI Stellen als unsicher markiert hat.
+    let unsicherTotal = 0;
+    aufgaben.forEach(function(a) {
+      if (a && a.unsicher === true) unsicherTotal++;
+      if (Array.isArray(a && a.teilaufgaben)) a.teilaufgaben.forEach(function(t) { if (t && t.unsicher === true) unsicherTotal++; });
+    });
+    if (unsicherTotal > 0) {
+      body += docxP('⚠ ' + unsicherTotal + ' Stelle' + (unsicherTotal === 1 ? '' : 'n') + ' von der KI als unsicher markiert – in der Tabelle gelb hinterlegt. Bitte besonders sorgfältig prüfen.', { bold: true, size: 22, color: '92400E', spaceAfter: 120 });
+    }
     const W = [2500, 1000, 3100, 3038];
+    const UNS = 'FEF3C7'; // Hintergrund für unsichere Zeilen
     const cellP = function(text, opts) { return docxP(text, Object.assign({ size: 20, spaceAfter: 0 }, opts || {})); };
     let rowsXml = '<w:tr>' +
       docxCell(W[0], cellP('Aufgabe', { bold: true }), 'F2F4F7') +
@@ -3523,26 +3558,33 @@ function buildKorrekturDocx(result, pruefung, schueler) {
     aufgaben.forEach(function(a, ai) {
       const hatTeil = Array.isArray(a.teilaufgaben) && a.teilaufgaben.length > 0;
       if (hatTeil) {
+        const teilUns = a.teilaufgaben.some(function(t) { return t && t.unsicher === true; });
+        const headerFill = (a.unsicher === true || teilUns) ? UNS : 'F9FAFB';
+        const headerLabel = (a.bezeichnung || ('Aufgabe ' + (ai + 1))) + (a.unsicher === true ? ' ⚠' : '');
         rowsXml += '<w:tr>' +
-          docxCell(W[0], cellP(a.bezeichnung || ('Aufgabe ' + (ai + 1)), { bold: true }), 'F9FAFB') +
-          docxCell(W[1], cellP(aufgabeErreichtSumme(a) + ' / ' + aufgabeMaxSumme(a), { bold: true }), 'F9FAFB') +
-          docxCell(W[2], cellP(''), 'F9FAFB') +
-          docxCell(W[3], cellP(''), 'F9FAFB') +
+          docxCell(W[0], cellP(headerLabel, { bold: true }), headerFill) +
+          docxCell(W[1], cellP(aufgabeErreichtSumme(a) + ' / ' + aufgabeMaxSumme(a), { bold: true }), headerFill) +
+          docxCell(W[2], cellP(''), headerFill) +
+          docxCell(W[3], cellP(''), headerFill) +
           '</w:tr>';
         a.teilaufgaben.forEach(function(t, ti) {
+          const fill = (t && t.unsicher === true) ? UNS : '';
+          const label = (t.bezeichnung || ('Teilaufgabe ' + (ti + 1))) + ((t && t.unsicher === true) ? ' ⚠ unsicher' : '');
           rowsXml += '<w:tr>' +
-            docxCell(W[0], cellP(t.bezeichnung || ('Teilaufgabe ' + (ti + 1)))) +
-            docxCell(W[1], cellP((t.erreicht != null ? t.erreicht : 0) + ' / ' + (t.max != null ? t.max : '–'))) +
-            docxCell(W[2], cellP(t.begruendung || '–')) +
-            docxCell(W[3], cellP(t.verbesserung || '–')) +
+            docxCell(W[0], cellP(label), fill) +
+            docxCell(W[1], cellP((t.erreicht != null ? t.erreicht : 0) + ' / ' + (t.max != null ? t.max : '–')), fill) +
+            docxCell(W[2], cellP(t.begruendung || '–'), fill) +
+            docxCell(W[3], cellP(t.verbesserung || '–'), fill) +
             '</w:tr>';
         });
       } else {
+        const fill = (a && a.unsicher === true) ? UNS : '';
+        const label = (a.bezeichnung || ('Aufgabe ' + (ai + 1))) + ((a && a.unsicher === true) ? ' ⚠ unsicher' : '');
         rowsXml += '<w:tr>' +
-          docxCell(W[0], cellP(a.bezeichnung || ('Aufgabe ' + (ai + 1)), { bold: true })) +
-          docxCell(W[1], cellP((a.erreicht != null ? a.erreicht : 0) + ' / ' + (a.max != null ? a.max : '–'))) +
-          docxCell(W[2], cellP(a.begruendung || a.feedback || '–')) +
-          docxCell(W[3], cellP(a.verbesserung || '–')) +
+          docxCell(W[0], cellP(label, { bold: true }), fill) +
+          docxCell(W[1], cellP((a.erreicht != null ? a.erreicht : 0) + ' / ' + (a.max != null ? a.max : '–')), fill) +
+          docxCell(W[2], cellP(a.begruendung || a.feedback || '–'), fill) +
+          docxCell(W[3], cellP(a.verbesserung || '–'), fill) +
           '</w:tr>';
       }
     });
