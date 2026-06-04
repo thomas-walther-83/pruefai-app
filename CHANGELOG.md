@@ -8,6 +8,20 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Geändert / Landing-Page Design (Warm & Menschlich)
+- **Neues warmes Design-System** für die Landing Page (index.html): Creme-Hintergrund
+  (#FBF7F0), Tinte (#1C1B1A), Teal-Akzent (#0E7C66) und Sand-Flächen – statt des
+  generischen Corporate-Blaus. Inspiriert von preisgekrönten Education-Apps
+  (Apple Design Awards 2025: CapWords, Speechify) und Awwwards-SaaS-Trends.
+- **Selbst-gehostete Schrift** „Plus Jakarta Sans" (variabel 200–800, eine 27 KB
+  woff2-Datei unter `/fonts/`). CSP-konform (`font-src 'self'`) und ohne externen
+  Google-Fonts-Call – passt zur Datenschutz-Positionierung.
+- **Hellerer, freundlicher Hero** (warmer Verlauf statt dunkelblauem Block),
+  runde Pill-Buttons, Glas-Navigation, sanfte Hover-Lifts auf Karten.
+- **SVG-Line-Icons statt Emoji** in Logo, Value-Cards und Trust-Strip.
+- Teal-/Warm-Akzente durchgängig in Pricing, Vergleichstabelle, CTA-Banner, Footer
+  und Cookie-Banner.
+
 ### Behoben
 - **Falsche Note in der Einträge-Liste**: Nach der KI-Korrektur zeigte die Liste
   bei allen Schülern die von der KI selbst gemeldete (unzuverlässige) Note – oft
