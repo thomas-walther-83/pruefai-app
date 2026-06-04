@@ -8,6 +8,17 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt / Features
+- **Klassen-Statistik pro Prüfung**: Die Noten-Ansicht zeigt jetzt Mittelwert,
+  **Median**, **Bestehensquote in %** (farbcodiert), Bestanden/benotet, **Streuung (σ)**
+  und die **Spannweite** samt **Ausreisser** (tiefste/höchste Note mit Name) – zusätzlich
+  zum bestehenden Notenverteilungs-Histogramm.
+- **Sammel-PDF „Rückgabe"**: Ein PDF mit einer druckfertigen Seite je korrigierter
+  Schülerarbeit (Note, Punkte, Bewertung pro Aufgabe/Teilaufgabe, Kommentar,
+  ⚠-Markierung unsicherer Stellen) – zum Austeilen an die Klasse. Button in der
+  Noten-Ansicht neben Notenliste-PDF und CSV-Export.
+- Notenlisten-PDF-Export auf die neue Teal-Markenfarbe umgestellt.
+
 ### Geändert / App-Design (Warm & Menschlich)
 - **App-Oberfläche (app.html) auf das warme Design-System umgestellt** – konsistent
   zur Landing Page: Creme-Hintergrund, Teal-Akzent (#0E7C66), warme Tinte & Sand-Töne

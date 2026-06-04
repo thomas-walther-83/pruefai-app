@@ -143,6 +143,7 @@
     /* Stats */
     .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
     .stat-card { background: linear-gradient(180deg, #ffffff 0%, #F6F0E6 100%); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center; box-shadow: var(--shadow); }
+    .noten-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: .7rem; }
     .stat-card__num { font-size: 2rem; font-weight: 700; color: var(--primary); }
     .stat-card__lbl { font-size: .8rem; color: var(--text-muted); margin-top: .25rem; }
 
@@ -512,8 +513,9 @@
           <label class="form-label">Klasse</label>
           <select class="form-control" id="noten-klasse-select" onchange="loadNotenTabelle()"><option value="">– bitte wählen –</option></select>
         </div>
-        <button class="btn btn-secondary" onclick="exportNotenPDF()" title="Notenübersicht als PDF herunterladen">&#128196; PDF-Export</button>
+        <button class="btn btn-secondary" onclick="exportNotenPDF()" title="Notenübersicht als PDF herunterladen">&#128196; Notenliste PDF</button>
         <button class="btn btn-secondary" onclick="exportNotenCSV()" title="Noten als CSV für Excel herunterladen">&#128202; CSV-Export</button>
+        <button class="btn btn-secondary" onclick="exportSammelPDF()" title="Alle korrigierten Arbeiten als druckfertige Rückgabeblätter (ein PDF, eine Seite pro Schüler/in)">&#128209; Sammel-PDF Rückgabe</button>
       </div>
       <div id="noten-tabelle-wrap"></div>
       <div id="noten-histogram-wrap" class="card hidden" style="margin-top:1rem">
@@ -3289,6 +3291,19 @@ function rundeNote(note, schritt) {
   return Math.round(n * 100) / 100;
 }
 
+// Klassen-Statistik aus einer Liste von Noten: Mittelwert, Median, Streuung,
+// Bestehensquote und Spannweite (tiefste/höchste = Ausreisser).
+function computeNotenStat(vals) {
+  const n = vals.length;
+  if (!n) return { n: 0 };
+  const sorted = vals.slice().sort(function(a, b) { return a - b; });
+  const mean = vals.reduce(function(s, v) { return s + v; }, 0) / n;
+  const median = (n % 2) ? sorted[(n - 1) / 2] : (sorted[n / 2 - 1] + sorted[n / 2]) / 2;
+  const variance = vals.reduce(function(s, v) { return s + (v - mean) * (v - mean); }, 0) / n;
+  const pass = vals.filter(function(v) { return v >= 4.0; }).length;
+  return { n: n, mean: mean, median: median, stddev: Math.sqrt(variance), pass: pass, passRate: pass / n, min: sorted[0], max: sorted[n - 1] };
+}
+
 // Note aus Punkten – Formel pro Prüfung wählbar.
 function noteAusPunkte(erreicht, maxPunkte, formel, rundung) {
   const max = Number(maxPunkte) || 0;
@@ -3974,14 +3989,30 @@ async function loadNotenTabelle() {
       return { name: s.name, nummer: s.nummer, note: n, punkte: e && e.punkte, status: e && e.status };
     }).sort(function(a,b) { return a.name.localeCompare(b.name); });
     const mitNote = noten.filter(function(n) { return n.note !== null; });
-    const bestanden = mitNote.filter(function(n) { return n.note >= 4.0; }).length;
-    const avg = mitNote.length ? (mitNote.reduce(function(s, n) { return s + n.note; }, 0) / mitNote.length).toFixed(2) : '–';
-    wrap.innerHTML = '<div class="card" style="margin-bottom:1rem"><div style="display:flex;gap:1.5rem;flex-wrap:wrap">' +
-      '<div><strong>Prüfung:</strong> ' + escHtml(p && p.name || '') + '</div>' +
-      '<div><strong>Datum:</strong> ' + (p && p.datum ? formatDate(p.datum) : '–') + '</div>' +
-      '<div><strong>Max. Punkte:</strong> ' + (p && p.max_punkte || '–') + '</div>' +
-      '<div><strong>&#216; Note:</strong> <span style="font-weight:700">' + avg + '</span></div>' +
-      '<div><strong>Bestanden:</strong> ' + bestanden + ' / ' + noten.length + '</div></div></div>' +
+    const st = computeNotenStat(mitNote.map(function(n) { return n.note; }));
+    let minN = null, maxN = null;
+    mitNote.forEach(function(n) { if (minN === null || n.note < minN.note) minN = n; if (maxN === null || n.note > maxN.note) maxN = n; });
+    const fmt = function(x) { return (Math.round(x * 100) / 100).toFixed(2); };
+    const tile = function(num, lbl, color) { return '<div class="stat-card"><div style="font-size:1.4rem;font-weight:800;line-height:1.1;color:' + (color || 'var(--text)') + '">' + num + '</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:.15rem">' + lbl + '</div></div>'; };
+    const passColor = st.n ? (st.passRate >= 0.8 ? 'var(--success)' : st.passRate >= 0.5 ? 'var(--warning)' : 'var(--danger)') : 'var(--text-muted)';
+    const statsHtml = st.n
+      ? '<div class="noten-stat-grid">' +
+          tile(fmt(st.mean), '&#216; Note (Mittelwert)', 'var(--primary)') +
+          tile(fmt(st.median), 'Median') +
+          tile(Math.round(st.passRate * 100) + '%', 'Bestehensquote', passColor) +
+          tile(st.pass + ' / ' + st.n, 'Bestanden / benotet') +
+          tile('±' + fmt(st.stddev), 'Streuung (σ)') +
+          tile(noteHtml(st.min) + ' – ' + noteHtml(st.max), 'Spannweite') +
+        '</div>' +
+        ((minN && maxN) ? '<div style="font-size:.78rem;color:var(--text-muted);margin-top:.7rem">&#9888;&#65039; Ausreisser: tiefste Note <strong>' + noteHtml(minN.note) + '</strong> (' + escHtml(minN.name) + '), höchste <strong>' + noteHtml(maxN.note) + '</strong> (' + escHtml(maxN.name) + ').</div>' : '')
+      : '<div class="alert alert-info" style="margin:0">Noch keine benoteten Arbeiten – die Statistik erscheint, sobald Noten vorliegen.</div>';
+    wrap.innerHTML =
+      '<div class="card" style="margin-bottom:1rem">' +
+        '<div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:' + (st.n ? '1rem' : '0') + '">' +
+          '<div><strong>Prüfung:</strong> ' + escHtml(p && p.name || '') + '</div>' +
+          '<div><strong>Datum:</strong> ' + (p && p.datum ? formatDate(p.datum) : '–') + '</div>' +
+          '<div><strong>Max. Punkte:</strong> ' + (p && p.max_punkte || '–') + '</div>' +
+        '</div>' + statsHtml + '</div>' +
       '<div class="card"><div class="table-wrap"><table><thead><tr><th>#</th><th>Name</th><th>Nummer</th><th>Punkte</th><th>Note</th><th>Status</th></tr></thead><tbody>' +
       noten.map(function(n, i) {
         return '<tr><td>' + (i+1) + '</td><td><strong>' + escHtml(n.name) + '</strong></td><td>' + escHtml(n.nummer || '–') + '</td><td>' + (n.punkte != null ? n.punkte : '–') + '</td><td>' + (n.note !== null ? noteHtml(n.note) : '–') + '</td><td><span class="badge ' + statusBadge(n.status || 'offen') + '">' + escHtml(n.status || 'offen') + '</span></td></tr>';
@@ -4034,9 +4065,97 @@ async function exportNotenPDF() {
       const e = eMap[s.id]; const note = e ? (e.note_manuell || e.note) : null;
       return [i+1, s.name, s.nummer || '', e && e.punkte || '', note !== null ? parseFloat(note).toFixed(1) : '', note !== null ? (note >= 4.0 ? 'Bestanden' : 'Nicht best.') : ''];
     });
-    doc.autoTable({ startY: 52, head: [['#', 'Name', 'Nummer', 'Punkte', 'Note', 'Status']], body: rows, styles: { fontSize: 10 }, headStyles: { fillColor: [26, 86, 219] } });
+    doc.autoTable({ startY: 52, head: [['#', 'Name', 'Nummer', 'Punkte', 'Note', 'Status']], body: rows, styles: { fontSize: 10 }, headStyles: { fillColor: [14, 124, 102] } });
     doc.save('Noten_' + (p && p.name || 'Pruefung') + '_' + (k && k.name || '') + '.pdf');
     showToast('PDF erstellt.', 'success');
+  } catch(e) { showToast('PDF-Fehler: ' + e.message, 'error'); }
+}
+
+// Sammel-PDF „Rückgabe": ein PDF mit einer druckfertigen Seite je korrigierter
+// Schülerarbeit (Note, Punkte, Bewertung pro Aufgabe, Kommentar) – zum Austeilen.
+async function exportSammelPDF() {
+  const pruefungId = document.getElementById('noten-pruefung-select').value;
+  const klasseId   = document.getElementById('noten-klasse-select').value;
+  if (!pruefungId || !klasseId) { showToast('Prüfung und Klasse wählen.', 'error'); return; }
+  if (!window.jspdf) { showToast('jsPDF nicht geladen.', 'error'); return; }
+  try {
+    const jsPDF = window.jspdf.jsPDF;
+    const [schueler, eintraege, pRows, kRows] = await Promise.all([
+      sb.select('schueler', 'klasse_id=eq.' + klasseId),
+      sb.select('eintraege', 'pruefung_id=eq.' + pruefungId),
+      sb.select('pruefungen', 'id=eq.' + pruefungId),
+      sb.select('klassen', 'id=eq.' + klasseId)
+    ]);
+    const eMap = {};
+    eintraege.forEach(function(e) { eMap[e.schueler_id] = e; });
+    const p = pRows[0] || {}; const k = kRows[0] || {};
+    const liste = schueler.slice().sort(function(a, b) { return a.name.localeCompare(b.name); })
+      .map(function(s) { return { s: s, e: eMap[s.id] }; })
+      .filter(function(x) { return x.e && (x.e.ergebnis || x.e.note_manuell != null || x.e.note != null); });
+    if (!liste.length) { showToast('Keine korrigierten Arbeiten für diese Auswahl.', 'error'); return; }
+    showToast('Sammel-PDF wird erstellt …', 'info');
+    const doc = new jsPDF();
+    const today = formatDate(new Date().toISOString().split('T')[0]);
+    liste.forEach(function(item, idx) {
+      if (idx > 0) doc.addPage();
+      const s = item.s, e = item.e;
+      const result = e.ergebnis || {};
+      const aufgaben = Array.isArray(result.aufgaben) ? result.aufgaben : [];
+      const note = (e.note_manuell != null ? e.note_manuell : e.note);
+      const maxTotal = aufgaben.reduce(function(sum, a) { return sum + aufgabeMaxSumme(a); }, 0) || Number(p.max_punkte) || 0;
+      const punkte = (e.punkte != null ? e.punkte : (aufgaben.length ? Math.round(aufgaben.reduce(function(sum, a) { return sum + aufgabeErreichtSumme(a); }, 0) * 100) / 100 : null));
+      const bestanden = note != null && note >= 4.0;
+      doc.setFontSize(16); doc.setTextColor(28, 27, 26); doc.text('Prüfungskorrektur', 14, 20);
+      doc.setFontSize(11); doc.setTextColor(80, 72, 62);
+      doc.text((p.name || '') + (p.datum ? '  ·  ' + formatDate(p.datum) : ''), 14, 28);
+      doc.text((k.name || '') + '  ·  ' + (cfg.schoolName || 'PruefAI') + '  ·  ' + today, 14, 34);
+      doc.setDrawColor(232, 223, 209); doc.line(14, 38, 196, 38);
+      doc.setFontSize(14); doc.setTextColor(28, 27, 26); doc.text(String(s.name || 'Schüler/in'), 14, 48);
+      doc.setFontSize(12);
+      const noteStr = note != null ? parseFloat(note).toFixed(1) : '–';
+      if (bestanden) doc.setTextColor(21, 128, 61); else if (note != null) doc.setTextColor(185, 28, 28); else doc.setTextColor(80, 72, 62);
+      doc.text('Note: ' + noteStr + '   (' + (note != null ? (bestanden ? 'Bestanden' : 'Nicht bestanden') : 'offen') + ')', 14, 56);
+      doc.setTextColor(80, 72, 62);
+      doc.text('Punkte: ' + (punkte != null ? punkte : '–') + ' / ' + maxTotal, 150, 56);
+      const body = [];
+      aufgaben.forEach(function(a) {
+        const hatTeil = Array.isArray(a.teilaufgaben) && a.teilaufgaben.length;
+        const uns = (a.unsicher === true) || (hatTeil && a.teilaufgaben.some(function(t) { return t && t.unsicher === true; }));
+        const aName = (a.bezeichnung || 'Aufgabe') + (uns ? '  [!]' : '');
+        if (hatTeil) {
+          body.push([{ content: aName, styles: { fontStyle: 'bold' } }, aufgabeErreichtSumme(a) + ' / ' + aufgabeMaxSumme(a), '', '']);
+          a.teilaufgaben.forEach(function(t) {
+            body.push(['   ' + (t.bezeichnung || 'Teilaufgabe') + (t.unsicher === true ? ' [!]' : ''), (t.erreicht != null ? t.erreicht : 0) + ' / ' + (t.max != null ? t.max : '–'), t.begruendung || '', t.verbesserung || '']);
+          });
+        } else {
+          body.push([aName, (a.erreicht != null ? a.erreicht : 0) + ' / ' + (a.max != null ? a.max : '–'), a.begruendung || (a.feedback || ''), a.verbesserung || '']);
+        }
+      });
+      if (body.length) {
+        doc.autoTable({
+          startY: 62,
+          head: [['Aufgabe', 'Punkte', 'Wofür es Punkte gibt', 'Für mehr Punkte nötig']],
+          body: body,
+          styles: { fontSize: 9, cellPadding: 2, valign: 'top', textColor: [40, 30, 15], overflow: 'linebreak' },
+          headStyles: { fillColor: [14, 124, 102], textColor: [255, 255, 255] },
+          columnStyles: { 0: { cellWidth: 46 }, 1: { cellWidth: 20, halign: 'center' }, 2: { cellWidth: 58 }, 3: { cellWidth: 58 } },
+          margin: { left: 14, right: 14 },
+        });
+      }
+      let y = (doc.lastAutoTable ? doc.lastAutoTable.finalY : 62) + 9;
+      const hatUnsicher = aufgaben.some(function(a) { return a.unsicher === true || (Array.isArray(a.teilaufgaben) && a.teilaufgaben.some(function(t) { return t && t.unsicher === true; })); });
+      if (hatUnsicher) {
+        doc.setFontSize(8.5); doc.setTextColor(146, 64, 14);
+        doc.text('[!] = von der KI als unsicher markiert, manuell geprüft.', 14, y); y += 6;
+      }
+      if (result.kommentar) {
+        doc.setFontSize(10); doc.setTextColor(28, 27, 26); doc.text('Kommentar', 14, y); y += 5;
+        doc.setFontSize(10); doc.setTextColor(80, 72, 62);
+        doc.text(doc.splitTextToSize(String(result.kommentar), 182), 14, y);
+      }
+    });
+    doc.save('Rueckgabe_' + (p.name || 'Pruefung') + '_' + (k.name || '') + '.pdf');
+    showToast(liste.length + (liste.length === 1 ? ' Rückgabeblatt' : ' Rückgabeblätter') + ' als PDF erstellt.', 'success');
   } catch(e) { showToast('PDF-Fehler: ' + e.message, 'error'); }
 }
 
