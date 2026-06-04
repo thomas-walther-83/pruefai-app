@@ -8,6 +8,21 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Geändert / App-Design (Warm & Menschlich)
+- **App-Oberfläche (app.html) auf das warme Design-System umgestellt** – konsistent
+  zur Landing Page: Creme-Hintergrund, Teal-Akzent (#0E7C66), warme Tinte & Sand-Töne
+  statt Corporate-Blau. Header von blauem auf Teal-Verlauf.
+- **Schrift Plus Jakarta Sans** auch in der App (selbst gehostet, im Service-Worker-
+  Cache für Offline-Nutzung).
+- Notenfarben (1–6) bleiben als semantische Skala erhalten; nur Marken-/Neutral-Töne
+  wurden umgestellt. PWA-Manifest (Theme-/Hintergrundfarbe, Icon) angepasst.
+- SW-Cache auf `pruefai-v23`, App-Version 1.4.0.
+
+### Geändert / Landing-Page: Produkt-Mockups
+- **Zwei Produkt-Einblicke mit fiktiven Daten** in die Landing Page eingebaut
+  (CSS-„Screenshots" im Browser-Frame): eine fertige Korrektur (Note, Punkte pro
+  Aufgabe, ⚠-Markierung) und eine Klassen-Übersicht mit Status & Schnitt.
+
 ### Geändert / Landing-Page Design (Warm & Menschlich)
 - **Neues warmes Design-System** für die Landing Page (index.html): Creme-Hintergrund
   (#FBF7F0), Tinte (#1C1B1A), Teal-Akzent (#0E7C66) und Sand-Flächen – statt des
