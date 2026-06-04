@@ -1,7 +1,8 @@
 // Pruefai Service Worker – App-Shell caching
-const CACHE_NAME = 'pruefai-v22';
+const CACHE_NAME = 'pruefai-v23';
 const APP_SHELL = [
   './app.html',
+  './fonts/plus-jakarta-sans.woff2',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.min.js',
   './qrcode.min.js',
