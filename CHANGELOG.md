@@ -8,6 +8,13 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Geändert / App-Politur (Icons)
+- **Navigation & Header auf SVG-Line-Icons umgestellt** (statt Emoji): Header-Logo,
+  Datenablage- und Einstellungen-Button, alle Desktop-Tabs und die Mobile-Bottom-Nav.
+  Neue `.ic`-Klasse: Icons erben Textfarbe & -grösse und färben sich im Aktiv-Zustand
+  automatisch mit. Konsistent mit der Landing Page. (Content-Icons folgen.)
+- SW-Cache `pruefai-v27`, Version 1.5.4.
+
 ### Behoben
 - **CORS: same-origin zusätzlich erlauben** (`claude`, `validate-license`, `relay`,
   `capture-lead`, `contact-enterprise`). Nach dem Setzen von `ALLOWED_ORIGINS` hätten

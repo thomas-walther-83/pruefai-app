@@ -1,6 +1,6 @@
 {
   "name": "pruefai",
-  "version": "1.5.3",
+  "version": "1.5.4",
   "description": "KI-gestützte Prüfungskorrektur für Schweizer Berufsschulen",
   "private": true,
   "main": "index.html",

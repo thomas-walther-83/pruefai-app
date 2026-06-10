@@ -52,6 +52,8 @@
     .nav-tab { padding: .85rem 1.25rem; border: none; background: transparent; color: var(--text-muted); font-size: .9rem; font-weight: 600; white-space: nowrap; border-bottom: 3px solid transparent; transition: color .15s, border-color .15s, background .15s; }
     .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); background: #E9F5F0; }
     .nav-tab:hover:not(.active) { color: var(--text); background: #F4EFE6; }
+    /* Inline-SVG-Icons – erben Textfarbe & -grösse, Drop-in-Ersatz für Emoji */
+    .ic { width: 1.05em; height: 1.05em; vertical-align: -.16em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
     .main { flex: 1; padding: 1.5rem 1.25rem 2rem; max-width: 1120px; margin: 0 auto; width: 100%; }
     .view { display: none; }
     .view.active { display: block; }
@@ -313,12 +315,12 @@
 <div id="app">
   <header class="header">
     <div>
-      <div class="header__logo">&#9999;&#65039; PruefAI</div>
+      <div class="header__logo"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> PruefAI</div>
       <div class="header__sub" id="header-school">Meine Schule</div>
     </div>
     <div class="header__actions">
-      <button class="btn btn-icon" id="fs-status-btn" onclick="onFsStatusClick()" title="Datenablage" style="display:none;font-size:.95rem">&#128193;</button>
-      <button class="btn btn-icon" onclick="openSettingsModal()" title="Einstellungen">&#9881;&#65039;</button>
+      <button class="btn btn-icon" id="fs-status-btn" onclick="onFsStatusClick()" title="Datenablage" style="display:none;font-size:.95rem"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg></button>
+      <button class="btn btn-icon" onclick="openSettingsModal()" title="Einstellungen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
       <a id="free-trial-badge" href="/" title="Plan wählen" style="display:none;font-size:.75rem;font-weight:600;background:var(--warning-light);color:var(--warning);border:1px solid #fcd34d;border-radius:20px;padding:.25rem .65rem;white-space:nowrap;text-decoration:none">🎓 <span id="free-trial-remaining"></span> gratis</a>
       <div class="usage-bar-wrap" id="usage-bar-wrap">
         <span id="usage-bar-label" style="white-space:nowrap"></span>
@@ -328,26 +330,26 @@
   </header>
 
   <nav class="nav-tabs">
-    <button class="nav-tab active" onclick="showView('dashboard')" id="tab-dashboard" title="Übersicht mit Kennzahlen und nächsten Prüfungen">&#128202; Dashboard</button>
-    <button class="nav-tab" onclick="showView('klassen')" id="tab-klassen" title="Klassen verwalten und organisieren">&#127979; Klassen</button>
-    <button class="nav-tab" onclick="showView('schueler')" id="tab-schueler" title="Schüler erfassen und zuweisen">&#128101; Schüler</button>
-    <button class="nav-tab" onclick="showView('faecher')" id="tab-faecher" title="Fächer und Kürzel verwalten">&#128218; Fächer</button>
-    <button class="nav-tab" onclick="showView('pruefungen')" id="tab-pruefungen" title="Prüfungen erstellen und bearbeiten">&#128221; Prüfungen</button>
-    <button class="nav-tab" onclick="showView('korrektur')" id="tab-korrektur" title="KI-Korrekturen starten und prüfen">&#129302; Korrektur</button>
-    <button class="nav-tab" onclick="showView('noten')" id="tab-noten" title="Notenübersicht und Exporte anzeigen">&#128200; Noten</button>
-    <button class="nav-tab" onclick="showView('rubrics')" id="tab-rubrics" title="Bewertungsraster definieren und wiederverwenden">&#128203; Rubrics <span class="pro-badge">Pro</span></button>
-    <button class="nav-tab" onclick="showView('analytik')" id="tab-analytik" title="Notentrends und Fehlerkatalog anzeigen">&#128201; Analytik <span class="pro-badge">Pro</span></button>
-    <button class="nav-tab" onclick="showView('hilfe')" id="tab-hilfe" title="Hilfe und Rechtliches">&#10067; Hilfe</button>
+    <button class="nav-tab active" onclick="showView('dashboard')" id="tab-dashboard" title="Übersicht mit Kennzahlen und nächsten Prüfungen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="8" rx="1.2"/><rect x="14" y="3" width="7" height="5" rx="1.2"/><rect x="14" y="11" width="7" height="10" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/></svg> Dashboard</button>
+    <button class="nav-tab" onclick="showView('klassen')" id="tab-klassen" title="Klassen verwalten und organisieren"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M9.5 21v-5h5v5"/></svg> Klassen</button>
+    <button class="nav-tab" onclick="showView('schueler')" id="tab-schueler" title="Schüler erfassen und zuweisen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6"/><path d="M18 20a5.5 5.5 0 0 0-2.5-4.6"/></svg> Schüler</button>
+    <button class="nav-tab" onclick="showView('faecher')" id="tab-faecher" title="Fächer und Kürzel verwalten"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5Z"/><path d="M5 19.5A1.5 1.5 0 0 1 6.5 18H19"/></svg> Fächer</button>
+    <button class="nav-tab" onclick="showView('pruefungen')" id="tab-pruefungen" title="Prüfungen erstellen und bearbeiten"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M8.5 13h7M8.5 17h5"/></svg> Prüfungen</button>
+    <button class="nav-tab" onclick="showView('korrektur')" id="tab-korrektur" title="KI-Korrekturen starten und prüfen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.7 4.5L18 9.2l-4.3 1.7L12 15.4l-1.7-4.5L6 9.2l4.3-1.7Z"/><path d="M18.5 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8Z"/></svg> Korrektur</button>
+    <button class="nav-tab" onclick="showView('noten')" id="tab-noten" title="Notenübersicht und Exporte anzeigen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M9 13.5L7.5 21l4.5-2.6L16.5 21 15 13.5"/></svg> Noten</button>
+    <button class="nav-tab" onclick="showView('rubrics')" id="tab-rubrics" title="Bewertungsraster definieren und wiederverwenden"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V5H9Z"/><path d="M9 11h6M9 15h6"/></svg> Rubrics <span class="pro-badge">Pro</span></button>
+    <button class="nav-tab" onclick="showView('analytik')" id="tab-analytik" title="Notentrends und Fehlerkatalog anzeigen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16.5l5.5-5.5 3.5 3.5L21 6"/><path d="M16 6h5v5"/></svg> Analytik <span class="pro-badge">Pro</span></button>
+    <button class="nav-tab" onclick="showView('hilfe')" id="tab-hilfe" title="Hilfe und Rechtliches"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 1 1 3.6 2.5c-.8.5-1.2 1-1.2 1.9"/><circle cx="12" cy="17" r="0.7" fill="currentColor" stroke="none"/></svg> Hilfe</button>
   </nav>
 
   <!-- Mobile Bottom Navigation -->
   <nav class="mobile-nav">
     <div class="mobile-nav__items">
-      <button class="mobile-nav__item active" id="mnav-dashboard" onclick="showView('dashboard')"><span class="mobile-nav__icon">&#128202;</span>Dashboard</button>
-      <button class="mobile-nav__item" id="mnav-klassen" onclick="showView('klassen')"><span class="mobile-nav__icon">&#127979;</span>Klassen</button>
-      <button class="mobile-nav__item" id="mnav-korrektur" onclick="showView('korrektur')"><span class="mobile-nav__icon">&#129302;</span>Korrektur</button>
-      <button class="mobile-nav__item" id="mnav-noten" onclick="showView('noten')"><span class="mobile-nav__icon">&#128200;</span>Noten</button>
-      <button class="mobile-nav__item" id="mnav-mehr" onclick="showMobileMenu()"><span class="mobile-nav__icon">&#8942;</span>Mehr</button>
+      <button class="mobile-nav__item active" id="mnav-dashboard" onclick="showView('dashboard')"><span class="mobile-nav__icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="8" rx="1.2"/><rect x="14" y="3" width="7" height="5" rx="1.2"/><rect x="14" y="11" width="7" height="10" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/></svg></span>Dashboard</button>
+      <button class="mobile-nav__item" id="mnav-klassen" onclick="showView('klassen')"><span class="mobile-nav__icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M9.5 21v-5h5v5"/></svg></span>Klassen</button>
+      <button class="mobile-nav__item" id="mnav-korrektur" onclick="showView('korrektur')"><span class="mobile-nav__icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.7 4.5L18 9.2l-4.3 1.7L12 15.4l-1.7-4.5L6 9.2l4.3-1.7Z"/><path d="M18.5 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8Z"/></svg></span>Korrektur</button>
+      <button class="mobile-nav__item" id="mnav-noten" onclick="showView('noten')"><span class="mobile-nav__icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M9 13.5L7.5 21l4.5-2.6L16.5 21 15 13.5"/></svg></span>Noten</button>
+      <button class="mobile-nav__item" id="mnav-mehr" onclick="showMobileMenu()"><span class="mobile-nav__icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span>Mehr</button>
     </div>
   </nav>
 
@@ -1673,17 +1675,18 @@ async function fsHydrateBlobsRecursive(dirHandle, prefix) {
 }
 
 // FS-UI: Onboarding-Modal, Header-Badge, Settings-Sektion
+const FS_ICON_SVG = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>';
 function updateFsStatusBadge() {
   const btn = document.getElementById('fs-status-btn');
   if (!btn) return;
   if (fsConnected()) {
     btn.style.display = 'inline-flex';
     btn.title = 'Daten werden in Ordner „' + fsFolderName() + '" gespiegelt';
-    btn.innerHTML = '&#128193;';
+    btn.innerHTML = FS_ICON_SVG;
   } else if (FS_SUPPORTED) {
     btn.style.display = 'inline-flex';
     btn.title = 'Lokaler Ordner nicht verbunden – klicken zum Verbinden';
-    btn.innerHTML = '&#128193;';
+    btn.innerHTML = FS_ICON_SVG;
     btn.style.opacity = '0.4';
   } else {
     btn.style.display = 'none';
