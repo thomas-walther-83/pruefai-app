@@ -8,6 +8,13 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Behoben
+- **CORS: same-origin zusätzlich erlauben** (`claude`, `validate-license`, `relay`,
+  `capture-lead`, `contact-enterprise`). Nach dem Setzen von `ALLOWED_ORIGINS` hätten
+  sonst alle Vercel-Preview-Deployments (`*.vercel.app`) bei API-Aufrufen 403 erhalten.
+  Same-Origin-Requests (Origin = eigener Host) sind jetzt immer erlaubt – Production und
+  Previews funktionieren, echtes Cross-Site bleibt blockiert.
+
 ### Sicherheit / Behoben
 - **Doppelklick-Schutz für KI-Korrektur**: Einzel- und Batch-Korrektur sind jetzt
   gegen parallele/doppelte Auslösung gesichert (In-Flight-Guard) – verhindert doppelte

@@ -113,7 +113,8 @@ export default async function handler(req, res) {
   const origin = req.headers.origin || '';
 
   // CORS: only allow configured origins (or same-origin requests with no Origin header)
-  if (origin && ALLOWED_ORIGINS.length > 0 && !ALLOWED_ORIGINS.includes(origin)) {
+  const isSameOrigin = !!origin && origin === `${req.headers['x-forwarded-proto'] || 'https'}://${req.headers.host || ''}`;
+  if (origin && !isSameOrigin && ALLOWED_ORIGINS.length > 0 && !ALLOWED_ORIGINS.includes(origin)) {
     return res.status(403).json({ error: 'Origin not allowed.' });
   }
 
