@@ -52,6 +52,8 @@
     .nav-tab { padding: .85rem 1.25rem; border: none; background: transparent; color: var(--text-muted); font-size: .9rem; font-weight: 600; white-space: nowrap; border-bottom: 3px solid transparent; transition: color .15s, border-color .15s, background .15s; }
     .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); background: #E9F5F0; }
     .nav-tab:hover:not(.active) { color: var(--text); background: #F4EFE6; }
+    /* Inline-SVG-Icons – erben Textfarbe & -grösse, Drop-in-Ersatz für Emoji */
+    .ic { width: 1.05em; height: 1.05em; vertical-align: -.16em; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
     .main { flex: 1; padding: 1.5rem 1.25rem 2rem; max-width: 1120px; margin: 0 auto; width: 100%; }
     .view { display: none; }
     .view.active { display: block; }
@@ -289,22 +291,22 @@
 <!-- Mobile Upload Page (shown when ?mode=mobile) -->
 <div id="mobile-app">
   <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.5rem">
-    <div style="font-size:1.4rem;font-weight:700;color:var(--primary)">&#9999;&#65039; PruefAI</div>
+    <div style="font-size:1.4rem;font-weight:700;color:var(--primary)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> PruefAI</div>
     <div style="font-size:.8rem;color:var(--text-muted)">Foto-Upload</div>
   </div>
   <div class="card">
-    <div class="card__title">&#128248; Fotos aufnehmen</div>
+    <div class="card__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h3l1 1.5H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg> Fotos aufnehmen</div>
     <div id="mobile-schueler-info" style="font-size:.875rem;color:var(--text-muted);margin-bottom:.75rem"></div>
     <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem">
-      <button class="btn btn-primary" onclick="document.getElementById('mobile-camera-input').click()">&#128247; Kamera</button>
-      <button class="btn btn-secondary" onclick="document.getElementById('mobile-file-input').click()">&#128444;&#65039; Galerie</button>
+      <button class="btn btn-primary" onclick="document.getElementById('mobile-camera-input').click()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h3l1 1.5H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg> Kamera</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('mobile-file-input').click()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 16l-5-5-7 7"/></svg> Galerie</button>
     </div>
     <input type="file" id="mobile-camera-input" accept="image/*" capture="environment" style="display:none" onchange="mobileAddPhoto(event)" />
     <input type="file" id="mobile-file-input" accept="image/*" multiple style="display:none" onchange="mobileAddPhoto(event)" />
     <div id="mobile-photo-grid" class="mobile-photo-grid"></div>
     <div id="mobile-send-status" style="text-align:center;font-size:.875rem;margin:.75rem 0"></div>
     <div style="display:flex;gap:.5rem;justify-content:flex-end">
-      <button class="btn btn-success" id="mobile-send-btn" onclick="mobileSendPhotos()" disabled>&#128228; Senden</button>
+      <button class="btn btn-success" id="mobile-send-btn" onclick="mobileSendPhotos()" disabled><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V5"/><path d="M8 9l4-4 4 4"/><path d="M5 19h14"/></svg> Senden</button>
     </div>
   </div>
 </div>
@@ -313,12 +315,12 @@
 <div id="app">
   <header class="header">
     <div>
-      <div class="header__logo">&#9999;&#65039; PruefAI</div>
+      <div class="header__logo"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> PruefAI</div>
       <div class="header__sub" id="header-school">Meine Schule</div>
     </div>
     <div class="header__actions">
-      <button class="btn btn-icon" id="fs-status-btn" onclick="onFsStatusClick()" title="Datenablage" style="display:none;font-size:.95rem">&#128193;</button>
-      <button class="btn btn-icon" onclick="openSettingsModal()" title="Einstellungen">&#9881;&#65039;</button>
+      <button class="btn btn-icon" id="fs-status-btn" onclick="onFsStatusClick()" title="Datenablage" style="display:none;font-size:.95rem"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg></button>
+      <button class="btn btn-icon" onclick="openSettingsModal()" title="Einstellungen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg></button>
       <a id="free-trial-badge" href="/" title="Plan wählen" style="display:none;font-size:.75rem;font-weight:600;background:var(--warning-light);color:var(--warning);border:1px solid #fcd34d;border-radius:20px;padding:.25rem .65rem;white-space:nowrap;text-decoration:none">🎓 <span id="free-trial-remaining"></span> gratis</a>
       <div class="usage-bar-wrap" id="usage-bar-wrap">
         <span id="usage-bar-label" style="white-space:nowrap"></span>
@@ -328,31 +330,31 @@
   </header>
 
   <nav class="nav-tabs">
-    <button class="nav-tab active" onclick="showView('dashboard')" id="tab-dashboard" title="Übersicht mit Kennzahlen und nächsten Prüfungen">&#128202; Dashboard</button>
-    <button class="nav-tab" onclick="showView('klassen')" id="tab-klassen" title="Klassen verwalten und organisieren">&#127979; Klassen</button>
-    <button class="nav-tab" onclick="showView('schueler')" id="tab-schueler" title="Schüler erfassen und zuweisen">&#128101; Schüler</button>
-    <button class="nav-tab" onclick="showView('faecher')" id="tab-faecher" title="Fächer und Kürzel verwalten">&#128218; Fächer</button>
-    <button class="nav-tab" onclick="showView('pruefungen')" id="tab-pruefungen" title="Prüfungen erstellen und bearbeiten">&#128221; Prüfungen</button>
-    <button class="nav-tab" onclick="showView('korrektur')" id="tab-korrektur" title="KI-Korrekturen starten und prüfen">&#129302; Korrektur</button>
-    <button class="nav-tab" onclick="showView('noten')" id="tab-noten" title="Notenübersicht und Exporte anzeigen">&#128200; Noten</button>
-    <button class="nav-tab" onclick="showView('rubrics')" id="tab-rubrics" title="Bewertungsraster definieren und wiederverwenden">&#128203; Rubrics <span class="pro-badge">Pro</span></button>
-    <button class="nav-tab" onclick="showView('analytik')" id="tab-analytik" title="Notentrends und Fehlerkatalog anzeigen">&#128201; Analytik <span class="pro-badge">Pro</span></button>
-    <button class="nav-tab" onclick="showView('hilfe')" id="tab-hilfe" title="Hilfe und Rechtliches">&#10067; Hilfe</button>
+    <button class="nav-tab active" onclick="showView('dashboard')" id="tab-dashboard" title="Übersicht mit Kennzahlen und nächsten Prüfungen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="8" rx="1.2"/><rect x="14" y="3" width="7" height="5" rx="1.2"/><rect x="14" y="11" width="7" height="10" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/></svg> Dashboard</button>
+    <button class="nav-tab" onclick="showView('klassen')" id="tab-klassen" title="Klassen verwalten und organisieren"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M9.5 21v-5h5v5"/></svg> Klassen</button>
+    <button class="nav-tab" onclick="showView('schueler')" id="tab-schueler" title="Schüler erfassen und zuweisen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6"/><path d="M18 20a5.5 5.5 0 0 0-2.5-4.6"/></svg> Schüler</button>
+    <button class="nav-tab" onclick="showView('faecher')" id="tab-faecher" title="Fächer und Kürzel verwalten"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5Z"/><path d="M5 19.5A1.5 1.5 0 0 1 6.5 18H19"/></svg> Fächer</button>
+    <button class="nav-tab" onclick="showView('pruefungen')" id="tab-pruefungen" title="Prüfungen erstellen und bearbeiten"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M8.5 13h7M8.5 17h5"/></svg> Prüfungen</button>
+    <button class="nav-tab" onclick="showView('korrektur')" id="tab-korrektur" title="KI-Korrekturen starten und prüfen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.7 4.5L18 9.2l-4.3 1.7L12 15.4l-1.7-4.5L6 9.2l4.3-1.7Z"/><path d="M18.5 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8Z"/></svg> Korrektur</button>
+    <button class="nav-tab" onclick="showView('noten')" id="tab-noten" title="Notenübersicht und Exporte anzeigen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M9 13.5L7.5 21l4.5-2.6L16.5 21 15 13.5"/></svg> Noten</button>
+    <button class="nav-tab" onclick="showView('rubrics')" id="tab-rubrics" title="Bewertungsraster definieren und wiederverwenden"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V5H9Z"/><path d="M9 11h6M9 15h6"/></svg> Rubrics <span class="pro-badge">Pro</span></button>
+    <button class="nav-tab" onclick="showView('analytik')" id="tab-analytik" title="Notentrends und Fehlerkatalog anzeigen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16.5l5.5-5.5 3.5 3.5L21 6"/><path d="M16 6h5v5"/></svg> Analytik <span class="pro-badge">Pro</span></button>
+    <button class="nav-tab" onclick="showView('hilfe')" id="tab-hilfe" title="Hilfe und Rechtliches"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 1 1 3.6 2.5c-.8.5-1.2 1-1.2 1.9"/><circle cx="12" cy="17" r="0.7" fill="currentColor" stroke="none"/></svg> Hilfe</button>
   </nav>
 
   <!-- Mobile Bottom Navigation -->
   <nav class="mobile-nav">
     <div class="mobile-nav__items">
-      <button class="mobile-nav__item active" id="mnav-dashboard" onclick="showView('dashboard')"><span class="mobile-nav__icon">&#128202;</span>Dashboard</button>
-      <button class="mobile-nav__item" id="mnav-klassen" onclick="showView('klassen')"><span class="mobile-nav__icon">&#127979;</span>Klassen</button>
-      <button class="mobile-nav__item" id="mnav-korrektur" onclick="showView('korrektur')"><span class="mobile-nav__icon">&#129302;</span>Korrektur</button>
-      <button class="mobile-nav__item" id="mnav-noten" onclick="showView('noten')"><span class="mobile-nav__icon">&#128200;</span>Noten</button>
-      <button class="mobile-nav__item" id="mnav-mehr" onclick="showMobileMenu()"><span class="mobile-nav__icon">&#8942;</span>Mehr</button>
+      <button class="mobile-nav__item active" id="mnav-dashboard" onclick="showView('dashboard')"><span class="mobile-nav__icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="8" rx="1.2"/><rect x="14" y="3" width="7" height="5" rx="1.2"/><rect x="14" y="11" width="7" height="10" rx="1.2"/><rect x="3" y="14" width="7" height="7" rx="1.2"/></svg></span>Dashboard</button>
+      <button class="mobile-nav__item" id="mnav-klassen" onclick="showView('klassen')"><span class="mobile-nav__icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M9.5 21v-5h5v5"/></svg></span>Klassen</button>
+      <button class="mobile-nav__item" id="mnav-korrektur" onclick="showView('korrektur')"><span class="mobile-nav__icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.7 4.5L18 9.2l-4.3 1.7L12 15.4l-1.7-4.5L6 9.2l4.3-1.7Z"/><path d="M18.5 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8Z"/></svg></span>Korrektur</button>
+      <button class="mobile-nav__item" id="mnav-noten" onclick="showView('noten')"><span class="mobile-nav__icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="9" r="5.5"/><path d="M9 13.5L7.5 21l4.5-2.6L16.5 21 15 13.5"/></svg></span>Noten</button>
+      <button class="mobile-nav__item" id="mnav-mehr" onclick="showMobileMenu()"><span class="mobile-nav__icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="18" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span>Mehr</button>
     </div>
   </nav>
 
   <!-- FAB: Schnell Foto aufnehmen -->
-  <button class="fab" id="fab-foto" onclick="openFotoModal()" title="Prüfung fotografieren">&#128247;</button>
+  <button class="fab" id="fab-foto" onclick="openFotoModal()" title="Prüfung fotografieren"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h3l1 1.5H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg></button>
 
   <main class="main">
 
@@ -365,7 +367,7 @@
         <div class="stat-card"><div class="stat-card__num" id="stat-korrigiert">–</div><div class="stat-card__lbl">Korrigiert</div></div>
       </div>
       <div class="card">
-        <div class="card__title">&#128197; Nächste Prüfungen <span class="help-hint" tabindex="0" data-tip="Hier sehen Sie die nächsten Termine über alle Klassen hinweg."></span></div>
+        <div class="card__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 9h16M8 3v4M16 3v4"/></svg> Nächste Prüfungen <span class="help-hint" tabindex="0" data-tip="Hier sehen Sie die nächsten Termine über alle Klassen hinweg."></span></div>
         <div id="dashboard-pruefungen-list"><p style="color:var(--text-muted);font-size:.875rem">Keine anstehenden Prüfungen.</p></div>
       </div>
     </div>
@@ -405,7 +407,7 @@
           <select class="form-control" id="schueler-filter-klasse" style="width:auto" onchange="loadSchueler()" title="Liste nach Klasse filtern">
             <option value="">Alle Klassen</option>
           </select>
-          <button class="btn btn-secondary" onclick="openCsvImportModal()">&#128229; CSV-Import</button>
+          <button class="btn btn-secondary" onclick="openCsvImportModal()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10"/><path d="M8 11l4 4 4-4"/><path d="M5 19h14"/></svg> CSV-Import</button>
           <button class="btn btn-primary" onclick="openModal('schueler-modal')" title="Neuen Schüler erfassen">+ Neuer Schüler</button>
         </div>
       </div>
@@ -491,7 +493,7 @@
           <label class="form-label">Klasse</label>
           <select class="form-control" id="korrektur-klasse-select" onchange="loadKorrekturEintraege()"><option value="">– bitte wählen –</option></select>
         </div>
-        <button class="btn btn-success" id="btn-ki-alle" onclick="kiAlleKorrigieren()" title="Startet die KI-Korrektur für alle offenen Einträge in der Auswahl">&#129302; Alle KI-korrigieren</button>
+        <button class="btn btn-success" id="btn-ki-alle" onclick="kiAlleKorrigieren()" title="Startet die KI-Korrektur für alle offenen Einträge in der Auswahl"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.7 4.5L18 9.2l-4.3 1.7L12 15.4l-1.7-4.5L6 9.2l4.3-1.7Z"/><path d="M18.5 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8Z"/></svg> Alle KI-korrigieren</button>
       </div>
       <div id="korrektur-eintraege-list"></div>
     </div>
@@ -513,13 +515,13 @@
           <label class="form-label">Klasse</label>
           <select class="form-control" id="noten-klasse-select" onchange="loadNotenTabelle()"><option value="">– bitte wählen –</option></select>
         </div>
-        <button class="btn btn-secondary" onclick="exportNotenPDF()" title="Notenübersicht als PDF herunterladen">&#128196; Notenliste PDF</button>
-        <button class="btn btn-secondary" onclick="exportNotenCSV()" title="Noten als CSV für Excel herunterladen">&#128202; CSV-Export</button>
-        <button class="btn btn-secondary" onclick="exportSammelPDF()" title="Alle korrigierten Arbeiten als druckfertige Rückgabeblätter (ein PDF, eine Seite pro Schüler/in)">&#128209; Sammel-PDF Rückgabe</button>
+        <button class="btn btn-secondary" onclick="exportNotenPDF()" title="Notenübersicht als PDF herunterladen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-5-5Z"/></svg> Notenliste PDF</button>
+        <button class="btn btn-secondary" onclick="exportNotenCSV()" title="Noten als CSV für Excel herunterladen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"/><rect x="5" y="11" width="3.2" height="8" rx="1"/><rect x="10.4" y="6" width="3.2" height="13" rx="1"/><rect x="15.8" y="14" width="3.2" height="5" rx="1"/></svg> CSV-Export</button>
+        <button class="btn btn-secondary" onclick="exportSammelPDF()" title="Alle korrigierten Arbeiten als druckfertige Rückgabeblätter (ein PDF, eine Seite pro Schüler/in)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg> Sammel-PDF Rückgabe</button>
       </div>
       <div id="noten-tabelle-wrap"></div>
       <div id="noten-histogram-wrap" class="card hidden" style="margin-top:1rem">
-        <div class="card__title">&#128202; Notenverteilung <span class="help-hint" tabindex="0" data-tip="Balken zeigen, wie oft jede Note in der gewählten Prüfung vorkommt."></span></div>
+        <div class="card__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"/><rect x="5" y="11" width="3.2" height="8" rx="1"/><rect x="10.4" y="6" width="3.2" height="13" rx="1"/><rect x="15.8" y="14" width="3.2" height="5" rx="1"/></svg> Notenverteilung <span class="help-hint" tabindex="0" data-tip="Balken zeigen, wie oft jede Note in der gewählten Prüfung vorkommt."></span></div>
         <div id="noten-histogram"></div>
       </div>
     </div>
@@ -527,7 +529,7 @@
     <!-- Rubrics (Pro) -->
     <div id="view-rubrics" class="view">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
-        <h2 style="font-size:1.25rem;font-weight:700">&#128203; Bewertungsraster <span class="pro-badge">Pro</span></h2>
+        <h2 style="font-size:1.25rem;font-weight:700"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V5H9Z"/><path d="M9 11h6M9 15h6"/></svg> Bewertungsraster <span class="pro-badge">Pro</span></h2>
         <button class="btn btn-primary" id="btn-new-rubric" onclick="openRubricModal()">+ Neues Raster</button>
       </div>
       <div class="alert alert-info" style="margin-bottom:1rem">
@@ -540,7 +542,7 @@
 
     <!-- Analytik (Pro) -->
     <div id="view-analytik" class="view">
-      <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:1rem">&#128201; Analytik <span class="pro-badge">Pro</span></h2>
+      <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:1rem"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5l5.5 5.5 3.5-3.5L21 16"/><path d="M16 16h5v-5"/></svg> Analytik <span class="pro-badge">Pro</span></h2>
       <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;align-items:flex-end">
         <div style="flex:1;min-width:160px">
           <label class="form-label">Klasse</label>
@@ -555,7 +557,7 @@
     <!-- Hilfe -->
     <div id="view-hilfe" class="view">
       <div class="card">
-        <div class="card__title">&#10067; Hilfe &amp; Unterstützung</div>
+        <div class="card__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 1 1 3.6 2.5c-.8.5-1.2 1-1.2 1.9"/><circle cx="12" cy="17" r="0.7" fill="currentColor" stroke="none"/></svg> Hilfe &amp; Unterstützung</div>
         <p style="font-size:.875rem;color:var(--text-muted);margin-bottom:.85rem">
           Hier finden Sie schnelle Hilfe, rechtliche Informationen und den KI-Support-Chat.
         </p>
@@ -571,7 +573,7 @@
       </div>
 
       <div class="card">
-        <div class="card__title">&#129302; KI-Chatbot</div>
+        <div class="card__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.7 4.5L18 9.2l-4.3 1.7L12 15.4l-1.7-4.5L6 9.2l4.3-1.7Z"/><path d="M18.5 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8Z"/></svg> KI-Chatbot</div>
         <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.75rem">
           Stellen Sie Fragen zur Nutzung von PruefAI. Der Chatbot gibt allgemeine Hilfestellung (kein Rechtsrat). KI-Chat-Anfragen zählen als KI-Nutzung.
         </p>
@@ -678,7 +680,7 @@
       </div>
     </div>
     <div class="form-group" style="border:1px solid var(--primary,#0E7C66);border-radius:8px;padding:.85rem .9rem;background:rgba(14,124,102,.05)">
-      <label class="form-label" style="margin-bottom:.2rem">&#128193; Unterlagen für die KI-Korrektur</label>
+      <label class="form-label" style="margin-bottom:.2rem"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg> Unterlagen für die KI-Korrektur</label>
       <p class="form-hint" style="margin-bottom:.6rem">Laden Sie die <strong>Prüfungsvorlage</strong> hoch – die KI erkennt Aufgaben und Punkte automatisch (kein manuelles Eintippen nötig). Eine <strong>Musterlösung</strong> verbessert die Korrektur zusätzlich.</p>
       <div id="pruefung-unterlagen-content"></div>
     </div>
@@ -734,9 +736,9 @@
     <div class="modal__title" id="upload-modal-title">Prüfung hochladen</div>
     <button class="modal__close" onclick="closeModal('upload-modal')">&#10005;</button>
     <input type="hidden" id="upload-eintrag-id" />
-    <div class="alert alert-info" style="margin:0 0 .6rem;font-size:.8rem">&#128274; <strong>Datenschutz-Tipp:</strong> Decken Sie einen oben aufs Blatt geschriebenen Namen vor dem Foto ab (Post-it, Knick). Der Schülername wird in PruefAI ohnehin lokal verwaltet und nicht ans KI-Modell übertragen.</div>
+    <div class="alert alert-info" style="margin:0 0 .6rem;font-size:.8rem"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> <strong>Datenschutz-Tipp:</strong> Decken Sie einen oben aufs Blatt geschriebenen Namen vor dem Foto ab (Post-it, Knick). Der Schülername wird in PruefAI ohnehin lokal verwaltet und nicht ans KI-Modell übertragen.</div>
     <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
-      <div class="upload-zone__icon">&#128248;</div>
+      <div class="upload-zone__icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h3l1 1.5H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg></div>
       <div>Fotos / Scans hier ablegen oder klicken</div>
       <div style="font-size:.75rem;margin-top:.25rem;opacity:.8">JPG, PNG, WebP – mehrseitige Prüfungen möglich</div>
     </div>
@@ -744,9 +746,9 @@
     <input type="file" id="file-input" accept="image/*" multiple style="display:none" onchange="handleFileSelect(event)" />
     <!-- Camera capture (Mobile) -->
     <div style="margin-top:.75rem;display:flex;gap:.5rem;flex-wrap:wrap">
-      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('camera-input').click()" title="Direkt mit der Gerätekamera fotografieren">&#128247; Kamera</button>
-      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('file-input').click()" title="Bilder oder Scans aus Galerie/Dateien auswählen">&#128444;&#65039; Galerie / Datei</button>
-      <button class="btn btn-secondary btn-sm" onclick="openQrModal()" title="Upload vom Smartphone via QR-Code starten">&#128241; Mit Handy</button>
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('camera-input').click()" title="Direkt mit der Gerätekamera fotografieren"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h3l1 1.5H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg> Kamera</button>
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('file-input').click()" title="Bilder oder Scans aus Galerie/Dateien auswählen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 16l-5-5-7 7"/></svg> Galerie / Datei</button>
+      <button class="btn btn-secondary btn-sm" onclick="openQrModal()" title="Upload vom Smartphone via QR-Code starten"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/></svg> Mit Handy</button>
     </div>
     <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none" onchange="handleFileSelect(event)" />
     <div id="pages-preview" class="pages-grid"></div>
@@ -756,7 +758,7 @@
     </div>
     <div class="modal__footer">
       <button class="btn btn-secondary" onclick="closeModal('upload-modal')">Abbrechen</button>
-      <button class="btn btn-primary" onclick="uploadSeiten()" id="upload-btn">&#128228; Hochladen</button>
+      <button class="btn btn-primary" onclick="uploadSeiten()" id="upload-btn"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V5"/><path d="M8 9l4-4 4 4"/><path d="M5 19h14"/></svg> Hochladen</button>
     </div>
   </div>
 </div>
@@ -764,19 +766,19 @@
 <!-- KI-Ergebnis Modal -->
 <div id="ki-ergebnis-modal" class="modal-overlay hidden">
   <div class="modal" style="max-width:600px">
-    <div class="modal__title">&#129302; KI-Korrektur Ergebnis</div>
+    <div class="modal__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.7 4.5L18 9.2l-4.3 1.7L12 15.4l-1.7-4.5L6 9.2l4.3-1.7Z"/><path d="M18.5 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8Z"/></svg> KI-Korrektur Ergebnis</div>
     <button class="modal__close" onclick="closeModal('ki-ergebnis-modal')">&#10005;</button>
     <div id="ki-ergebnis-content"></div>
     <div id="ki-qualitaets-wrap" class="hidden" style="margin-top:.75rem">
       <div class="alert alert-warning">
         &#9888;&#65039; <strong>Grenzfall</strong> – Note liegt im Bereich 3.5–4.5. Qualitätsprüfung empfohlen.
-        <button class="btn btn-sm btn-secondary" style="margin-left:auto;display:block;margin-top:.5rem" onclick="runQualitaetsCheck()">&#128270; Qualitätscheck starten <span class="pro-badge">Pro</span></button>
+        <button class="btn btn-sm btn-secondary" style="margin-left:auto;display:block;margin-top:.5rem" onclick="runQualitaetsCheck()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg> Qualitätscheck starten <span class="pro-badge">Pro</span></button>
       </div>
       <div id="ki-qualitaets-result" class="hidden"></div>
     </div>
     <div class="modal__footer">
       <button class="btn btn-secondary" onclick="closeModal('ki-ergebnis-modal')">Schliessen</button>
-      <button class="btn btn-secondary" onclick="downloadKorrekturWord()">&#128196; Word herunterladen</button>
+      <button class="btn btn-secondary" onclick="downloadKorrekturWord()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-5-5Z"/></svg> Word herunterladen</button>
       <button class="btn btn-success" onclick="saveKiErgebnis()">&#10003; Bestätigen &amp; abschliessen</button>
     </div>
   </div>
@@ -785,7 +787,7 @@
 <!-- QR-Code Relay Modal -->
 <div id="qr-modal" class="modal-overlay hidden">
   <div class="modal" style="max-width:380px">
-    <div class="modal__title">&#128241; Mit Handy fotografieren</div>
+    <div class="modal__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/></svg> Mit Handy fotografieren</div>
     <button class="modal__close" onclick="closeQrModal()">&#10005;</button>
     <p id="qr-schueler-label" style="font-size:.875rem;color:var(--text-muted);margin-bottom:.5rem"></p>
     <div class="qr-canvas-wrap"><canvas id="qr-canvas"></canvas></div>
@@ -801,7 +803,7 @@
 <!-- Einstellungen Modal -->
 <div id="settings-modal" class="modal-overlay hidden">
   <div class="modal">
-    <div class="modal__title">&#9881;&#65039; Einstellungen</div>
+    <div class="modal__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg> Einstellungen</div>
     <button class="modal__close" onclick="closeModal('settings-modal')">&#10005;</button>
     <div class="form-group"><label class="form-label">Schulname</label><input type="text" id="settings-school-name" class="form-control" /></div>
     <div class="form-group">
@@ -819,30 +821,30 @@
     </div>
     <div class="form-group"><label class="form-label">Ihr Name (optional)</label><input type="text" id="settings-lehrer-name" class="form-control" placeholder="Vor- und Nachname" /></div>
     <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
-      <div class="form-label" style="margin-bottom:.75rem">&#128193; Lokaler Ordner für Ihre Daten</div>
+      <div class="form-label" style="margin-bottom:.75rem"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg> Lokaler Ordner für Ihre Daten</div>
       <div id="fs-settings-body" style="font-size:.875rem;color:var(--text-muted);line-height:1.55"></div>
     </div>
     <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
-      <div class="form-label" style="margin-bottom:.75rem">&#128260; Datensicherung (für Geräteübertragung)</div>
+      <div class="form-label" style="margin-bottom:.75rem"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-4.5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14 4.5L20 16"/><path d="M20 20v-4h-4"/></svg> Datensicherung (für Geräteübertragung)</div>
       <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-        <button class="btn btn-secondary" onclick="exportAllData()" title="Alle lokalen Daten in eine Datei exportieren">&#8659; Exportieren</button>
-        <label class="btn btn-secondary" style="cursor:pointer" title="Zuvor exportierte Daten wieder einlesen">&#8657; Importieren<input type="file" accept=".json" style="display:none" onchange="importAllData(this.files[0]);this.value=''" /></label>
+        <button class="btn btn-secondary" onclick="exportAllData()" title="Alle lokalen Daten in eine Datei exportieren"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12"/><path d="M7 12l5 5 5-5"/><path d="M5 20h14"/></svg> Exportieren</button>
+        <label class="btn btn-secondary" style="cursor:pointer" title="Zuvor exportierte Daten wieder einlesen"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V8"/><path d="M7 12l5-5 5 5"/><path d="M5 4h14"/></svg> Importieren<input type="file" accept=".json" style="display:none" onchange="importAllData(this.files[0]);this.value=''" /></label>
       </div>
       <p class="form-hint" style="margin-top:.5rem">Exportierte Datei per AirDrop, iCloud Drive o.ä. auf das andere Gerät übertragen und dort importieren.</p>
     </div>
     <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
-      <div class="form-label" style="margin-bottom:.75rem">&#128273; Lizenzschlüssel</div>
+      <div class="form-label" style="margin-bottom:.75rem"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="15" r="3.5"/><path d="M10.5 12.5L20 3"/><path d="M16 7l3 3"/><path d="M14 9l2.5 2.5"/></svg> Lizenzschlüssel</div>
       <input type="text" id="settings-license-key" class="form-control" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" style="font-family:monospace;font-size:.8rem" />
       <div id="license-info" style="margin-top:.75rem;font-size:.8rem;color:var(--text-muted)">Lizenz wird geprüft...</div>
       <a href="#" onclick="openStripePortal();return false;" style="font-size:.8rem;margin-top:.5rem;display:inline-block">Abo verwalten &#8594;</a>
     </div>
     <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
-      <div class="form-label" style="margin-bottom:.5rem">&#127979; Schulcode (nur für bestehende Schul-Lizenzen)</div>
+      <div class="form-label" style="margin-bottom:.5rem"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M9.5 21v-5h5v5"/></svg> Schulcode (nur für bestehende Schul-Lizenzen)</div>
       <input type="text" id="settings-schul-code" class="form-control" placeholder="SCHULE-XXXXXX" style="font-family:monospace;font-size:.8rem;text-transform:uppercase" />
       <p class="form-hint" style="margin-top:.4rem">Nur für bestehende Teams mit Schulcode. Neue Abos sind auf Einzelpersonen ausgerichtet.</p>
     </div>
     <div style="border-top:1px solid var(--border);margin:1.25rem 0;padding-top:1.25rem">
-      <div class="form-label" style="margin-bottom:.5rem">&#128172; Feedback-Textbausteine <span class="pro-badge">Pro</span></div>
+      <div class="form-label" style="margin-bottom:.5rem"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9l-4 4V5Z"/></svg> Feedback-Textbausteine <span class="pro-badge">Pro</span></div>
       <p class="form-hint" style="margin-bottom:.65rem">Häufige Rückmeldungen als 1-Klick-Bausteine speichern.</p>
       <div id="textbausteine-settings-list"></div>
       <div style="display:flex;gap:.5rem;margin-top:.65rem">
@@ -863,7 +865,7 @@
 <!-- Onboarding: lokalen Ordner wählen (File System Access API) -->
 <div id="fs-onboarding-modal" class="modal-overlay hidden">
   <div class="modal" style="max-width:560px">
-    <div class="modal__title">&#128193; Daten lokal in einem Ordner ablegen</div>
+    <div class="modal__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg> Daten lokal in einem Ordner ablegen</div>
     <div id="fs-onboarding-body" style="font-size:.9rem;line-height:1.6"></div>
   </div>
 </div>
@@ -871,7 +873,7 @@
 <!-- Rechtsgrundlage-Bestätigung (einmalig, bei erster Schüler-/Korrekturansicht) -->
 <div id="rechtsgrundlage-modal" class="modal-overlay hidden">
   <div class="modal" style="max-width:540px">
-    <div class="modal__title">&#128274; Datenschutz – Ihre Verantwortung als Lehrperson</div>
+    <div class="modal__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Datenschutz – Ihre Verantwortung als Lehrperson</div>
     <p style="color:var(--text-muted);margin-bottom:1rem;font-size:.9rem;line-height:1.6">PruefAI verarbeitet Schülerdaten <strong>in Ihrem Auftrag</strong>. Als Lehrperson bzw. Schule sind Sie rechtlich für die Grundlage dieser Verarbeitung verantwortlich. Bitte bestätigen Sie einmalig:</p>
     <label style="display:flex;align-items:flex-start;gap:.6rem;margin-bottom:.7rem;font-size:.875rem;cursor:pointer">
       <input type="checkbox" id="rechtsgrundlage-check-1" style="margin-top:.25rem;flex-shrink:0" onchange="updateRechtsgrundlageButton()" />
@@ -915,7 +917,7 @@
 <!-- Upsell Modal (shown when trial limit is reached) -->
 <div id="upsell-modal" class="modal-overlay hidden">
   <div class="modal" style="max-width:560px">
-    <div class="modal__title">&#11088; Gratis-Kontingent aufgebraucht</div>
+    <div class="modal__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8L3.5 9.7l5.9-.9Z"/></svg> Gratis-Kontingent aufgebraucht</div>
     <button class="modal__close" onclick="closeModal('upsell-modal')">&#10005;</button>
     <p style="color:var(--text-muted);margin-bottom:1.25rem;font-size:.9rem">
       Wählen Sie einen Plan, um weiterhin KI-Korrekturen zu nutzen. Monatlich kündbar.
@@ -928,7 +930,7 @@
         <a href="/api/stripe-checkout?plan=starter" class="btn btn-secondary btn-sm" style="display:block;text-align:center">Wählen</a>
       </div>
       <div class="upsell-plan upsell-plan--popular">
-        <div class="upsell-plan__name">&#11088; Pro</div>
+        <div class="upsell-plan__name"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9 6.8 19.6l1-5.8L3.5 9.7l5.9-.9Z"/></svg> Pro</div>
         <div class="upsell-plan__price"><sup style="font-size:.75rem;font-weight:600">CHF</sup>19<span style="font-size:.8rem;font-weight:400;color:var(--text-muted)">/Mt</span></div>
         <div class="upsell-plan__desc">300 Korrekturen</div>
         <a href="/api/stripe-checkout?plan=pro" class="btn btn-primary btn-sm" style="display:block;text-align:center">Wählen</a>
@@ -949,26 +951,26 @@
 <!-- Onboarding Wizard (shown after first license key activation) -->
 <div id="onboarding-modal" class="modal-overlay hidden">
   <div class="modal" style="max-width:460px">
-    <div class="modal__title">&#127881; Lizenz aktiviert – Los geht's!</div>
+    <div class="modal__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20l5-13 8 8-13 5Z"/><path d="M14 6l1.5-1.5M18 8l2-1M17 12h2.5"/></svg> Lizenz aktiviert – Los geht's!</div>
     <button class="modal__close" onclick="closeModal('onboarding-modal')">&#10005;</button>
     <p style="color:var(--text-muted);margin-bottom:1.25rem;font-size:.9rem">
       Ihr Plan ist aktiv. So starten Sie in 4 einfachen Schritten:
     </p>
     <div class="onboarding-step">
       <div class="onboarding-num">1</div>
-      <div><strong>Schulname setzen</strong> – in &#9881;&#65039; Einstellungen oben rechts</div>
+      <div><strong>Schulname setzen</strong> – in <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg> Einstellungen oben rechts</div>
     </div>
     <div class="onboarding-step">
       <div class="onboarding-num">2</div>
-      <div><strong>Erste Klasse anlegen</strong> – Tab «&#127979; Klassen» &#8594; «+ Neue Klasse»</div>
+      <div><strong>Erste Klasse anlegen</strong> – Tab «<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V9l7-4 7 4v12"/><path d="M9.5 21v-5h5v5"/></svg> Klassen» &#8594; «+ Neue Klasse»</div>
     </div>
     <div class="onboarding-step">
       <div class="onboarding-num">3</div>
-      <div><strong>Prüfung erstellen</strong> – Tab «&#128221; Prüfungen» &#8594; «+ Neue Prüfung»</div>
+      <div><strong>Prüfung erstellen</strong> – Tab «<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M8.5 13h7M8.5 17h5"/></svg> Prüfungen» &#8594; «+ Neue Prüfung»</div>
     </div>
     <div class="onboarding-step">
       <div class="onboarding-num">4</div>
-      <div><strong>KI-Korrektur starten</strong> – Tab «&#129302; Korrektur» &#8594; Fotos hochladen &#8594; KI-korrigieren</div>
+      <div><strong>KI-Korrektur starten</strong> – Tab «<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.7 4.5L18 9.2l-4.3 1.7L12 15.4l-1.7-4.5L6 9.2l4.3-1.7Z"/><path d="M18.5 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8Z"/></svg> Korrektur» &#8594; Fotos hochladen &#8594; KI-korrigieren</div>
     </div>
     <div class="modal__footer">
       <button class="btn btn-primary" onclick="closeModal('onboarding-modal')">Los geht's! &#8594;</button>
@@ -979,15 +981,15 @@
 
 <div id="mobile-menu-modal" class="modal-overlay hidden">
   <div class="modal" style="max-width:360px">
-    <div class="modal__title">&#8942; Weitere Funktionen</div>
+    <div class="modal__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="18" r="1.4" fill="currentColor" stroke="none"/></svg> Weitere Funktionen</div>
     <button class="modal__close" onclick="closeModal('mobile-menu-modal')">&#10005;</button>
     <div style="display:flex;flex-direction:column;gap:.5rem">
-      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('schueler')">&#128101; Schüler</button>
-      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('faecher')">&#128218; Fächer</button>
-      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('pruefungen')">&#128221; Prüfungen</button>
-      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('rubrics')">&#128203; Rubrics <span class="pro-badge">Pro</span></button>
-      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('analytik')">&#128201; Analytik <span class="pro-badge">Pro</span></button>
-      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('hilfe')">&#10067; Hilfe</button>
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('schueler')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 20a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6"/><path d="M18 20a5.5 5.5 0 0 0-2.5-4.6"/></svg> Schüler</button>
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('faecher')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5Z"/><path d="M5 19.5A1.5 1.5 0 0 1 6.5 18H19"/></svg> Fächer</button>
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('pruefungen')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M8.5 13h7M8.5 17h5"/></svg> Prüfungen</button>
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('rubrics')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V5H9Z"/><path d="M9 11h6M9 15h6"/></svg> Rubrics <span class="pro-badge">Pro</span></button>
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('analytik')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5l5.5 5.5 3.5-3.5L21 16"/><path d="M16 16h5v-5"/></svg> Analytik <span class="pro-badge">Pro</span></button>
+      <button class="btn btn-secondary" style="justify-content:flex-start" onclick="closeModal('mobile-menu-modal');showView('hilfe')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.2a2.5 2.5 0 1 1 3.6 2.5c-.8.5-1.2 1-1.2 1.9"/><circle cx="12" cy="17" r="0.7" fill="currentColor" stroke="none"/></svg> Hilfe</button>
     </div>
   </div>
 </div>
@@ -1017,7 +1019,7 @@
 <!-- CSV-Import Modal -->
 <div id="csv-import-modal" class="modal-overlay hidden">
   <div class="modal" style="max-width:620px">
-    <div class="modal__title">&#128229; Schüler per CSV importieren</div>
+    <div class="modal__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10"/><path d="M8 11l4 4 4-4"/><path d="M5 19h14"/></svg> Schüler per CSV importieren</div>
     <button class="modal__close" onclick="closeModal('csv-import-modal')">&#10005;</button>
     <div class="alert alert-info" style="margin-bottom:1rem">
       CSV-Format: <strong>Name;Schülernummer;Klassenname</strong> (1 Schüler pro Zeile, erste Zeile wird als Kopfzeile ignoriert, wenn sie kein Semikolon enthält).
@@ -1029,7 +1031,7 @@
     <div class="form-group">
       <label class="form-label">CSV-Datei *</label>
       <div class="upload-zone" onclick="document.getElementById('csv-file-input').click()">
-        <div class="upload-zone__icon">&#128229;</div>
+        <div class="upload-zone__icon"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10"/><path d="M8 11l4 4 4-4"/><path d="M5 19h14"/></svg></div>
         <div id="csv-file-name">CSV-Datei auswählen…</div>
         <div style="font-size:.75rem;margin-top:.25rem;opacity:.8">.csv oder .txt – Trennzeichen: Semikolon (;)</div>
       </div>
@@ -1047,7 +1049,7 @@
     </div>
     <div class="modal__footer">
       <button class="btn btn-secondary" onclick="closeModal('csv-import-modal')">Abbrechen</button>
-      <button class="btn btn-primary" id="csv-import-btn" onclick="doImportSchueler()" disabled>&#128229; Importieren</button>
+      <button class="btn btn-primary" id="csv-import-btn" onclick="doImportSchueler()" disabled><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v10"/><path d="M8 11l4 4 4-4"/><path d="M5 19h14"/></svg> Importieren</button>
     </div>
   </div>
 </div>
@@ -1180,7 +1182,7 @@ function isPro() {
 
 function requirePro(featureName) {
   if (isPro()) return true;
-  showToast('&#128274; ' + featureName + ' ist nur im Pro- oder Max-Plan verfügbar.', 'info');
+  showToast(featureName + ' ist nur im Pro- oder Max-Plan verfügbar.', 'info');
   document.getElementById('upsell-modal').classList.remove('hidden');
   return false;
 }
@@ -1673,17 +1675,18 @@ async function fsHydrateBlobsRecursive(dirHandle, prefix) {
 }
 
 // FS-UI: Onboarding-Modal, Header-Badge, Settings-Sektion
+const FS_ICON_SVG = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>';
 function updateFsStatusBadge() {
   const btn = document.getElementById('fs-status-btn');
   if (!btn) return;
   if (fsConnected()) {
     btn.style.display = 'inline-flex';
     btn.title = 'Daten werden in Ordner „' + fsFolderName() + '" gespiegelt';
-    btn.innerHTML = '&#128193;';
+    btn.innerHTML = FS_ICON_SVG;
   } else if (FS_SUPPORTED) {
     btn.style.display = 'inline-flex';
     btn.title = 'Lokaler Ordner nicht verbunden – klicken zum Verbinden';
-    btn.innerHTML = '&#128193;';
+    btn.innerHTML = FS_ICON_SVG;
     btn.style.opacity = '0.4';
   } else {
     btn.style.display = 'none';
@@ -1719,7 +1722,7 @@ function showFsOnboarding() {
       '<p style="font-size:.8rem;color:var(--text-muted)">Pro Sitzung müssen Sie den Zugriff einmal bestätigen — danach läuft die Synchronisation im Hintergrund.</p>' +
       '<div class="modal__footer">' +
         '<button class="btn btn-secondary" onclick="closeFsOnboarding(true)">Später</button>' +
-        '<button class="btn btn-primary" onclick="fsOnboardingPick()">&#128193; Ordner wählen</button>' +
+        '<button class="btn btn-primary" onclick="fsOnboardingPick()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg> Ordner wählen</button>' +
       '</div>';
   } else {
     body.innerHTML =
@@ -1772,13 +1775,13 @@ function renderFsSettings() {
       '<p style="margin:0 0 .5rem">&#10003; <strong>Verbunden:</strong> ' + escHtml(fsFolderName()) + '</p>' +
       '<p style="margin:0 0 .6rem">Alle Änderungen werden automatisch in diesen Ordner gespiegelt — als JSON-Dateien (Klassen, Schüler, Prüfungen) und als reguläre Bild-/PDF-Dateien (Prüfungsfotos, Lernunterlagen).</p>' +
       '<div style="display:flex;gap:.5rem;flex-wrap:wrap">' +
-        '<button class="btn btn-secondary btn-sm" onclick="fsManualResync()">&#128260; Jetzt komplett sichern</button>' +
+        '<button class="btn btn-secondary btn-sm" onclick="fsManualResync()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14-4.5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14 4.5L20 16"/><path d="M20 20v-4h-4"/></svg> Jetzt komplett sichern</button>' +
         '<button class="btn btn-secondary btn-sm" onclick="fsDisconnectClick()">&#10005; Verbindung lösen</button>' +
       '</div>';
   } else {
     el.innerHTML =
       '<p style="margin:0 0 .5rem">Noch kein Ordner verbunden. Daten liegen aktuell nur in der browsereigenen Datenbank.</p>' +
-      '<button class="btn btn-primary btn-sm" onclick="showFsOnboarding()">&#128193; Ordner wählen</button>';
+      '<button class="btn btn-primary btn-sm" onclick="showFsOnboarding()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg> Ordner wählen</button>';
   }
 }
 async function fsManualResync() {
@@ -2011,7 +2014,7 @@ async function loadKlassen() {
         (isBerufsschule ? '<td>' + escHtml(k.beruf) + '</td><td>' + lehrjahrText + '</td>' : '') +
         '<td>' + escHtml(k.schuljahr) + '</td><td>' + cnt + '</td><td>' +
         '<button class="btn btn-sm btn-secondary" onclick="editKlasse(\'' + k.id + '\')">&#9998;</button> ' +
-        '<button class="btn btn-sm btn-danger" onclick="deleteKlasse(\'' + k.id + '\')">&#128465;</button></td></tr>';
+        '<button class="btn btn-sm btn-danger" onclick="deleteKlasse(\'' + k.id + '\')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M10 11v6M14 11v6"/></svg></button></td></tr>';
     }).join('');
   } catch(e) { showToast(e.message, 'error'); }
 }
@@ -2125,7 +2128,7 @@ async function loadSchueler() {
     tbody.innerHTML = view.map(function(s) {
       return '<tr><td><strong>' + escHtml(s.name) + '</strong></td><td>' + escHtml(s.nummer || '–') + '</td><td>' + escHtml(km[s.klasse_id] || '–') + '</td><td>' +
       '<button class="btn btn-sm btn-secondary" onclick="editSchueler(\'' + s.id + '\')">&#9998;</button> ' +
-      '<button class="btn btn-sm btn-danger" onclick="deleteSchueler(\'' + s.id + '\')">&#128465;</button></td></tr>';
+      '<button class="btn btn-sm btn-danger" onclick="deleteSchueler(\'' + s.id + '\')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M10 11v6M14 11v6"/></svg></button></td></tr>';
     }).join('');
   } catch(e) { showToast(e.message, 'error'); }
 }
@@ -2177,7 +2180,7 @@ async function loadFaecher() {
       const profilCell = f.ki_profil ? '<span class="badge badge-blue">' + escHtml(profilLabels[f.ki_profil] || f.ki_profil) + '</span>' : '<span style="color:var(--text-muted);font-size:.8rem">Standard</span>';
       return '<tr><td><strong>' + escHtml(f.name) + '</strong></td><td><span class="badge badge-blue">' + escHtml(f.kuerzel) + '</span></td><td>' + profilCell + '</td><td>' +
       '<button class="btn btn-sm btn-secondary" onclick="editFach(\'' + f.id + '\')">&#9998;</button> ' +
-      '<button class="btn btn-sm btn-danger" onclick="deleteFach(\'' + f.id + '\')">&#128465;</button></td></tr>';
+      '<button class="btn btn-sm btn-danger" onclick="deleteFach(\'' + f.id + '\')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M10 11v6M14 11v6"/></svg></button></td></tr>';
     }).join('');
   } catch(e) { showToast(e.message, 'error'); }
 }
@@ -2269,8 +2272,8 @@ async function loadPruefungen() {
         '<td><small>' + escHtml(kNames || '–') + '</small></td>' +
         '<td>' + unterlagenBadges(docsByP[p.id] || []) + '</td><td>' +
         '<button class="btn btn-sm btn-secondary" onclick="editPruefung(\'' + p.id + '\')">&#9998;</button> ' +
-        '<button class="btn btn-sm btn-success" onclick="erstelleEintraege(\'' + p.id + '\')">&#128203; Einträge</button> ' +
-        '<button class="btn btn-sm btn-danger" onclick="deletePruefung(\'' + p.id + '\')">&#128465;</button></td></tr>';
+        '<button class="btn btn-sm btn-success" onclick="erstelleEintraege(\'' + p.id + '\')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V5H9Z"/><path d="M9 11h6M9 15h6"/></svg> Einträge</button> ' +
+        '<button class="btn btn-sm btn-danger" onclick="deletePruefung(\'' + p.id + '\')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M10 11v6M14 11v6"/></svg></button></td></tr>';
     }).join('');
   } catch(e) { showToast(e.message, 'error'); }
 }
@@ -2406,9 +2409,9 @@ function dokumentTyp(m) {
 }
 
 function dokIcon(m) {
-  if (m && m.mime_type && m.mime_type.includes('pdf')) return '&#128196;';
-  if (m && m.mime_type && m.mime_type.startsWith('image/')) return '&#128444;&#65039;';
-  return '&#128196;';
+  if (m && m.mime_type && m.mime_type.includes('pdf')) return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-5-5Z"/></svg>';
+  if (m && m.mime_type && m.mime_type.startsWith('image/')) return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M21 16l-5-5-7 7"/></svg>';
+  return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-5-5Z"/></svg>';
 }
 
 // Rendert die Unterlagen-Checkliste im Prüfungs-Dialog.
@@ -2453,12 +2456,12 @@ async function renderPruefungUnterlagen(pruefungId) {
         '<span>' + dokIcon(m) + '</span>' +
         '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(m.bezeichnung || m.dateiname || 'Datei') +
         (m.groesse_bytes ? ' <span style="color:var(--text-muted)">· ' + formatBytes(m.groesse_bytes) + '</span>' : '') + '</span>' +
-        '<button type="button" class="btn btn-sm btn-danger" onclick="deletePruefungDoc(\'' + m.id + '\')">&#128465;</button>' +
+        '<button type="button" class="btn btn-sm btn-danger" onclick="deletePruefungDoc(\'' + m.id + '\')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M10 11v6M14 11v6"/></svg></button>' +
         '</div>';
     });
     if (dt.typ === 'vorlagenpruefung') {
       if (vorhanden) {
-        html += '<button type="button" class="btn btn-sm btn-primary" style="margin-top:.4rem" onclick="analysiereVorlagenpruefung()">&#129302; Punkteschema analysieren</button>';
+        html += '<button type="button" class="btn btn-sm btn-primary" style="margin-top:.4rem" onclick="analysiereVorlagenpruefung()"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.7 4.5L18 9.2l-4.3 1.7L12 15.4l-1.7-4.5L6 9.2l4.3-1.7Z"/><path d="M18.5 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8Z"/></svg> Punkteschema analysieren</button>';
       }
       if (schema) html += renderPunkteschemaInfo(schema);
     }
@@ -2471,7 +2474,7 @@ async function renderPruefungUnterlagen(pruefungId) {
 function renderPunkteschemaInfo(schema) {
   if (!schema) return '';
   let h = '<div class="alert alert-info" style="margin:.5rem 0 0;font-size:.8rem">' +
-    '<strong>&#128202; Punkteschema (aus Vorlagenprüfung)</strong><br>' +
+    '<strong><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"/><rect x="5" y="11" width="3.2" height="8" rx="1"/><rect x="10.4" y="6" width="3.2" height="13" rx="1"/><rect x="15.8" y="14" width="3.2" height="5" rx="1"/></svg> Punkteschema (aus Vorlagenprüfung)</strong><br>' +
     'Max. Punkte: <strong>' + (schema.max_punkte != null ? schema.max_punkte : '?') + '</strong>';
   if (Array.isArray(schema.aufgaben) && schema.aufgaben.length) {
     h += '<ul style="margin:.35rem 0 0;padding-left:1.1rem">';
@@ -2696,7 +2699,7 @@ async function loadKorrekturEintraege() {
     const seitenCount = {};
     (alleSeiten || []).forEach(function(su) { seitenCount[su.eintrag_id] = (seitenCount[su.eintrag_id] || 0) + 1; });
     if (!schueler.length) { el.innerHTML = '<div class="alert alert-warning">Keine Schüler in dieser Klasse.</div>'; return; }
-    el.innerHTML = '<div class="card"><div class="card__title">&#128221; Einträge (' + schueler.length + ' Schüler)</div>' +
+    el.innerHTML = '<div class="card"><div class="card__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M8.5 13h7M8.5 17h5"/></svg> Einträge (' + schueler.length + ' Schüler)</div>' +
       '<div class="table-wrap"><table><thead><tr><th>Schüler</th><th>Status</th><th>Seiten</th><th>Note</th><th>Aktionen</th></tr></thead><tbody>' +
       schueler.map(function(s) {
         const e = eMap[s.id];
@@ -2710,9 +2713,9 @@ async function loadKorrekturEintraege() {
         return '<tr><td><strong>' + escHtml(s.name) + '</strong>' + (s.nummer ? '<br><small>' + escHtml(s.nummer) + '</small>' : '') + '</td>' +
           '<td><span class="badge ' + statusBadge(status) + '">' + escHtml(status) + '</span></td>' +
           '<td>' + anzSeiten + '</td><td>' + note + '</td><td>' +
-          '<button class="btn btn-sm btn-secondary" onclick="openUploadForSchueler(\'' + safePruefungId + '\', \'' + safeSchuelerId + '\', \'' + safeName + '\')">&#128248; Upload</button> ' +
-          (e ? '<button class="btn btn-sm btn-primary" data-ki="' + e.id + '" onclick="kiKorrigieren(\'' + e.id + '\')"' + (keineSeiten ? ' disabled title="Zuerst Seiten hochladen"' : '') + '>&#129302; KI</button> ' +
-               (e.ergebnis ? '<button class="btn btn-sm btn-secondary" onclick="reviewKorrektur(\'' + e.id + '\')">&#128221; Prüfen</button> ' : '') +
+          '<button class="btn btn-sm btn-secondary" onclick="openUploadForSchueler(\'' + safePruefungId + '\', \'' + safeSchuelerId + '\', \'' + safeName + '\')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.5h3l1 1.5H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><circle cx="12" cy="12.5" r="3.2"/></svg> Upload</button> ' +
+          (e ? '<button class="btn btn-sm btn-primary" data-ki="' + e.id + '" onclick="kiKorrigieren(\'' + e.id + '\')"' + (keineSeiten ? ' disabled title="Zuerst Seiten hochladen"' : '') + '><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.7 4.5L18 9.2l-4.3 1.7L12 15.4l-1.7-4.5L6 9.2l4.3-1.7Z"/><path d="M18.5 14l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8Z"/></svg> KI</button> ' +
+               (e.ergebnis ? '<button class="btn btn-sm btn-secondary" onclick="reviewKorrektur(\'' + e.id + '\')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M8.5 13h7M8.5 17h5"/></svg> Prüfen</button> ' : '') +
                '<button class="btn btn-sm btn-secondary" onclick="noteManuelleingabe(\'' + e.id + '\')">&#9998; Note</button>'
             : '<span style="color:var(--text-muted);font-size:.8rem">Eintrag wird beim Upload erstellt</span>') + '</td></tr>';
       }).join('') + '</tbody></table></div></div>';
@@ -4312,7 +4315,7 @@ async function checkLicenseInfo(key, schulCode) {
       el.innerHTML = '&#10003;&#65039; Aktiv – Plan: <strong>' + d.plan + '</strong> | Korrekturen: ' + d.corrections_this_month + ' / ' + (d.limit >= 99999 ? '&#8734;' : d.limit);
     } else {
       localStorage.removeItem('lernortai_plan');
-      el.innerHTML = '&#10060; Ungültig oder abgelaufen. <a href="/">Plan wählen &#8594;</a>';
+      el.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M15 9l-6 6M9 9l6 6"/></svg> Ungültig oder abgelaufen. <a href="/">Plan wählen &#8594;</a>';
     }
   } catch(e) { /* ignore */ }
 }
@@ -4505,11 +4508,11 @@ async function loadRubrics() {
       const totalPts = kriterien.reduce(function(s, k) { return s + (k.max_punkte || 0); }, 0);
       return '<div class="card" style="margin-bottom:.75rem">' +
         '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem">' +
-        '<div><div class="card__title" style="margin-bottom:.25rem">&#128203; ' + escHtml(r.name) + '</div>' +
+        '<div><div class="card__title" style="margin-bottom:.25rem"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V5H9Z"/><path d="M9 11h6M9 15h6"/></svg> ' + escHtml(r.name) + '</div>' +
         '<div style="font-size:.8rem;color:var(--text-muted)">' + (r.fach_id && fm[r.fach_id] ? escHtml(fm[r.fach_id]) + ' · ' : '') + kriterien.length + ' Kriterien · ' + totalPts + ' Punkte total</div></div>' +
         '<div style="display:flex;gap:.5rem">' +
         '<button class="btn btn-sm btn-secondary" onclick="editRubric(\'' + r.id + '\')">&#9998;</button> ' +
-        '<button class="btn btn-sm btn-danger" onclick="deleteRubric(\'' + r.id + '\')">&#128465;</button></div></div>' +
+        '<button class="btn btn-sm btn-danger" onclick="deleteRubric(\'' + r.id + '\')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M10 11v6M14 11v6"/></svg></button></div></div>' +
         (kriterien.length ? '<div>' + kriterien.map(function(k) {
           return '<div class="rubric-kriterium"><span class="rubric-kriterium__name">' + escHtml(k.name) + (k.beschreibung ? '<span style="font-size:.75rem;color:var(--text-muted);display:block">' + escHtml(k.beschreibung) + '</span>' : '') + '</span><span class="rubric-kriterium__pts">' + k.max_punkte + ' Pkt</span></div>';
         }).join('') + '</div>' : '') + '</div>';
@@ -4647,7 +4650,7 @@ async function runQualitaetsCheck() {
     wrap.classList.remove('hidden');
     showToast('Qualitätscheck abgeschlossen.', 'success');
   } catch(e) { showToast('Qualitätscheck-Fehler: ' + e.message, 'error'); }
-  finally { if (btn) { btn.disabled = false; btn.innerHTML = '&#128270; Qualitätscheck starten <span class="pro-badge">Pro</span>'; } }
+  finally { if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg> Qualitätscheck starten <span class="pro-badge">Pro</span>'; } }
 }
 
 // =============================================================
@@ -4734,7 +4737,7 @@ async function loadTextbausteineSettings() {
     const el = document.getElementById('textbausteine-settings-list');
     if (!rows.length) { el.innerHTML = '<p style="color:var(--text-muted);font-size:.8rem">Noch keine Textbausteine definiert.</p>'; return; }
     el.innerHTML = rows.map(function(t) {
-      return '<div class="textbaustein-list-item"><span class="textbaustein-list-item__text">' + escHtml(t.text) + '</span><button class="btn btn-sm btn-danger" onclick="deleteTextbaustein(\'' + t.id + '\')">&#128465;</button></div>';
+      return '<div class="textbaustein-list-item"><span class="textbaustein-list-item__text">' + escHtml(t.text) + '</span><button class="btn btn-sm btn-danger" onclick="deleteTextbaustein(\'' + t.id + '\')"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/><path d="M10 11v6M14 11v6"/></svg></button></div>';
     }).join('');
   } catch(e) { /* ignore */ }
 }
@@ -4764,12 +4767,12 @@ async function renderTextbausteineChips() {
   const el = document.getElementById('textbausteine-chips');
   if (!el) return;
   if (!isPro()) {
-    el.innerHTML = '<span style="font-size:.75rem;color:var(--text-muted)">&#128274; Textbausteine – nur im Pro-Plan verfügbar</span>';
+    el.innerHTML = '<span style="font-size:.75rem;color:var(--text-muted)"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg> Textbausteine – nur im Pro-Plan verfügbar</span>';
     return;
   }
   try {
     const rows = await sb.select('textbausteine');
-    if (!rows.length) { el.innerHTML = '<span style="font-size:.75rem;color:var(--text-muted)">Keine Textbausteine. Erstellen Sie welche unter &#9881;&#65039; Einstellungen.</span>'; return; }
+    if (!rows.length) { el.innerHTML = '<span style="font-size:.75rem;color:var(--text-muted)">Keine Textbausteine. Erstellen Sie welche unter <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg> Einstellungen.</span>'; return; }
     el.innerHTML = rows.map(function(t) {
       return '<button class="textbaustein-chip" onclick="insertTextbaustein(\'' + jsAttr(t.text) + '\')">' + escHtml(t.text) + '</button>';
     }).join('');
@@ -4834,7 +4837,7 @@ function renderAnalytikContent(trendData, errorKeywords, schueler, eintraege, re
   let html = '';
   // Trend chart
   html += '<div class="card" style="margin-bottom:1rem">';
-  html += '<div class="card__title">&#128200; Notenentwicklung (' + trendData.length + ' Prüfungen)</div>';
+  html += '<div class="card__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 16.5l5.5-5.5 3.5 3.5L21 6"/><path d="M16 6h5v5"/></svg> Notenentwicklung (' + trendData.length + ' Prüfungen)</div>';
   if (!trendData.length) {
     html += '<p style="color:var(--text-muted);font-size:.875rem">Noch keine Prüfungsdaten vorhanden.</p>';
   } else {
@@ -4869,7 +4872,7 @@ function renderAnalytikContent(trendData, errorKeywords, schueler, eintraege, re
   html += '</div>';
   // Error catalog
   html += '<div class="card">';
-  html += '<div class="card__title">&#128270; Fehlerkatalog – häufige KI-Rückmeldungen</div>';
+  html += '<div class="card__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg> Fehlerkatalog – häufige KI-Rückmeldungen</div>';
   if (!errorKeywords.length) {
     html += '<p style="color:var(--text-muted);font-size:.875rem">Noch keine KI-Korrekturen vorhanden für diese Klasse.</p>';
   } else {
@@ -4907,7 +4910,7 @@ function renderJahresuebersicht(schueler, eintraege, relevantPruefungen) {
   const hasHj2 = hj2Exams.length > 0;
 
   let html = '<div class="card" style="margin-top:1rem">';
-  html += '<div class="card__title">&#128203; Jahresübersicht pro Schüler/in <span class="pro-badge">Pro</span></div>';
+  html += '<div class="card__title"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V5H9Z"/><path d="M9 11h6M9 15h6"/></svg> Jahresübersicht pro Schüler/in <span class="pro-badge">Pro</span></div>';
   html += '<p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.75rem">Noten über das gesamte Schuljahr, Halbjahresdurchschnitt und vorgeschlagene Zeugnisnote (gerundet auf 0.5)</p>';
   html += '<div class="table-wrap"><table><thead><tr>';
   html += '<th>Name</th>';
