@@ -9,6 +9,8 @@ const PLAN_LABELS = {
   schule: 'Schule (individuelles Kontingent)',
 };
 
+const VALID_PLANS = new Set(['starter', 'pro', 'max', 'schule']);
+
 const MAX_PAYMENT_FAILURES = 3;
 
 function generateSchulCode() {
@@ -180,7 +182,8 @@ export default async function handler(req, res) {
       const session = event.data.object;
       const customerId = session.customer;
       const customerEmail = session.customer_details?.email || session.customer_email || '';
-      const plan = session.metadata?.plan || 'starter';
+      const rawPlan = session.metadata?.plan || 'starter';
+      const plan = VALID_PLANS.has(rawPlan) ? rawPlan : 'starter';
       const sessionId = session.id || '';
 
       // Idempotency: Stripe may deliver the same event multiple times. Without
@@ -239,11 +242,11 @@ export default async function handler(req, res) {
           priceData.product?.metadata?.plan ||
           null;
 
-        if (newPlan) {
+        if (newPlan && VALID_PLANS.has(newPlan)) {
           await updateCustomerMetadata(stripeKey, customerId, { plan: newPlan });
           console.log(`Subscription updated: customer=${customerId}, newPlan=${newPlan}`);
         } else {
-          console.warn(`Subscription updated for customer=${customerId} but no plan metadata found on price ${priceId}`);
+          console.warn(`Subscription updated for customer=${customerId} but no valid plan metadata found on price ${priceId} (got: ${newPlan})`);
         }
       }
     } else if (event.type === 'customer.subscription.deleted') {

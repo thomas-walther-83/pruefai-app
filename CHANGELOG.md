@@ -8,6 +8,27 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 
 ## [Unveröffentlicht]
 
+### Sicherheit / Behoben
+- **Doppelklick-Schutz für KI-Korrektur**: Einzel- und Batch-Korrektur sind jetzt
+  gegen parallele/doppelte Auslösung gesichert (In-Flight-Guard) – verhindert doppelte
+  API-Calls und damit doppelte Kosten/Verbrauch. Buttons zeigen währenddessen einen
+  Lade-Zustand und sind deaktiviert.
+- **XSS in `onclick`-Handlern geschlossen**: Schülernamen und Feedback-Textbausteine
+  wurden in Inline-`onclick`-Attribute interpoliert; ein Name/Text mit `'` oder `"`
+  konnte aus dem Attribut ausbrechen und Code ausführen. Neuer Encoder `jsAttr()`
+  bettet Werte attribut- und JS-sicher ein (verifiziert gegen mehrere Payloads).
+- **XSS-Härtung im KI-Qualitätscheck**: Aus der KI-Antwort stammende Werte
+  (`note`, `note_vorschlag`) werden nun konsequent escaped, bevor sie ins DOM gehen.
+- **Kein Fehler-Leak mehr** (`/api/claude`): interne Fehlermeldungen werden nur noch
+  geloggt, der Client erhält eine generische Meldung.
+- **Rate-Limiting für `/api/validate-license`**: schützt vor Brute-Force/Enumeration
+  von Lizenzschlüsseln und vor Last auf der Stripe-API (30/Stunde/IP).
+- **Stripe-Webhook**: Plan-Werte werden gegen eine Whitelist geprüft, bevor sie als
+  Kunden-Metadaten gespeichert werden.
+- **`/api/admin-revoke`**: zusätzlicher Injection-Schutz – nur UUID-Format wird in die
+  Stripe-Suchanfrage übernommen.
+- SW-Cache auf `pruefai-v25`, Version 1.5.1.
+
 ### Hinzugefügt / Features
 - **Klassen-Statistik pro Prüfung**: Die Noten-Ansicht zeigt jetzt Mittelwert,
   **Median**, **Bestehensquote in %** (farbcodiert), Bestanden/benotet, **Streuung (σ)**

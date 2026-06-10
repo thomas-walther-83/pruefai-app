@@ -1,5 +1,5 @@
 // Pruefai Service Worker – App-Shell caching
-const CACHE_NAME = 'pruefai-v24';
+const CACHE_NAME = 'pruefai-v26';
 const APP_SHELL = [
   './app.html',
   './fonts/plus-jakarta-sans.woff2',
