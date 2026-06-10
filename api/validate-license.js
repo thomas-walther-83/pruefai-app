@@ -1,5 +1,28 @@
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean);
 const PLAN_LIMITS = { starter: 50, pro: 300, max: 1500, schule: 99999 };
+
+// In-Memory-Rate-Limit gegen Brute-Force/Enumeration von Lizenz-Keys und gegen
+// Last auf der Stripe-API. (Pro Serverless-Instanz; bremst Massenabfragen.)
+const RATE_LIMIT_MAX = 30;
+const RATE_LIMIT_WINDOW_MS = 3_600_000;
+const ipRateMap = new Map();
+function getClientIp(req) {
+  const fwd = req.headers['x-forwarded-for'];
+  if (fwd) return String(Array.isArray(fwd) ? fwd[0] : fwd).split(',')[0].trim();
+  return req.socket?.remoteAddress || 'unknown';
+}
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const entry = ipRateMap.get(ip);
+  if (!entry || entry.resetAt < now) {
+    ipRateMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    if (ipRateMap.size > 5000) { for (const [k, v] of ipRateMap) { if (v.resetAt < now) ipRateMap.delete(k); } }
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+  entry.count++;
+  return true;
+}
 const LICENSE_KEY_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 const SCHUL_CODE_RE = /^SCHULE-[0-9A-F]{12}$/;
 
@@ -54,6 +77,9 @@ export default async function handler(req, res) {
 
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
+  }
+  if (!checkRateLimit(getClientIp(req))) {
+    return res.status(429).json({ error: 'Zu viele Anfragen. Bitte später erneut versuchen.' });
   }
   res.setHeader('Cache-Control', 'no-store');
 

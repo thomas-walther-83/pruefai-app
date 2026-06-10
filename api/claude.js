@@ -296,7 +296,8 @@ export default async function handler(req, res) {
       }),
     });
   } catch (err) {
-    return res.status(502).json({ error: 'Failed to reach Anthropic API: ' + err.message });
+    console.error('Anthropic request failed:', err.message);
+    return res.status(502).json({ error: 'Die KI ist momentan nicht erreichbar. Bitte später erneut versuchen.' });
   }
 
   const data = await response.json();

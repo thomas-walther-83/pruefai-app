@@ -2702,7 +2702,7 @@ async function loadKorrekturEintraege() {
         const e = eMap[s.id];
         const safePruefungId = String(pruefungId || '').replace(/[^a-zA-Z0-9_-]/g, '');
         const safeSchuelerId = String(s.id || '').replace(/[^a-zA-Z0-9_-]/g, '');
-        const safeName = escHtml(s.name).replace(/'/g, "\\'");
+        const safeName = jsAttr(s.name);
         const status = e ? e.status : 'kein Eintrag';
         const note = e && (e.note_manuell || e.note) ? noteHtml(e.note_manuell || e.note) : '–';
         const anzSeiten = e ? (seitenCount[e.id] || 0) : 0;
@@ -3424,11 +3424,11 @@ function showKiErgebnis() {
       '<div><div style="font-size:.75rem;color:var(--text-muted)">Punkte total</div>' +
       '<div style="font-size:1.15rem;font-weight:700"><span id="ki-total-erreicht">0</span> / ' + maxTotal + '</div></div>' +
       '<div><div style="font-size:.75rem;color:var(--text-muted)">Note · ' + (NOTENFORMEL_LABELS[formel] || formel) + ' · Rundung ' + rundung + '</div>' +
-      '<input type="number" id="ki-note-input" class="form-control" step="any" min="1" max="6" value="' + (result.note != null ? result.note : '') + '" style="width:120px;font-size:1.15rem;font-weight:700" /></div>' +
+      '<input type="number" id="ki-note-input" class="form-control" step="any" min="1" max="6" value="' + (result.note != null ? escHtml(String(result.note)) : '') + '" style="width:120px;font-size:1.15rem;font-weight:700" /></div>' +
       '<div id="ki-pass-badge"></div></div>';
   } else {
     html += '<div class="form-group"><label class="form-label">Note (1.0–6.0)</label>' +
-      '<input type="number" id="ki-note-input" class="form-control" step="any" min="1" max="6" value="' + (result.note != null ? result.note : '') + '" style="width:120px" /></div>';
+      '<input type="number" id="ki-note-input" class="form-control" step="any" min="1" max="6" value="' + (result.note != null ? escHtml(String(result.note)) : '') + '" style="width:120px" /></div>';
   }
 
   html += '<div class="form-group" style="margin-top:.75rem"><label class="form-label">Gesamtkommentar</label>' +
@@ -4439,6 +4439,14 @@ function currentSchoolyear() { const n = new Date(); const y = n.getFullYear(); 
 function formatDate(iso) { if (!iso) return '–'; const parts = iso.split('-'); return parts[2] + '.' + parts[1] + '.' + parts[0]; }
 function formatBytes(b) { if (!b) return ''; if (b < 1024) return b + ' B'; if (b < 1048576) return Math.round(b/1024) + ' KB'; return (b/1048576).toFixed(1) + ' MB'; }
 function escHtml(str) { if (str === null || str === undefined) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+// Sicheres Einbetten eines Wertes als einfach-gequoteter JS-String INNERHALB eines
+// doppelt-gequoteten HTML-Attributs, z. B. onclick="f('<wert>')". Verhindert
+// Attribut-/String-Ausbruch (XSS) bei Namen oder Freitext mit ' " \ < > &.
+function jsAttr(str) {
+  return String(str === null || str === undefined ? '' : str)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+    .replace(/\\/g, '\\\\').replace(/'/g, '\\&#39;');
+}
 function noteHtml(note) { if (note === null || note === undefined) return '–'; const n = parseFloat(note); return '<span class="' + noteClass(n) + '">' + n.toFixed(1) + '</span>'; }
 function noteClass(n) { if (n >= 5.5) return 'note-6'; if (n >= 4.5) return 'note-5'; if (n >= 4.0) return 'note-4'; return 'note-bad'; }
 function statusBadge(s) { if (s === 'abgeschlossen') return 'badge-green'; if (s === 'korrigiert') return 'badge-blue'; if (s === 'hochgeladen') return 'badge-yellow'; return 'badge-gray'; }
@@ -4605,10 +4613,10 @@ async function runQualitaetsCheck() {
     catch(pe) { throw new Error('Qualitätscheck-Antwort konnte nicht geparst werden.'); }
     const wrap = document.getElementById('ki-qualitaets-result');
     if (qResult.bestaetigt) {
-      wrap.innerHTML = '<div class="alert alert-success">&#10003; Zweiter Korrekteur bestätigt Note ' + result.note + '. ' + escHtml(qResult.begruendung || '') + '</div>';
+      wrap.innerHTML = '<div class="alert alert-success">&#10003; Zweiter Korrekteur bestätigt Note ' + escHtml(String(result.note)) + '. ' + escHtml(qResult.begruendung || '') + '</div>';
       kiPendingData.result.ki_qualitaet_unsicher = false;
     } else {
-      wrap.innerHTML = '<div class="alert alert-warning">&#9888;&#65039; Abweichung erkannt! Vorschlag: <strong>' + qResult.note_vorschlag + '</strong> – ' + escHtml(qResult.begruendung || '') + (qResult.abweichung ? '<br><small>' + escHtml(qResult.abweichung) + '</small>' : '') + '</div>';
+      wrap.innerHTML = '<div class="alert alert-warning">&#9888;&#65039; Abweichung erkannt! Vorschlag: <strong>' + escHtml(String(qResult.note_vorschlag != null ? qResult.note_vorschlag : '')) + '</strong> – ' + escHtml(qResult.begruendung || '') + (qResult.abweichung ? '<br><small>' + escHtml(qResult.abweichung) + '</small>' : '') + '</div>';
       kiPendingData.result.ki_qualitaet_unsicher = true;
       if (qResult.note_vorschlag) {
         kiPendingData.result.note = qResult.note_vorschlag;
@@ -4743,7 +4751,7 @@ async function renderTextbausteineChips() {
     const rows = await sb.select('textbausteine');
     if (!rows.length) { el.innerHTML = '<span style="font-size:.75rem;color:var(--text-muted)">Keine Textbausteine. Erstellen Sie welche unter &#9881;&#65039; Einstellungen.</span>'; return; }
     el.innerHTML = rows.map(function(t) {
-      return '<button class="textbaustein-chip" onclick="insertTextbaustein(' + JSON.stringify(t.text) + ')">' + escHtml(t.text) + '</button>';
+      return '<button class="textbaustein-chip" onclick="insertTextbaustein(\'' + jsAttr(t.text) + '\')">' + escHtml(t.text) + '</button>';
     }).join('');
   } catch(e) { el.innerHTML = ''; }
 }

@@ -154,7 +154,9 @@ describe('claude – Anthropic-Proxy (gemockt)', () => {
     const res = mockRes();
     await handler(mockReq({ body: { messages: SAMPLE_MESSAGES } }), res);
     assert.equal(res.statusCode, 502);
-    assert.ok(res.body.error.includes('Anthropic'));
+    assert.ok(typeof res.body.error === 'string' && res.body.error.length > 0);
+    // Sicherheits-Check: interne Fehlerdetails dürfen nicht geleakt werden.
+    assert.ok(!res.body.error.includes('ECONNREFUSED'));
   });
 
   it('gibt Anthropic-Fehlerstatus direkt zurück (z.B. 429 Rate Limit)', async () => {

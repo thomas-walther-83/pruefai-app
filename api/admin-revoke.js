@@ -11,6 +11,9 @@ function constantTimeEqual(a, b) {
 }
 
 async function findCustomerByLicense(stripeKey, licenseKey) {
+  // Defense-in-depth: nur UUID-Format zulassen, niemals Sonderzeichen in die
+  // Stripe-Search-Query einbauen (Injection-Schutz, unabhängig vom Caller).
+  if (typeof licenseKey !== 'string' || !/^[0-9a-fA-F-]{36}$/.test(licenseKey)) return null;
   const query = encodeURIComponent(`metadata['license_key']:'${licenseKey}'`);
   const res = await fetch(
     `https://api.stripe.com/v1/customers/search?query=${query}&limit=1`,
