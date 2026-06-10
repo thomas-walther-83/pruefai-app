@@ -491,7 +491,7 @@
           <label class="form-label">Klasse</label>
           <select class="form-control" id="korrektur-klasse-select" onchange="loadKorrekturEintraege()"><option value="">– bitte wählen –</option></select>
         </div>
-        <button class="btn btn-success" onclick="kiAlleKorrigieren()" title="Startet die KI-Korrektur für alle offenen Einträge in der Auswahl">&#129302; Alle KI-korrigieren</button>
+        <button class="btn btn-success" id="btn-ki-alle" onclick="kiAlleKorrigieren()" title="Startet die KI-Korrektur für alle offenen Einträge in der Auswahl">&#129302; Alle KI-korrigieren</button>
       </div>
       <div id="korrektur-eintraege-list"></div>
     </div>
@@ -2711,7 +2711,7 @@ async function loadKorrekturEintraege() {
           '<td><span class="badge ' + statusBadge(status) + '">' + escHtml(status) + '</span></td>' +
           '<td>' + anzSeiten + '</td><td>' + note + '</td><td>' +
           '<button class="btn btn-sm btn-secondary" onclick="openUploadForSchueler(\'' + safePruefungId + '\', \'' + safeSchuelerId + '\', \'' + safeName + '\')">&#128248; Upload</button> ' +
-          (e ? '<button class="btn btn-sm btn-primary" onclick="kiKorrigieren(\'' + e.id + '\')"' + (keineSeiten ? ' disabled title="Zuerst Seiten hochladen"' : '') + '>&#129302; KI</button> ' +
+          (e ? '<button class="btn btn-sm btn-primary" data-ki="' + e.id + '" onclick="kiKorrigieren(\'' + e.id + '\')"' + (keineSeiten ? ' disabled title="Zuerst Seiten hochladen"' : '') + '>&#129302; KI</button> ' +
                (e.ergebnis ? '<button class="btn btn-sm btn-secondary" onclick="reviewKorrektur(\'' + e.id + '\')">&#128221; Prüfen</button> ' : '') +
                '<button class="btn btn-sm btn-secondary" onclick="noteManuelleingabe(\'' + e.id + '\')">&#9998; Note</button>'
             : '<span style="color:var(--text-muted);font-size:.8rem">Eintrag wird beim Upload erstellt</span>') + '</td></tr>';
@@ -3133,7 +3133,20 @@ async function ladeSeitenBlocks(seiten) {
   return [];
 }
 
+// Verhindert doppelte/parallele KI-Korrekturen desselben Eintrags (Doppelklick →
+// doppelte API-Calls/Kosten) und gibt visuelles Button-Feedback.
+const _kiInFlight = new Set();
+function setKiButtonsBusy(eintragsId, busy) {
+  document.querySelectorAll('[data-ki="' + eintragsId + '"]').forEach(function(b) {
+    b.disabled = busy;
+    if (busy) { if (b.dataset.label == null) b.dataset.label = b.innerHTML; b.innerHTML = '&#8987;'; }
+    else if (b.dataset.label != null) { b.innerHTML = b.dataset.label; delete b.dataset.label; }
+  });
+}
 async function kiKorrigieren(eintragsId, silent) {
+  if (_kiInFlight.has(eintragsId)) return; // Doppelklick / parallele Aufrufe verhindern
+  _kiInFlight.add(eintragsId);
+  setKiButtonsBusy(eintragsId, true);
   try {
     const eintraege = await sb.select('eintraege', 'id=eq.' + eintragsId);
     const eintrag = eintraege[0]; if (!eintrag) return;
@@ -3275,6 +3288,7 @@ async function kiKorrigieren(eintragsId, silent) {
     kiPendingData = { eintragsId: eintragsId, result: result, pruefung: pruefung, schueler: schueler };
     if (!silent) showKiErgebnis();
   } catch(e) { showToast('KI-Fehler: ' + e.message, 'error'); }
+  finally { _kiInFlight.delete(eintragsId); setKiButtonsBusy(eintragsId, false); }
 }
 
 function ladeNotenDefault() {
@@ -3801,15 +3815,21 @@ async function kiAlleKorrigieren() {
     }
   }
   if (!confirm(todo.length + ' Prüfungen mit KI korrigieren?')) return;
+  const alleBtn = document.getElementById('btn-ki-alle');
+  if (alleBtn) alleBtn.disabled = true;
   let done = 0;
-  for (let i = 0; i < todo.length; i++) {
-    const result = await kiKorrigieren(todo[i].id, true);
-    if (result === 'limit') { showToast('Limit erreicht – ' + done + ' von ' + todo.length + ' Korrekturen abgeschlossen.', 'error'); return; }
-    done++;
-    showToast('Korrigiert: ' + done + '/' + todo.length, 'info');
+  try {
+    for (let i = 0; i < todo.length; i++) {
+      const result = await kiKorrigieren(todo[i].id, true);
+      if (result === 'limit') { showToast('Limit erreicht – ' + done + ' von ' + todo.length + ' Korrekturen abgeschlossen.', 'error'); return; }
+      done++;
+      showToast('Korrigiert: ' + done + '/' + todo.length, 'info');
+    }
+    showToast('Alle Korrekturen abgeschlossen. Bitte je Schüler über „Prüfen" bestätigen.', 'success');
+    loadKorrekturEintraege();
+  } finally {
+    if (alleBtn) alleBtn.disabled = false;
   }
-  showToast('Alle Korrekturen abgeschlossen. Bitte je Schüler über „Prüfen" bestätigen.', 'success');
-  loadKorrekturEintraege();
 }
 
 // =============================================================

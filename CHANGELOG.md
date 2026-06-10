@@ -9,6 +9,10 @@ Das Format basiert auf [Keep a Changelog](https://keepachangelog.com/de/1.0.0/).
 ## [Unveröffentlicht]
 
 ### Sicherheit / Behoben
+- **Doppelklick-Schutz für KI-Korrektur**: Einzel- und Batch-Korrektur sind jetzt
+  gegen parallele/doppelte Auslösung gesichert (In-Flight-Guard) – verhindert doppelte
+  API-Calls und damit doppelte Kosten/Verbrauch. Buttons zeigen währenddessen einen
+  Lade-Zustand und sind deaktiviert.
 - **XSS in `onclick`-Handlern geschlossen**: Schülernamen und Feedback-Textbausteine
   wurden in Inline-`onclick`-Attribute interpoliert; ein Name/Text mit `'` oder `"`
   konnte aus dem Attribut ausbrechen und Code ausführen. Neuer Encoder `jsAttr()`
